@@ -11,11 +11,10 @@
 
 <script>
 /* =========================================================
-   👇 SÓ ALTERE ESSAS 2 LINHAS ABAIXO! NÃO MEXA NO RESTO
+   ✅ SUAS CHAVES JÁ COLOCADAS AQUI — NÃO PRECISA MEXER!
    ========================================================= */
 const SUPABASE_URL = "https://xptujmysydmczmhpoebn.supabase.co";
 const SUPABASE_KEY = "sb_publishable_jPJMaONcjw2IqqKBiRkt9A_P33ZYNY_";
-/* ========================================================= */
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   realtime: { params: { eventsPerSecond: 10 } }
@@ -192,7 +191,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       } catch (e) {
         console.error(e);
         setStatus('❌ Erro', 'rgba(220,38,38,.25)');
-        toast('Erro ao conectar. Verifique suas chaves do Supabase.');
+        toast('Erro: ' + (e.message || 'verifique sua conexão'));
       }
     }
 
