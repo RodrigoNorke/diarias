@@ -13,18 +13,51 @@
 const SUPABASE_URL = "https://xptujmysydmczmhpoebn.supabase.co";
 const SUPABASE_KEY = "sb_publishable_jPJMaONcjw2IqqKBiRkt9A_P33ZYNY_";
 const app = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  realtime: { params: { eventsPerSecond: 10 } }
+  realtime: { params: { eventsPerSecond: 10 } },
+  auth: { autoRefreshToken: true, persistSession: true }
 });
+
+// SEU E-MAIL = ADMINISTRADOR
+const ADM_EMAIL = "rodriggo.oliveira20@gmail.com"; // ← COLOQUE SEU E-MAIL AQUI!
 
 (function(){
   var s = document.createElement('style');
-  s.textContent = ':root{--bg:#1c1f2e;--card:#262a3a;--text:#e8ecf4;--muted:#8b9ab8;--accent:#c9923c;--accent-soft:rgba(201,146,60,.18);--accent2:#4d8b7a;--accent2-soft:rgba(77,139,122,.18);--border:rgba(139,154,184,.16)}.reveal{opacity:0;transform:translateY(20px);animation:fadeUp .6s ease forwards}.reveal:nth-child(2){animation-delay:.1s}.reveal:nth-child(3){animation-delay:.2s}.reveal:nth-child(4){animation-delay:.3s}.reveal:nth-child(5){animation-delay:.4s}.reveal:nth-child(6){animation-delay:.5s}@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}.metric-card{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}.metric-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(201,146,60,.12);border-color:var(--accent)}.tbl-row{transition:background .15s ease}.tbl-row:hover{background:rgba(201,146,60,.06)}input,select{outline:none}input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--accent-soft)}.btn-primary{background:linear-gradient(135deg,var(--accent),#b8812b);color:#1c1f2e;font-weight:700;transition:all .2s ease}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(201,146,60,.35)}.btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border);transition:all .2s ease}.btn-secondary:hover{border-color:var(--muted)}.modal-backdrop{background:rgba(10,12,20,.7);backdrop-filter:blur(6px)}::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}::-webkit-scrollbar-thumb:hover{background:var(--muted)}.currency{font-variant-numeric:tabular-nums}.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--accent);color:var(--text);padding:14px 20px;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.4);z-index:9999;animation:toastIn .3s ease}@keyframes toastIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}.spinner{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}@keyframes spin{to{transform:rotate(360deg)}}';
+  s.textContent = ':root{--bg:#1c1f2e;--card:#262a3a;--text:#e8ecf4;--muted:#8b9ab8;--accent:#c9923c;--accent-soft:rgba(201,146,60,.18);--accent2:#4d8b7a;--accent2-soft:rgba(77,139,122,.18);--border:rgba(139,154,184,.16)}.reveal{opacity:0;transform:translateY(20px);animation:fadeUp .6s ease forwards}.reveal:nth-child(2){animation-delay:.1s}.reveal:nth-child(3){animation-delay:.2s}.reveal:nth-child(4){animation-delay:.3s}.reveal:nth-child(5){animation-delay:.4s}.reveal:nth-child(6){animation-delay:.5s}@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}.metric-card{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}.metric-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(201,146,60,.12);border-color:var(--accent)}.tbl-row{transition:background .15s ease}.tbl-row:hover{background:rgba(201,146,60,.06)}input,select{outline:none}input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--accent-soft)}.btn-primary{background:linear-gradient(135deg,var(--accent),#b8812b);color:#1c1f2e;font-weight:700;transition:all .2s ease}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(201,146,60,.35)}.btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border);transition:all .2s ease}.btn-secondary:hover{border-color:var(--muted)}.modal-backdrop{background:rgba(10,12,20,.7);backdrop-filter:blur(6px)}::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}::-webkit-scrollbar-thumb:hover{background:var(--muted)}.currency{font-variant-numeric:tabular-nums}.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--accent);color:var(--text);padding:14px 20px;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.4);z-index:9999;animation:toastIn .3s ease}@keyframes toastIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}.spinner{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}@keyframes spin{to{transform:rotate(360deg)}}.login-card{background:var(--card);border:1px solid var(--border);box-shadow:0 25px 80px rgba(0,0,0,.5)}.user-tag{background:var(--accent-soft);color:var(--accent);font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600}';
   document.head.appendChild(s);
 })();
 </script>
 </head>
 <body style="margin:0;padding:0;">
-<div style="background-color:transparent;box-sizing:border-box;">
+
+<!-- TELA DE LOGIN -->
+<div id="telaLogin" style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(1200px 600px at 80% -10%, rgba(201,146,60,.10), transparent 60%), #1c1f2e;">
+  <div class="login-card rounded-2xl p-8 w-full max-w-md m-4">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#a87828);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 24px rgba(201,146,60,.3)">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1c1f2e" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--text);margin-bottom:6px">Meu Livro de Diárias</h2>
+      <p style="color:var(--muted)">Faça login para acessar</p>
+    </div>
+    <div id="formEntrar">
+      <input id="emailLogin" type="email" placeholder="Seu e-mail" class="w-full px-4 py-3 rounded-xl mb-4" style="background:var(--bg);border:1px solid var(--border);color:var(--text)" required>
+      <input id="senhaLogin" type="password" placeholder="Sua senha" class="w-full px-4 py-3 rounded-xl mb-4" style="background:var(--bg);border:1px solid var(--border);color:var(--text)" required>
+      <button onclick="fazerLogin()" class="btn-primary w-full py-3 rounded-xl text-sm font-semibold mb-3">Entrar</button>
+      <p style="text-align:center;color:var(--muted);font-size:13px">Não tem conta? <a href="#" onclick="mostrarCadastro();return false;" style="color:var(--accent)">Criar conta</a></p>
+    </div>
+    <div id="formCadastro" style="display:none">
+      <input id="nomeCad" type="text" placeholder="Seu nome" class="w-full px-4 py-3 rounded-xl mb-4" style="background:var(--bg);border:1px solid var(--border);color:var(--text)">
+      <input id="emailCad" type="email" placeholder="Seu e-mail" class="w-full px-4 py-3 rounded-xl mb-4" style="background:var(--bg);border:1px solid var(--border);color:var(--text)">
+      <input id="senhaCad" type="password" placeholder="Criar senha (mínimo 6 caracteres)" class="w-full px-4 py-3 rounded-xl mb-4" style="background:var(--bg);border:1px solid var(--border);color:var(--text)">
+      <button onclick="fazerCadastro()" class="btn-primary w-full py-3 rounded-xl text-sm font-semibold mb-3">Criar conta</button>
+      <p style="text-align:center;color:var(--muted);font-size:13px">Já tem conta? <a href="#" onclick="mostrarLogin();return false;" style="color:var(--accent)">Entrar</a></p>
+    </div>
+    <div id="mensagemLogin" style="margin-top:16px;text-align:center;font-size:14px"></div>
+  </div>
+</div>
+
+<!-- TELA PRINCIPAL (APARECE DEPOIS DE LOGAR) -->
+<div id="telaApp" style="display:none">
   <div style="color:var(--text);font-family:'Source Sans 3',sans-serif;background:radial-gradient(1200px 600px at 80% -10%, rgba(201,146,60,.10), transparent 60%), var(--bg);min-height:100%">
     <div class="max-w-6xl mx-auto px-6 py-12">
 
@@ -37,14 +70,18 @@ const app = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
             <p style="font-family:'Cormorant Garamond',serif;font-size:12px;letter-spacing:0.25em;text-transform:uppercase;color:var(--accent);margin-bottom:4px">Gestão Financeira · ☁️ Sincronizado</p>
             <h1 class="text-4xl font-bold" style="font-family:'Cormorant Garamond',serif;color:var(--text);letter-spacing:-0.01em;line-height:1.1">Meu Livro de Diárias</h1>
           </div>
-          <div id="statusConexao" class="text-xs px-3 py-1.5 rounded-full" style="background:var(--border);color:var(--muted)">
-            <span class="spinner" style="width:10px;height:10px;border-width:2px;margin-right:6px;vertical-align:middle"></span>
-            Conectando...
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span id="nomeUsuario" class="user-tag"></span>
+            <div id="statusConexao" class="text-xs px-3 py-1.5 rounded-full" style="background:var(--border);color:var(--muted)">
+              <span class="spinner" style="width:10px;height:10px;border-width:2px;margin-right:6px;vertical-align:middle"></span>
+              Conectando...
+            </div>
+            <button onclick="sairConta()" class="btn-secondary px-3 py-1.5 rounded-lg text-xs">Sair</button>
+            <button onclick="abrirModal()" class="btn-primary px-4 py-2.5 rounded-xl text-sm flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nova Diária
+            </button>
           </div>
-          <button onclick="abrirModal()" class="btn-primary px-6 py-3 rounded-xl text-sm flex items-center gap-2">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nova Diária
-          </button>
         </div>
         <p style="color:var(--muted);max-width:600px;line-height:1.6" class="text-base">Dados salvos na nuvem · sincroniza automaticamente entre celular, notebook e tablet.</p>
       </div>
@@ -114,9 +151,10 @@ const app = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           <table class="w-full text-sm">
             <thead>
               <tr style="color:var(--muted);border-bottom:1px solid var(--border)" class="text-xs uppercase tracking-wider">
-                <th class="text-left pb-3 font-semibold" style="width:25%">Data</th>
+                <th class="text-left pb-3 font-semibold" style="width:22%">Data</th>
                 <th class="text-left pb-3 font-semibold">Descrição</th>
-                <th class="text-right pb-3 font-semibold" style="width:25%">Valor</th>
+                <th class="text-left pb-3 font-semibold" style="width:18%">Usuário</th>
+                <th class="text-right pb-3 font-semibold" style="width:20%">Valor</th>
                 <th class="text-right pb-3 font-semibold" style="width:60px"></th>
               </tr>
             </thead>
@@ -165,173 +203,254 @@ const app = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         </form>
       </div>
     </div>
-
-    <script>
-    let diarias = [];
-    let graficoInstancia = null;
-
-    function moeda(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
-    function dataBr(d){return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}
-    function mesAno(d){return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}
-    function chaveMes(d){const dt=new Date(d+'T00:00:00');return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')}
-    function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
-    function setStatus(texto,cor){const el=document.getElementById('statusConexao');el.innerHTML=texto;el.style.background=cor;el.style.color='#1c1f2e';el.style.fontWeight=600}
-
-    async function carregarDoBanco() {
-      try {
-        const { data, error } = await app.from('diarias').select('*').order('data', { ascending: false });
-        if (error) throw error;
-        diarias = data || [];
-        setStatus('☁️ Sincronizado', 'rgba(13,150,105,.25)');
-        atualizarTudo();
-      } catch (e) {
-        console.error(e);
-        setStatus('❌ Erro', 'rgba(220,38,38,.25)');
-        toast('Erro: ' + (e.message || 'verifique sua conexão'));
-      }
-    }
-
-    function ligarSincronia() {
-      app.channel('diarias-sync')
-        .on('postgres_changes',{event:'*',schema:'public',table:'diarias'},()=>carregarDoBanco())
-        .subscribe(s=>{if(s==='SUBSCRIBED')setStatus('🟢 Ao vivo','rgba(13,150,105,.25)')});
-    }
-
-    function abrirModal(){
-      document.getElementById('modal').style.display='flex';
-      document.getElementById('data').value=new Date().toISOString().split('T')[0];
-      document.getElementById('valor').value='';document.getElementById('descricao').value='';
-      setTimeout(()=>document.getElementById('valor').focus(),50);
-    }
-    function fecharModal(){document.getElementById('modal').style.display='none'}
-    document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')fecharModal()});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape')fecharModal()});
-
-    async function salvarDiaria(e){
-      e.preventDefault();
-      const btn=document.getElementById('btnSalvar');
-      btn.disabled=true;btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:8px;vertical-align:middle"></span>Salvando...';
-      try{
-        const valor=parseFloat(document.getElementById('valor').value);
-        const data=document.getElementById('data').value;
-        const descricao=document.getElementById('descricao').value.trim()||null;
-        const {error}=await app.from('diarias').insert({valor,data,descricao});
-        if(error)throw error;
-        toast('✅ Diária salva!');fecharModal();
-      }catch(err){toast('❌ Erro: '+err.message)}
-      finally{btn.disabled=false;btn.textContent='Salvar Diária'}
-    }
-
-    async function excluir(id){
-      if(!confirm('Excluir esta diária?'))return;
-      try{const {error}=await app.from('diarias').delete().eq('id',id);if(error)throw error;toast('✅ Excluída')}
-      catch(err){toast('❌ Erro: '+err.message)}
-    }
-
-    function diariasFiltradas(){
-      const ano=document.getElementById('filtroAno').value;
-      return (!ano||ano==='todos')?diarias:diarias.filter(d=>d.data.startsWith(ano));
-    }
-    function limparFiltro(){document.getElementById('filtroAno').value='todos';atualizarTudo()}
-    function preencherAnos(){
-      const sel=document.getElementById('filtroAno');
-      const anos=[...new Set(diarias.map(d=>d.data.slice(0,4)))].sort((a,b)=>b-a);
-      sel.innerHTML='<option value="todos">Todos os anos</option>'+anos.map(a=>`<option value="${a}">${a}</option>`).join('');
-    }
-
-    function atualizarMetricas(){
-      const lista=diariasFiltradas();
-      const total=lista.reduce((s,d)=>s+Number(d.valor),0);
-      const qtd=lista.length;
-      const media=qtd>0?total/qtd:0;
-      const maior=qtd>0?lista.reduce((m,d)=>Number(d.valor)>Number(m.valor)?d:m):null;
-      const hoje=new Date();
-      const chaveHoje=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0');
-      const mesLista=diarias.filter(d=>chaveMes(d.data)===chaveHoje);
-      const totalMes=mesLista.reduce((s,d)=>s+Number(d.valor),0);
-      document.getElementById('total').textContent=moeda(total);
-      document.getElementById('subtotalInfo').textContent=`${qtd} diária${qtd===1?'':'s'}`;
-      document.getElementById('media').textContent=moeda(media);
-      document.getElementById('maior').textContent=maior?moeda(maior.valor):moeda(0);
-      document.getElementById('maiorData').textContent=maior?dataBr(maior.data):'—';
-      document.getElementById('mesAtual').textContent=moeda(totalMes);
-      document.getElementById('mesInfo').textContent=`${mesLista.length} em ${mesAno(hoje.toISOString().split('T')[0])}`;
-    }
-
-    function atualizarTabela(){
-      const lista=diariasFiltradas();
-      const tb=document.getElementById('tabelaDiarias');
-      const vazio=document.getElementById('vazio');
-      if(lista.length===0){tb.innerHTML='';vazio.style.display='block';return}
-      vazio.style.display='none';
-      tb.innerHTML=lista.map(d=>`
-        <tr class="tbl-row" style="border-bottom:1px solid var(--border)">
-          <td class="py-3.5 font-medium">${dataBr(d.data)}</td>
-          <td class="py-3.5" style="color:var(--muted)">${d.descricao||'<span style="opacity:.5">Sem descrição</span>'}</td>
-          <td class="py-3.5 text-right font-semibold currency" style="color:var(--accent);font-family:'Cormorant Garamond',serif;font-size:18px">${moeda(d.valor)}</td>
-          <td class="py-3.5 text-right">
-            <button onclick='excluir("${d.id}")' style="color:var(--muted);padding:8px;border-radius:8px" onmouseover="this.style.background='rgba(220,38,38,.15)';this.style.color='#f87171'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)'">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
-            </button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    function atualizarGrafico(){
-      const lista=diariasFiltradas();
-      const el=document.getElementById('grafico');
-      if(!el)return;
-      if(typeof echarts==='undefined'){setTimeout(atualizarGrafico,250);return}
-      if(!graficoInstancia)graficoInstancia=echarts.init(el);
-      const meses={};
-      lista.forEach(d=>{const k=chaveMes(d.data);meses[k]=(meses[k]||0)+Number(d.valor)});
-      const chaves=Object.keys(meses).sort();
-      const rotulos=chaves.map(k=>{const[a,m]=k.split('-');return new Date(a,Number(m)-1,1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})});
-      const valores=chaves.map(k=>Number(meses[k].toFixed(2)));
-      const st=getComputedStyle(document.documentElement);
-      const ac=st.getPropertyValue('--accent').trim()||'#c9923c';
-      const mt=st.getPropertyValue('--muted').trim()||'#8b9ab8';
-      const cd=st.getPropertyValue('--card').trim()||'#262a3a';
-      const tx=st.getPropertyValue('--text').trim()||'#e8ecf4';
-      const bd=st.getPropertyValue('--border').trim()||'rgba(139,154,184,.16)';
-      const grad={type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:ac+'cc'},{offset:1,color:ac+'15'}]};
-      graficoInstancia.setOption({
-        backgroundColor:'transparent',
-        tooltip:{trigger:'axis',backgroundColor:cd,borderColor:bd,textStyle:{color:tx},formatter:p=>`<b>${p[0].axisValue}</b><br><span style="color:${ac};font-weight:700">${moeda(p[0].value)}</span>`},
-        grid:{left:'3%',right:'4%',bottom:'3%',top:'10%',containLabel:true},
-        xAxis:{type:'category',data:rotulos.length?rotulos:['Sem dados'],axisLabel:{color:mt,fontSize:11},axisTick:{show:false},axisLine:{lineStyle:{color:bd}}},
-        yAxis:{type:'value',scale:true,axisLabel:{color:mt,fontSize:11,formatter:v=>'R$ '+v},splitLine:{lineStyle:{color:bd,type:'dashed'}}},
-        series:[{type:'bar',data:valores.length?valores:[0],barWidth:'55%',itemStyle:{borderRadius:[8,8,0,0],color:grad,borderColor:ac,borderWidth:1},label:{show:valores.length>0&&valores.length<=12,position:'top',color:tx,fontWeight:700,fontSize:12,formatter:p=>moeda(p.value)}}]
-      },true);
-      window.addEventListener('resize',()=>graficoInstancia&&graficoInstancia.resize());
-    }
-
-    function exportarDados(){
-      if(diarias.length===0){alert('Nada para exportar');return}
-      const csv='Data,Descrição,Valor\n'+diarias
-        .sort((a,b)=>a.data.localeCompare(b.data))
-        .map(d=>`${d.data},"${(d.descricao||'').replace(/"/g,'""')}",${Number(d.valor).toFixed(2).replace('.',',')}`)
-        .join('\n');
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
-      a.download=`diarias_${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-    }
-
-    function atualizarTudo(){
-      preencherAnos();
-      atualizarMetricas();
-      atualizarTabela();
-      atualizarGrafico();
-    }
-
-    (async function init(){
-      await carregarDoBanco();
-      ligarSincronia();
-    })();
-    </script>
   </div>
 </div>
+
+<script>
+let diarias = [];
+let graficoInstancia = null;
+let usuarioAtual = null;
+let ehAdmin = false;
+
+function moeda(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function dataBr(d){return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}
+function mesAno(d){return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}
+function chaveMes(d){const dt=new Date(d+'T00:00:00');return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
+function setStatus(texto,cor){const el=document.getElementById('statusConexao');el.innerHTML=texto;el.style.background=cor;el.style.color='#1c1f2e';el.style.fontWeight=600}
+
+// === TELA DE LOGIN ===
+function mostrarCadastro(){
+  document.getElementById('formEntrar').style.display='none';
+  document.getElementById('formCadastro').style.display='block';
+  document.getElementById('mensagemLogin').innerHTML='';
+}
+function mostrarLogin(){
+  document.getElementById('formEntrar').style.display='block';
+  document.getElementById('formCadastro').style.display='none';
+  document.getElementById('mensagemLogin').innerHTML='';
+}
+
+async function fazerCadastro(){
+  const nome=document.getElementById('nomeCad').value.trim();
+  const email=document.getElementById('emailCad').value.trim();
+  const senha=document.getElementById('senhaCad').value;
+  if(!nome||!email||senha.length<6){
+    document.getElementById('mensagemLogin').innerHTML='<span style="color:#f87171">Preencha tudo. Senha com mínimo 6 caracteres.</span>';return;
+  }
+  const {data,error}=await app.auth.signUp({email,password:senha,options:{data:{nome}}});
+  if(error){document.getElementById('mensagemLogin').innerHTML=`<span style="color:#f87171">${error.message}</span>`;return}
+  document.getElementById('mensagemLogin').innerHTML='<span style="color:#4ade80">✅ Conta criada! Verifique seu e-mail ou faça login.</span>';
+  toast('Conta criada com sucesso!');mostrarLogin();
+}
+
+async function fazerLogin(){
+  const email=document.getElementById('emailLogin').value.trim();
+  const senha=document.getElementById('senhaLogin').value;
+  if(!email||!senha){document.getElementById('mensagemLogin').innerHTML='<span style="color:#f87171">Preencha e-mail e senha.</span>';return}
+  const {data,error}=await app.auth.signInWithPassword({email,password:senha});
+  if(error){document.getElementById('mensagemLogin').innerHTML=`<span style="color:#f87171">${error.message}</span>`;return}
+  usuarioAtual=data.user;
+  ehAdmin = (usuarioAtual.email || '').toLowerCase() === ADM_EMAIL.toLowerCase();
+  entrarApp();
+}
+
+async function sairConta(){
+  await app.auth.signOut();
+  usuarioAtual=null;ehAdmin=false;
+  document.getElementById('telaLogin').style.display='flex';
+  document.getElementById('telaApp').style.display='none';
+  document.getElementById('emailLogin').value='';
+  document.getElementById('senhaLogin').value='';
+}
+
+function entrarApp(){
+  document.getElementById('telaLogin').style.display='none';
+  document.getElementById('telaApp').style.display='block';
+  const nome = usuarioAtual.user_metadata?.nome || usuarioAtual.email?.split('@')[0] || 'Usuário';
+  document.getElementById('nomeUsuario').textContent = ehAdmin ? `👑 ${nome} (ADM)` : nome;
+  carregarDoBanco();
+  ligarSincronia();
+}
+
+// === BANCO DE DADOS ===
+async function carregarDoBanco() {
+  try {
+    let query = app.from('diarias').select('*');
+    if (!ehAdmin) {
+      // Usuário comum vê SOMENTE as suas diárias
+      query = query.eq('usuario_id', usuarioAtual.id);
+    }
+    query = query.order('data', { ascending: false });
+    const { data, error } = await query;
+    if (error) throw error;
+    diarias = data || [];
+    setStatus('🟢 Online', 'rgba(13,150,105,.25)');
+    atualizarTudo();
+  } catch (e) {
+    console.error(e);
+    setStatus('❌ Erro', 'rgba(220,38,38,.25)');
+    toast('Erro: ' + (e.message || 'verifique sua conexão'));
+  }
+}
+
+function ligarSincronia() {
+  app.channel('diarias-sync')
+    .on('postgres_changes',{event:'*',schema:'public',table:'diarias'},()=>carregarDoBanco())
+    .subscribe(s=>{if(s==='SUBSCRIBED')setStatus('🟢 Online','rgba(13,150,105,.25)')});
+}
+
+// === MODAL ===
+function abrirModal(){
+  document.getElementById('modal').style.display='flex';
+  document.getElementById('data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('valor').value='';document.getElementById('descricao').value='';
+  setTimeout(()=>document.getElementById('valor').focus(),50);
+}
+function fecharModal(){document.getElementById('modal').style.display='none'}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')fecharModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')fecharModal()});
+
+async function salvarDiaria(e){
+  e.preventDefault();
+  const btn=document.getElementById('btnSalvar');
+  btn.disabled=true;btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:8px;vertical-align:middle"></span>Salvando...';
+  try{
+    const valor=parseFloat(document.getElementById('valor').value);
+    const data=document.getElementById('data').value;
+    const descricao=document.getElementById('descricao').value.trim()||null;
+    const {error}=await app.from('diarias').insert({
+      valor, data, descricao,
+      usuario_id: usuarioAtual.id,
+      nome_usuario: usuarioAtual.user_metadata?.nome || usuarioAtual.email?.split('@')[0] || 'Usuário'
+    });
+    if(error)throw error;
+    toast('✅ Diária salva!');fecharModal();
+  }catch(err){toast('❌ Erro: '+err.message)}
+  finally{btn.disabled=false;btn.textContent='Salvar Diária'}
+}
+
+async function excluir(id, usuarioId){
+  // SÓ pode excluir se for ADM ou se for o próprio dono da diária
+  if (!ehAdmin && usuarioId !== usuarioAtual.id) {
+    toast('❌ Você só pode excluir suas próprias diárias'); return;
+  }
+  if(!confirm('Excluir esta diária?'))return;
+  try{const {error}=await app.from('diarias').delete().eq('id',id);if(error)throw error;toast('✅ Excluída')}
+  catch(err){toast('❌ Erro: '+err.message)}
+}
+
+// === FILTROS E MÉTRICAS ===
+function diariasFiltradas(){
+  const ano=document.getElementById('filtroAno').value;
+  return (!ano||ano==='todos')?diarias:diarias.filter(d=>d.data.startsWith(ano));
+}
+function limparFiltro(){document.getElementById('filtroAno').value='todos';atualizarTudo()}
+function preencherAnos(){
+  const sel=document.getElementById('filtroAno');
+  const anos=[...new Set(diarias.map(d=>d.data.slice(0,4)))].sort((a,b)=>b-a);
+  sel.innerHTML='<option value="todos">Todos os anos</option>'+anos.map(a=>`<option value="${a}">${a}</option>`).join('');
+}
+
+function atualizarMetricas(){
+  const lista=diariasFiltradas();
+  const total=lista.reduce((s,d)=>s+Number(d.valor),0);
+  const qtd=lista.length;
+  const media=qtd>0?total/qtd:0;
+  const maior=qtd>0?lista.reduce((m,d)=>Number(d.valor)>Number(m.valor)?d:m):null;
+  const hoje=new Date();
+  const chaveHoje=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0');
+  const mesLista=diarias.filter(d=>chaveMes(d.data)===chaveHoje);
+  const totalMes=mesLista.reduce((s,d)=>s+Number(d.valor),0);
+  document.getElementById('total').textContent=moeda(total);
+  document.getElementById('subtotalInfo').textContent=`${qtd} diária${qtd===1?'':'s'}`;
+  document.getElementById('media').textContent=moeda(media);
+  document.getElementById('maior').textContent=maior?moeda(maior.valor):moeda(0);
+  document.getElementById('maiorData').textContent=maior?dataBr(maior.data):'—';
+  document.getElementById('mesAtual').textContent=moeda(totalMes);
+  document.getElementById('mesInfo').textContent=`${mesLista.length} em ${mesAno(hoje.toISOString().split('T')[0])}`;
+}
+
+function atualizarTabela(){
+  const lista=diariasFiltradas();
+  const tb=document.getElementById('tabelaDiarias');
+  const vazio=document.getElementById('vazio');
+  if(lista.length===0){tb.innerHTML='';vazio.style.display='block';return}
+  vazio.style.display='none';
+  tb.innerHTML=lista.map(d=>`
+    <tr class="tbl-row" style="border-bottom:1px solid var(--border)">
+      <td class="py-3.5 font-medium">${dataBr(d.data)}</td>
+      <td class="py-3.5" style="color:var(--muted)">${d.descricao||'<span style="opacity:.5">Sem descrição</span>'}</td>
+      <td class="py-3.5 text-sm">${d.nome_usuario||'—'}</td>
+      <td class="py-3.5 text-right font-semibold currency" style="color:var(--accent);font-family:'Cormorant Garamond',serif;font-size:18px">${moeda(d.valor)}</td>
+      <td class="py-3.5 text-right">
+        <button onclick='excluir("${d.id}","${d.usuario_id||''}")' style="color:var(--muted);padding:8px;border-radius:8px" onmouseover="this.style.background='rgba(220,38,38,.15)';this.style.color='#f87171'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function atualizarGrafico(){
+  const lista=diariasFiltradas();
+  const el=document.getElementById('grafico');
+  if(!el)return;
+  if(typeof echarts==='undefined'){setTimeout(atualizarGrafico,250);return}
+  if(!graficoInstancia)graficoInstancia=echarts.init(el);
+  const meses={};
+  lista.forEach(d=>{const k=chaveMes(d.data);meses[k]=(meses[k]||0)+Number(d.valor)});
+  const chaves=Object.keys(meses).sort();
+  const rotulos=chaves.map(k=>{const[a,m]=k.split('-');return new Date(a,Number(m)-1,1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})});
+  const valores=chaves.map(k=>Number(meses[k].toFixed(2)));
+  const st=getComputedStyle(document.documentElement);
+  const ac=st.getPropertyValue('--accent').trim()||'#c9923c';
+  const mt=st.getPropertyValue('--muted').trim()||'#8b9ab8';
+  const cd=st.getPropertyValue('--card').trim()||'#262a3a';
+  const tx=st.getPropertyValue('--text').trim()||'#e8ecf4';
+  const bd=st.getPropertyValue('--border').trim()||'rgba(139,154,184,.16)';
+  const grad={type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:ac+'cc'},{offset:1,color:ac+'15'}]};
+  graficoInstancia.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis',backgroundColor:cd,borderColor:bd,textStyle:{color:tx},formatter:p=>`<b>${p[0].axisValue}</b><br><span style="color:${ac};font-weight:700">${moeda(p[0].value)}</span>`},
+    grid:{left:'3%',right:'4%',bottom:'3%',top:'10%',containLabel:true},
+    xAxis:{type:'category',data:rotulos.length?rotulos:['Sem dados'],axisLabel:{color:mt,fontSize:11},axisTick:{show:false},axisLine:{lineStyle:{color:bd}}},
+    yAxis:{type:'value',scale:true,axisLabel:{color:mt,fontSize:11,formatter:v=>'R$ '+v},splitLine:{lineStyle:{color:bd,type:'dashed'}}},
+    series:[{type:'bar',data:valores.length?valores:[0],barWidth:'55%',itemStyle:{borderRadius:[8,8,0,0],color:grad,borderColor:ac,borderWidth:1},label:{show:valores.length>0&&valores.length<=12,position:'top',color:tx,fontWeight:700,fontSize:12,formatter:p=>moeda(p.value)}}]
+  },true);
+  window.addEventListener('resize',()=>graficoInstancia&&graficoInstancia.resize());
+}
+
+function exportarDados(){
+  if(diarias.length===0){alert('Nada para exportar');return}
+  const csv='Data,Descrição,Usuário,Valor\n'+diarias
+    .sort((a,b)=>a.data.localeCompare(b.data))
+    .map(d=>`${d.data},"${(d.descricao||'').replace(/"/g,'""')}","${(d.nome_usuario||'').replace(/"/g,'""')}",${Number(d.valor).toFixed(2).replace('.',',')}`)
+    .join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`diarias_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+}
+
+function atualizarTudo(){
+  preencherAnos();
+  atualizarMetricas();
+  atualizarTabela();
+  atualizarGrafico();
+}
+
+// === INICIALIZAÇÃO ===
+app.auth.onAuthStateChange((event,session)=>{
+  if(session?.user){
+    usuarioAtual=session.user;
+    ehAdmin = (usuarioAtual.email || '').toLowerCase() === ADM_EMAIL.toLowerCase();
+    entrarApp();
+  } else {
+    document.getElementById('telaLogin').style.display='flex';
+    document.getElementById('telaApp').style.display='none';
+  }
+});
+</script>
 </body>
 </html>
