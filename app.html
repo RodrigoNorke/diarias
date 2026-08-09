@@ -320,4 +320,18 @@ const app = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     }
 
     function atualizarTudo(){
-      preencherAnos
+      preencherAnos();
+      atualizarMetricas();
+      atualizarTabela();
+      atualizarGrafico();
+    }
+
+    (async function init(){
+      await carregarDoBanco();
+      ligarSincronia();
+    })();
+    </script>
+  </div>
+</div>
+</body>
+</html>
