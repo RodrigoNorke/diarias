@@ -10,12 +10,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* =========================================================
-   ✅ SUAS CHAVES JÁ COLOCADAS AQUI — NÃO PRECISA MEXER!
-   ========================================================= */
 const SUPABASE_URL = "https://xptujmysydmczmhpoebn.supabase.co";
 const SUPABASE_KEY = "sb_publishable_jPJMaONcjw2IqqKBiRkt9A_P33ZYNY_";
-
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   realtime: { params: { eventsPerSecond: 10 } }
 });
