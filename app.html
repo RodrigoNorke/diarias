@@ -578,15 +578,15 @@ async function carregarDiarias(){
 async function carregarDescontos(){
   document.getElementById('carregandoDescontos').style.display='block';
   try{
-    let q=app.from('descontos').select('*');
-    if(!ehAdmin) q=q.eq('usuario_id',usuarioAtual.id);
-    q=q.order('data',{ascending:false});
-    const {data,error}=await q;
+    let q = app.from('descontos').select('*');
+    if(!ehAdmin) q = q.eq('usuario_id', usuarioAtual.id);
+    q = q.order('data', {ascending: false});
+    const {data, error} = await q;
     if(error) throw error;
-    descontos=data||[];
+    descontos = data || [];
     atualizarTudoDescontos();
   }catch(e){
-    toast(mensagemAmigavel(e),'erro');
+    toast(mensagemAmigavel(e), 'erro');
   }finally{
     document.getElementById('carregandoDescontos').style.display='none';
   }
