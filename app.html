@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CashLog</title>
     <link rel="icon" href="data:,">
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ============================================
-           CASHLOG – TEMA FUTURISTA
-        ============================================ */
         :root{
             --bg: #0a0e17;
             --bg-soft: #111827;
@@ -46,11 +43,6 @@
             --accent3: #e11d48;
             --accent3-soft: rgba(225, 29, 72, 0.08);
             --border: rgba(100, 116, 139, 0.2);
-            --erro: #e11d48;
-            --sucesso: #22c55e;
-            --aviso: #eab308;
-            --glow: 0 0 20px rgba(14, 165, 233, 0.2);
-            --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.08);
         }
         *{box-sizing:border-box;}
         body{
@@ -59,1261 +51,611 @@
             background: linear-gradient(135deg, var(--bg) 0%, var(--bg-soft) 100%);
             min-height:100vh;
             color:var(--text);
-            transition: background .3s ease, color .3s ease;
             position: relative;
-            overflow-x: hidden;
         }
         body::before{
             content:'';
-            position: fixed;
+            position:fixed;
             top:0; left:0; right:0; bottom:0;
             background:
                 radial-gradient(circle at 20% 50%, var(--accent-soft) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, var(--accent2-soft) 0%, transparent 50%),
                 radial-gradient(circle at 50% 80%, var(--accent3-soft) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
-            animation: bgGlow 15s ease-in-out infinite alternate;
+            pointer-events: none; z-index:0;
         }
-        @keyframes bgGlow{0%{opacity:0.4;}100%{opacity:0.8;}}
         .reveal{opacity:0;transform:translateY(16px);animation:fadeUp .7s ease forwards;}
         @keyframes fadeUp{to{opacity:1;transform:translateY(0);}}
-        .abas{display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;position: relative;z-index: 1;}
-        .aba{padding:12px 20px;cursor:pointer;border-radius:12px 12px 0 0;color:var(--text-soft);font-weight:500;transition:all .2s ease;border-bottom:3px solid transparent;position: relative;overflow: hidden;}
-        .aba::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transform:scaleX(0);transition:transform .3s ease;}
-        .aba.ativa::after{transform:scaleX(1);}
-        .aba.ativa{color:var(--accent);background:var(--accent-soft);}
+        .abas{display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid var(--border);position:relative;z-index:1;}
+        .aba{padding:12px 20px;cursor:pointer;border-radius:12px 12px 0 0;color:var(--text-soft);font-weight:500;transition:all .2s ease;border-bottom:3px solid transparent;}
+        .aba.ativa{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-soft);}
         .aba:hover{color:var(--text);background:var(--bg-soft);}
-        .aba-desconto.ativa{color:var(--accent3);background:var(--accent3-soft);}
-        .aba-desconto.ativa::after{background:linear-gradient(90deg,var(--accent3),var(--accent2));}
-        .metric-card,.table-card,.login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:var(--shadow-card);transition:all .3s ease;position:relative;overflow:hidden;}
-        .metric-card::before,.table-card::before,.login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.6;}
-        .metric-card:hover{background:var(--card-hover);transform:translateY(-4px);box-shadow:var(--glow),0 18px 45px rgba(0,0,0,.25);border-color:var(--accent);}
-        .tbl-row{transition:background .15s ease;}
-        .tbl-row:hover{background:var(--accent-soft);}
-        .tbl-row-desconto:hover{background:var(--accent3-soft);}
-        .mes-separador{background:var(--accent-soft);color:var(--accent);font-weight:600;}
-        .mes-separador-desconto{background:var(--accent3-soft);color:var(--accent3);font-weight:600;}
-        input,select{outline:none;transition:all .2s ease;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:10px 12px;backdrop-filter:blur(5px);}
-        input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),var(--glow);}
-        .btn-primary{background:linear-gradient(135deg,#00d4ff,#0090ff);color:#fff;font-weight:600;transition:all .25s ease;border-radius:14px;box-shadow:0 4px 15px rgba(0,212,255,.3);border:none;cursor:pointer;padding:10px 16px;text-shadow:0 1px 2px rgba(0,0,0,.2);}
-        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,212,255,.5);}
-        .btn-primary-vermelho{background:linear-gradient(135deg,#ff4d6d,#c9184a);box-shadow:0 4px 15px rgba(255,77,109,.3);}
-        .btn-primary-vermelho:hover{box-shadow:0 8px 25px rgba(255,77,109,.5);}
-        .btn-secondary{background:rgba(255,255,255,0.05);color:var(--text);border:1px solid var(--border);border-radius:12px;transition:all .25s ease;cursor:pointer;padding:10px 16px;backdrop-filter:blur(5px);}
-        .btn-secondary:hover{border-color:var(--accent);background:rgba(0,212,255,0.1);box-shadow:var(--glow);}
+        .aba-desconto.ativa{color:var(--accent3);border-bottom-color:var(--accent3);background:var(--accent3-soft);}
+        .metric-card,.table-card,.login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(12px);box-shadow:var(--shadow-card);position:relative;z-index:1;}
+        .metric-card:hover{transform:translateY(-2px);box-shadow:var(--glow);}
+        input,select{outline:none;transition:all .2s ease;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 12px;}
+        input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+        .btn-primary{background:linear-gradient(135deg,#00d4ff,#0090ff);color:#fff;font-weight:600;border-radius:12px;border:none;cursor:pointer;padding:10px 16px;transition:all .2s ease;}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,212,255,.3);}
+        .btn-primary-vermelho{background:linear-gradient(135deg,#ff4d6d,#c9184a);}
+        .btn-secondary{background:rgba(255,255,255,0.05);color:var(--text);border:1px solid var(--border);border-radius:10px;cursor:pointer;padding:10px 16px;transition:all .2s ease;}
+        .btn-secondary:hover{border-color:var(--accent);}
         .btn-pequeno{padding:6px 10px;font-size:13px;}
-        .btn-icone{background:transparent;border:none;cursor:pointer;padding:8px 10px;border-radius:8px;transition:all .2s ease;font-size:18px;}
+        .btn-icone{background:transparent;border:none;cursor:pointer;padding:6px 10px;border-radius:6px;font-size:18px;}
         .btn-icone:hover{background:var(--accent-soft);}
-        .excluir-btn:hover{color:var(--erro);background:rgba(255,77,109,.12);}
-        .modal-backdrop{background:rgba(6,8,15,.85);backdrop-filter:blur(10px);position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:50;}
-        .modal-backdrop .table-card{max-width:440px;width:100%;max-height:90vh;overflow-y:auto;}
-        .toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);padding:14px 20px;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.3),var(--glow);z-index:9999;animation:toastIn .3s ease;max-width:400px;}
+        .modal-backdrop{background:rgba(0,0,0,.7);position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+        .modal{background:var(--card);padding:24px;border-radius:16px;border:1px solid var(--border);width:100%;max-width:420px;}
+        .toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--border);padding:12px 20px;border-radius:10px;z-index:9999;animation:toastIn .3s ease;}
         .toast.sucesso{border-left:4px solid var(--sucesso);}
         .toast.erro{border-left:4px solid var(--erro);}
-        .toast.aviso{border-left:4px solid var(--aviso);}
         @keyframes toastIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-        .spinner{width:20px;height:20px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;}
+        .spinner{width:18px;height:18px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;}
         @keyframes spin{to{transform:rotate(360deg);}}
-        .user-tag{background:var(--accent-soft);color:var(--accent);font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500;}
-        .status-tag{font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500;}
-        .login-card{max-width:400px;width:100%;padding:32px;border-radius:24px;box-shadow:0 25px 80px rgba(0,0,0,.35),var(--glow);}
-        .header-icon{background:linear-gradient(135deg,#00d4ff,#a855f7);border-radius:16px;box-shadow:0 8px 24px rgba(0,212,255,.25);display:flex;align-items:center;justify-content:center;}
-        .carregando{text-align:center;padding:40px;color:var(--text-soft);}
-        .paginacao{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:20px;}
-        .paginacao button{min-width:36px;height:36px;padding:0;}
-        .paginacao button.ativo{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:var(--glow);}
-        .offline{position:fixed;top:0;left:0;right:0;background:var(--erro);color:white;text-align:center;padding:6px;font-size:13px;z-index:100;}
         .painel-conteudo{display:none;}
-        .painel-conteudo.ativo{display:block;animation:fadeUp .3s ease;}
-        @media(max-width:768px){
-            .tela-app{padding:12px!important;}
-            .metric-card{padding:16px!important;}
-            table{font-size:13px!important;}
-            .btn-primary,.btn-secondary{padding:10px 12px!important;font-size:14px;}
-            .btn-icone{padding:10px 12px;min-width:44px;min-height:44px;}
-            .toast{left:12px;right:12px;max-width:unset;}
-            .abas{overflow-x:auto;}
-            .aba{padding:10px 14px;font-size:14px;white-space:nowrap;}
-        }
-        ::-webkit-scrollbar{width:8px;height:8px;}
-        ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
-        ::-webkit-scrollbar-thumb:hover{background:var(--text-soft);}
-        h1,h2,h3{font-family:'Orbitron',sans-serif;letter-spacing:1px;text-transform:uppercase;}
+        .painel-conteudo.ativa{display:block;animation:fadeUp .3s ease;}
+        table{width:100%;border-collapse:collapse;}
+        th{background:var(--bg-soft);padding:10px 8px;text-align:left;color:var(--text-soft);font-size:14px;}
+        td{padding:10px 8px;border-bottom:1px solid var(--border);}
+        .tbl-row:hover{background:var(--accent-soft);}
+        .w-full{width:100%;}
+        .mb-3{margin-bottom:12px;}
+        .mb-4{margin-bottom:16px;}
+        .mb-6{margin-bottom:24px;}
+        .p-4{padding:16px;}
+        .p-5{padding:20px;}
+        .tela-app{max-width:1200px;margin:0 auto;padding:24px;position:relative;z-index:1;}
+        .tela-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;z-index:1;}
+        .login-card{max-width:400px;width:100%;padding:32px;border-radius:24px;text-align:center;}
+        .header-icon{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#00d4ff,#a855f7);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+        .header-icon svg{width:28px;height:28px;}
+        .barra-topo{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px;}
+        .acoes-topo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+        .vazio{text-align:center;padding:40px;color:var(--text-soft);}
+        .linha-botoes{display:flex;gap:10px;margin-top:8px;}
+        .linha-botoes button{flex:1;}
     </style>
 </head>
 <body id="corpo">
-    <div id="avisoOffline" class="offline" style="display:none;">⚠️ Sem conexão com a internet — os dados podem estar desatualizados</div>
 
-    <!-- TELA DE LOGIN -->
-    <div id="telaLogin" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;z-index:1;">
-        <div class="login-card reveal">
-            <div style="text-align:center;margin-bottom:32px;">
-                <div class="header-icon" style="width:68px;height:68px;margin:0 auto 16px;">
-                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                </div>
-                <h2 style="font-size:30px;color:var(--text);margin:0 0 8px;font-weight:700;">CashLog</h2>
-                <p style="color:var(--text-soft);font-size:15px;margin:0;">Onde cada centavo conta.</p>
+<!-- TELA LOGIN -->
+<div id="telaLogin" class="tela-login">
+    <div class="login-card reveal">
+        <div class="header-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h2 style="margin:0 0 8px;font-size:28px;">CashLog</h2>
+        <p style="color:var(--text-soft);margin-bottom:24px;">Onde cada centavo conta.</p>
+        
+        <div id="formEntrar">
+            <input id="emailLogin" type="email" placeholder="Seu e-mail" class="w-full mb-3">
+            <input id="senhaLogin" type="password" placeholder="Sua senha" class="w-full mb-4">
+            <button onclick="App.fazerLogin()" class="btn-primary w-full mb-3">Entrar</button>
+            <p style="margin:0;font-size:14px;color:var(--text-soft);">Não tem conta? <a href="#" onclick="App.mostrarCadastro();return false;" style="color:var(--accent);">Criar conta</a></p>
+        </div>
+        
+        <div id="formCadastro" style="display:none;">
+            <input id="nomeCad" type="text" placeholder="Seu nome completo" class="w-full mb-3">
+            <input id="emailCad" type="email" placeholder="Seu e-mail" class="w-full mb-3">
+            <input id="senhaCad" type="password" placeholder="Senha (mínimo 6 caracteres)" class="w-full mb-3">
+            <button onclick="App.fazerCadastro()" class="btn-primary w-full mb-3">Criar conta</button>
+            <p style="margin:0;font-size:14px;color:var(--text-soft);">Já tem conta? <a href="#" onclick="App.mostrarLogin();return false;" style="color:var(--accent);">Entrar</a></p>
+        </div>
+        
+        <div id="mensagemLogin" style="margin-top:16px;font-size:14px;"></div>
+    </div>
+</div>
+
+<!-- TELA PRINCIPAL -->
+<div id="telaApp" class="tela-app" style="display:none;">
+    <div class="barra-topo reveal">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div class="header-icon" style="width:40px;height:40px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
-            <div id="formEntrar">
-                <input id="emailLogin" type="email" placeholder="Seu e-mail" class="w-full mb-3">
-                <input id="senhaLogin" type="password" placeholder="Sua senha" class="w-full mb-4">
-                <button onclick="App.fazerLogin()" class="btn-primary w-full mb-3">Entrar</button>
-                <p style="text-align:center;color:var(--text-soft);font-size:14px;margin:0;">Não tem conta? <a href="#" onclick="App.mostrarCadastro();return false;" style="color:var(--accent);font-weight:500;">Criar conta</a></p>
+            <div>
+                <h1 style="margin:0;font-size:20px;">CashLog</h1>
+                <p style="margin:0;font-size:13px;color:var(--text-soft);">Onde cada centavo conta</p>
             </div>
-            <div id="formCadastro" style="display:none;">
-                <input id="nomeCad" type="text" placeholder="Seu nome completo" class="w-full mb-3">
-                <input id="emailCad" type="email" placeholder="Seu e-mail" class="w-full mb-3">
-                <input id="senhaCad" type="password" placeholder="Criar senha (mínimo 6 caracteres)" class="w-full mb-3">
-                <button onclick="App.fazerCadastro()" class="btn-primary w-full mb-3">Criar conta</button>
-                <p style="text-align:center;color:var(--text-soft);font-size:14px;margin:0;">Já tem conta? <a href="#" onclick="App.mostrarLogin();return false;" style="color:var(--accent);font-weight:500;">Entrar</a></p>
-            </div>
-            <div id="mensagemLogin" style="margin-top:16px;text-align:center;font-size:14px;"></div>
+        </div>
+        <div class="acoes-topo">
+            <button onclick="App.alternarTema()" class="btn-secondary btn-pequeno">🌙</button>
+            <span id="nomeUsuario" style="padding:6px 12px;background:var(--accent-soft);border-radius:20px;font-size:14px;">Usuário</span>
+            <button onclick="App.sairConta()" class="btn-secondary btn-pequeno">Sair</button>
         </div>
     </div>
 
-    <!-- TELA PRINCIPAL -->
-    <div id="telaApp" class="tela-app" style="display:none;max-width:1200px;margin:0 auto;padding:24px;position:relative;z-index:1;">
-        <!-- Cabeçalho -->
-        <div class="reveal" style="margin-bottom:24px;">
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                <div class="header-icon" style="width:44px;height:44px;flex-shrink:0;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                </div>
-                <div style="flex:1;min-width:240px;">
-                    <h1 style="font-size:24px;color:var(--text);margin:0 0 4px;font-weight:700;">CashLog</h1>
-                    <p style="color:var(--text-soft);font-size:14px;margin:0;">Onde cada centavo conta.</p>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <button onclick="App.alternarTema()" class="btn-secondary btn-pequeno" title="Alternar tema">🌙</button>
-                    <span id="nomeUsuario" class="user-tag"></span>
-                    <span id="statusConexao" class="status-tag" style="background:var(--border);color:var(--text-soft);font-size:12px;">
-                        <span class="spinner" style="width:10px;height:10px;border-width:2px;margin-right:6px;"></span> Conectando...
-                    </span>
-                    <button onclick="App.sairConta()" class="btn-secondary btn-pequeno">Sair</button>
-                </div>
+    <div class="abas reveal">
+        <div class="aba ativa" id="abaDiarias" onclick="App.selecionarAba('diarias')">💰 Diárias</div>
+        <div class="aba aba-desconto" id="abaDescontos" onclick="App.selecionarAba('descontos')">📉 Descontos</div>
+    </div>
+
+    <!-- PAINEL DIÁRIAS -->
+    <div id="painelDiarias" class="painel-conteudo ativa">
+        <!-- BOTÃO SEMPRE VISÍVEL -->
+        <div class="table-card p-4 mb-6 reveal">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <h3 style="margin:0 0 12px;font-size:16px;">Diárias</h3>
+                <button onclick="App.abrirModalDiaria()" class="btn-primary">+ Nova Diária</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input id="buscaDiarias" type="text" placeholder="🔍 Buscar..." style="flex:1;min-width:180px;">
+                <input id="dataInicioDiarias" type="date" style="width:140px;">
+                <input id="dataFimDiarias" type="date" style="width:140px;">
+                <button onclick="App.limparFiltrosDiarias()" class="btn-secondary btn-pequeno">Limpar</button>
             </div>
         </div>
 
-        <!-- Abas -->
-        <div class="abas reveal">
-            <div class="aba ativa" id="abaDiarias" onclick="App.selecionarAba('diarias')">💰 Diárias</div>
-            <div class="aba aba-desconto" id="abaDescontos" onclick="App.selecionarAba('descontos')">📉 Descontos</div>
-        </div>
-
-        <!-- Painel Diárias -->
-        <div id="painelDiarias" class="painel-conteudo ativa">
-            <div class="reveal table-card p-4 mb-6">
-                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                    <input id="buscaDiarias" type="text" placeholder="🔍 Buscar..." oninput="App.debounceAtualizarDiarias()" style="flex:1;min-width:180px;">
-                    <div style="display:flex;gap:6px;align-items:center;">
-                        <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">De:</label>
-                        <input id="dataInicioDiarias" type="date" onchange="App.filtrarDiarias()" style="width:140px;">
-                        <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">Até:</label>
-                        <input id="dataFimDiarias" type="date" onchange="App.filtrarDiarias()" style="width:140px;">
-                    </div>
-                    <select id="filtroMesDiarias" onchange="App.filtrarDiarias()" class="min-w-[140px]">
-                        <option value="todos">Todos os meses</option>
-                    </select>
-                    <select id="filtroAnoDiarias" onchange="App.filtrarDiarias()" class="min-w-[120px]">
-                        <option value="todos">Todos os anos</option>
-                    </select>
-                    <button onclick="App.limparFiltrosDiarias()" class="btn-secondary btn-pequeno">Limpar</button>
-                    <button onclick="App.abrirModalDiaria()" class="btn-primary btn-pequeno" title="Nova Diária (Ctrl+N)">+ Nova Diária</button>
-                </div>
+        <!-- MÉTRICAS -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;" class="reveal">
+            <div class="metric-card p-4">
+                <div style="font-size:13px;color:var(--text-soft);margin-bottom:6px;">Total</div>
+                <div id="totalDiarias" style="font-size:24px;font-weight:600;color:var(--accent);">R$ 0,00</div>
             </div>
-
-            <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);">💰</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Total de Diárias</span>
-                    </div>
-                    <div id="totalDiarias" style="font-size:26px;font-weight:600;color:var(--accent);">R$ 0,00</div>
-                    <div id="qtdDiarias" style="color:var(--text-soft);font-size:12px;margin-top:4px;">0 registros</div>
-                </div>
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent2-soft);display:flex;align-items:center;justify-content:center;color:var(--accent2);">📊</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Média/dia</span>
-                    </div>
-                    <div id="mediaDiarias" style="font-size:26px;font-weight:600;">R$ 0,00</div>
-                </div>
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);">📈</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Maior valor</span>
-                    </div>
-                    <div id="maiorDiarias" style="font-size:26px;font-weight:600;">R$ 0,00</div>
-                    <div id="maiorDataDiarias" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-                </div>
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent2-soft);display:flex;align-items:center;justify-content:center;color:var(--accent2);">📅</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Este mês</span>
-                    </div>
-                    <div id="mesAtualDiarias" style="font-size:26px;font-weight:600;color:var(--accent2);">R$ 0,00</div>
-                    <div id="mesInfoDiarias" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-                </div>
+            <div class="metric-card p-4">
+                <div style="font-size:13px;color:var(--text-soft);margin-bottom:6px;">Registros</div>
+                <div id="qtdDiarias" style="font-size:24px;font-weight:600;">0</div>
             </div>
-
-            <div class="reveal table-card p-4 mb-6">
-                <h3 style="margin:0 0 12px;font-size:16px;color:var(--accent);">Evolução Mensal</h3>
-                <div id="grafico" style="height:300px;"></div>
-            </div>
-
-            <div id="graficoUsuarioSecao" class="reveal table-card p-4 mb-6" style="display:none;">
-                <h3 style="margin:0 0 12px;font-size:16px;color:var(--accent2);">Gasto por Usuário</h3>
-                <div id="graficoUsuario" style="height:280px;"></div>
-            </div>
-
-            <div class="reveal table-card p-4">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-                    <h3 style="margin:0;font-size:16px;">Histórico de Diárias</h3>
-                    <button onclick="App.exportarDiarias()" class="btn-secondary btn-pequeno">📥 Exportar CSV</button>
-                </div>
-                <div id="carregandoDiarias" class="carregando" style="display:none;"><span class="spinner"></span> Carregando...</div>
-                <div style="overflow-x:auto;">
-                    <table style="width:100%;border-collapse:collapse;">
-                        <thead>
-                            <tr style="color:var(--text-soft);border-bottom:1px solid var(--border);font-size:13px;">
-                                <th style="text-align:left;padding:10px 8px;">Data</th>
-                                <th style="text-align:left;padding:10px 8px;">Descrição</th>
-                                <th style="text-align:left;padding:10px 8px;">Usuário</th>
-                                <th style="text-align:right;padding:10px 8px;">Valor</th>
-                                <th style="text-align:right;padding:10px 8px;width:100px;">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabelaDiarias"></tbody>
-                    </table>
-                </div>
-                <div id="vazioDiarias" style="text-align:center;padding:40px 20px;color:var(--text-soft);display:none;">
-                    <p style="margin:0;">Nenhuma diária encontrada.</p>
-                    <button onclick="App.abrirModalDiaria()" class="btn-primary btn-pequeno" style="margin-top:10px;">+ Cadastrar primeira diária</button>
-                </div>
-                <div id="paginacaoDiarias" class="paginacao"></div>
+            <div class="metric-card p-4">
+                <div style="font-size:13px;color:var(--text-soft);margin-bottom:6px;">Maior valor</div>
+                <div id="maiorDiarias" style="font-size:24px;font-weight:600;">R$ 0,00</div>
             </div>
         </div>
 
-        <!-- Painel Descontos -->
-        <div id="painelDescontos" class="painel-conteudo">
-            <div class="reveal table-card p-4 mb-6">
-                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                    <input id="buscaDescontos" type="text" placeholder="🔍 Buscar..." oninput="App.debounceAtualizarDescontos()" style="flex:1;min-width:180px;">
-                    <div style="display:flex;gap:6px;align-items:center;">
-                        <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">De:</label>
-                        <input id="dataInicioDescontos" type="date" onchange="App.filtrarDescontos()" style="width:140px;">
-                        <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">Até:</label>
-                        <input id="dataFimDescontos" type="date" onchange="App.filtrarDescontos()" style="width:140px;">
-                    </div>
-                    <select id="filtroMesDescontos" onchange="App.filtrarDescontos()" class="min-w-[140px]">
-                        <option value="todos">Todos os meses</option>
-                    </select>
-                    <select id="filtroAnoDescontos" onchange="App.filtrarDescontos()" class="min-w-[120px]">
-                        <option value="todos">Todos os anos</option>
-                    </select>
-                    <button onclick="App.limparFiltrosDescontos()" class="btn-secondary btn-pequeno">Limpar</button>
-                    <button onclick="App.abrirModalDesconto()" class="btn-primary btn-pequeno btn-primary-vermelho" title="Novo Desconto">+ Novo Desconto</button>
-                </div>
-            </div>
-
-            <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">📉</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Total de Descontos</span>
-                    </div>
-                    <div id="totalDescontos" style="font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
-                    <div id="qtdDescontos" style="color:var(--text-soft);font-size:12px;margin-top:4px;">0 registros</div>
-                </div>
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">📊</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Média/mês</span>
-                    </div>
-                    <div id="mediaDescontos" style="font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
-                </div>
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">⚠️</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Maior desconto</span>
-                    </div>
-                    <div id="maiorDescontos" style="font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
-                    <div id="maiorDataDescontos" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-                </div>
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">📅</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Este mês</span>
-                    </div>
-                    <div id="mesAtualDescontos" style="font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
-                    <div id="mesInfoDescontos" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-                </div>
-            </div>
-
-            <div class="reveal table-card p-4">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-                    <h3 style="margin:0;font-size:16px;">Histórico de Descontos</h3>
-                    <button onclick="App.exportarDescontos()" class="btn-secondary btn-pequeno">📥 Exportar CSV</button>
-                </div>
-                <div id="carregandoDescontos" class="carregando" style="display:none;"><span class="spinner"></span> Carregando...</div>
-                <div style="overflow-x:auto;">
-                    <table style="width:100%;border-collapse:collapse;">
-                        <thead>
-                            <tr style="color:var(--text-soft);border-bottom:1px solid var(--border);font-size:13px;">
-                                <th style="text-align:left;padding:10px 8px;">Data</th>
-                                <th style="text-align:left;padding:10px 8px;">O que foi descontado</th>
-                                <th style="text-align:left;padding:10px 8px;">Usuário</th>
-                                <th style="text-align:right;padding:10px 8px;">Valor</th>
-                                <th style="text-align:right;padding:10px 8px;width:100px;">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabelaDescontos"></tbody>
-                    </table>
-                </div>
-                <div id="vazioDescontos" style="text-align:center;padding:40px 20px;color:var(--text-soft);display:none;">
-                    <p style="margin:0;">Nenhum desconto cadastrado.</p>
-                    <button onclick="App.abrirModalDesconto()" class="btn-primary btn-pequeno btn-primary-vermelho" style="margin-top:10px;">+ Cadastrar primeiro desconto</button>
-                </div>
-                <div id="paginacaoDescontos" class="paginacao"></div>
+        <!-- TABELA -->
+        <div class="table-card p-4 reveal">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th style="width:100px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaDiarias"></tbody>
+            </table>
+            <div id="vazioDiarias" class="vazio">
+                <p>Nenhuma diária cadastrada ainda.</p>
+                <button onclick="App.abrirModalDiaria()" class="btn-primary" style="margin-top:10px;">+ Cadastrar primeira diária</button>
             </div>
         </div>
     </div>
 
-    <!-- Modais -->
-    <div id="modalDiaria" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true">
-        <div class="table-card p-5" style="width:100%;max-width:440px;max-height:90vh;overflow-y:auto;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-                <h3 id="tituloModalDiaria" style="margin:0;font-size:18px;">Nova Diária</h3>
-                <button onclick="App.fecharModalDiaria()" class="btn-icone" aria-label="Fechar">✕</button>
+    <!-- PAINEL DESCONTOS -->
+    <div id="painelDescontos" class="painel-conteudo">
+        <!-- BOTÃO SEMPRE VISÍVEL -->
+        <div class="table-card p-4 mb-6 reveal">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <h3 style="margin:0 0 12px;font-size:16px;">Descontos</h3>
+                <button onclick="App.abrirModalDesconto()" class="btn-primary btn-primary-vermelho">+ Novo Desconto</button>
             </div>
-            <form onsubmit="App.salvarDiaria(event)" style="display:flex;flex-direction:column;gap:16px;">
-                <input type="hidden" id="editIdDiaria">
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Valor (R$)</label>
-                    <input id="valorDiaria" type="text" required placeholder="0,00" oninput="App.formatarValor(this)" style="width:100%;font-size:16px;">
-                </div>
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Data</label>
-                    <input id="dataDiaria" type="date" required style="width:100%;font-size:16px;">
-                </div>
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Descrição</label>
-                    <input id="descricaoDiaria" type="text" placeholder="Ex: Alimentação, transporte..." style="width:100%;font-size:16px;">
-                </div>
-                <div style="display:flex;gap:10px;margin-top:8px;">
-                    <button type="button" onclick="App.fecharModalDiaria()" class="btn-secondary" style="flex:1;">Cancelar</button>
-                    <button id="btnSalvarDiaria" type="submit" class="btn-primary" style="flex:1;">Salvar</button>
-                </div>
-            </form>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input id="buscaDescontos" type="text" placeholder="🔍 Buscar..." style="flex:1;min-width:180px;">
+                <input id="dataInicioDescontos" type="date" style="width:140px;">
+                <input id="dataFimDescontos" type="date" style="width:140px;">
+                <button onclick="App.limparFiltrosDescontos()" class="btn-secondary btn-pequeno">Limpar</button>
+            </div>
+        </div>
+
+        <!-- MÉTRICAS -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;" class="reveal">
+            <div class="metric-card p-4">
+                <div style="font-size:13px;color:var(--text-soft);margin-bottom:6px;">Total</div>
+                <div id="totalDescontos" style="font-size:24px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
+            </div>
+            <div class="metric-card p-4">
+                <div style="font-size:13px;color:var(--text-soft);margin-bottom:6px;">Registros</div>
+                <div id="qtdDescontos" style="font-size:24px;font-weight:600;">0</div>
+            </div>
+            <div class="metric-card p-4">
+                <div style="font-size:13px;color:var(--text-soft);margin-bottom:6px;">Maior desconto</div>
+                <div id="maiorDescontos" style="font-size:24px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
+            </div>
+        </div>
+
+        <!-- TABELA -->
+        <div class="table-card p-4 reveal">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>O que foi descontado</th>
+                        <th>Valor</th>
+                        <th style="width:100px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaDescontos"></tbody>
+            </table>
+            <div id="vazioDescontos" class="vazio">
+                <p>Nenhum desconto cadastrado ainda.</p>
+                <button onclick="App.abrirModalDesconto()" class="btn-primary btn-primary-vermelho" style="margin-top:10px;">+ Cadastrar primeiro desconto</button>
+            </div>
         </div>
     </div>
+</div>
 
-    <div id="modalDesconto" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true">
-        <div class="table-card p-5" style="width:100%;max-width:440px;max-height:90vh;overflow-y:auto;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-                <h3 id="tituloModalDesconto" style="margin:0;font-size:18px;">Novo Desconto</h3>
-                <button onclick="App.fecharModalDesconto()" class="btn-icone" aria-label="Fechar">✕</button>
+<!-- MODAL DIÁRIA -->
+<div id="modalDiaria" class="modal-backdrop" style="display:none;">
+    <div class="modal">
+        <h3 style="margin:0 0 20px;">Nova Diária</h3>
+        <form onsubmit="App.salvarDiaria(event)">
+            <input type="hidden" id="editIdDiaria">
+            <div style="margin-bottom:14px;">
+                <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Valor (R$)</label>
+                <input id="valorDiaria" type="text" required placeholder="0,00" oninput="App.formatarValor(this)" style="width:100%;">
             </div>
-            <form onsubmit="App.salvarDesconto(event)" style="display:flex;flex-direction:column;gap:16px;">
-                <input type="hidden" id="editIdDesconto">
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">O que foi descontado? *</label>
-                    <input id="descricaoDesconto" type="text" required placeholder="Ex: Multa, taxa, imposto, devolução..." style="width:100%;font-size:16px;">
-                </div>
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Valor do Desconto (R$)</label>
-                    <input id="valorDesconto" type="text" required placeholder="0,00" oninput="App.formatarValor(this)" style="width:100%;font-size:16px;">
-                </div>
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Data</label>
-                    <input id="dataDesconto" type="date" required style="width:100%;font-size:16px;">
-                </div>
-                <div style="display:flex;gap:10px;margin-top:8px;">
-                    <button type="button" onclick="App.fecharModalDesconto()" class="btn-secondary" style="flex:1;">Cancelar</button>
-                    <button id="btnSalvarDesconto" type="submit" class="btn-primary btn-primary-vermelho" style="flex:1;">Salvar</button>
-                </div>
-            </form>
-        </div>
+            <div style="margin-bottom:14px;">
+                <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Data</label>
+                <input id="dataDiaria" type="date" required style="width:100%;">
+            </div>
+            <div style="margin-bottom:20px;">
+                <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Descrição</label>
+                <input id="descricaoDiaria" type="text" placeholder="Ex: Alimentação, transporte..." style="width:100%;">
+            </div>
+            <div class="linha-botoes">
+                <button type="button" onclick="App.fecharModalDiaria()" class="btn-secondary">Cancelar</button>
+                <button type="submit" class="btn-primary">Salvar</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <script>
-        (function() {
-            // Configuração
-            const SUPABASE_URL = "https://ompukaiwkovmjzlfadpp.supabase.co";
-            const SUPABASE_KEY = "sb_publishable_l7bWwOwGNWaTQuENabb3Fw_YZMaAv_Y";
-            const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
-            const ITENS_POR_PAGINA = 15;
+<!-- MODAL DESCONTO -->
+<div id="modalDesconto" class="modal-backdrop" style="display:none;">
+    <div class="modal">
+        <h3 style="margin:0 0 20px;">Novo Desconto</h3>
+        <form onsubmit="App.salvarDesconto(event)">
+            <input type="hidden" id="editIdDesconto">
+            <div style="margin-bottom:14px;">
+                <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">O que foi descontado? *</label>
+                <input id="descricaoDesconto" type="text" required placeholder="Ex: Multa, taxa, imposto..." style="width:100%;">
+            </div>
+            <div style="margin-bottom:14px;">
+                <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Valor (R$)</label>
+                <input id="valorDesconto" type="text" required placeholder="0,00" oninput="App.formatarValor(this)" style="width:100%;">
+            </div>
+            <div style="margin-bottom:20px;">
+                <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Data</label>
+                <input id="dataDesconto" type="date" required style="width:100%;">
+            </div>
+            <div class="linha-botoes">
+                <button type="button" onclick="App.fecharModalDesconto()" class="btn-secondary">Cancelar</button>
+                <button type="submit" class="btn-primary btn-primary-vermelho">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-            // Estado
-            let supabase;
-            let usuarioAtual = null;
-            let ehAdmin = false;
-            let temaEscuro = true;
-            let abaAtiva = 'diarias';
-            let diarias = [];
-            let descontos = [];
-            let graficoInstancia = null;
-            let graficoUsuarioInstancia = null;
-            let paginaDiarias = 1;
-            let paginaDescontos = 1;
-            let ultimoDesfazer = null;
-            let desfazerTimer = null;
-            let debounceTimerDiarias = null;
-            let debounceTimerDescontos = null;
+<script>
+(function() {
+    // ==============================================
+    // ✅ SEUS DADOS JÁ PREENCHIDOS!
+    // ==============================================
+    const SUPABASE_URL = "https://ompukaiwkovmjzlfadpp.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_l7bWwOwGNWaTQuENabb3Fw_YZMaAv_Y";
+    const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
 
-            // Helpers
-            const $ = (id) => document.getElementById(id);
+    // Variáveis globais
+    let supabase, usuarioAtual = null, ehAdmin = false;
+    let diarias = [], descontos = [];
 
-            function elExiste(id) {
-                return !!$(id);
+    // ---------- UTILITÁRIOS ----------
+    function moeda(v) { return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2}); }
+    function moedaParaNumero(v) { return Number(String(v||'').replace(/\D/g,''))/100; }
+    function formatarValor(i) {
+        const d = i.value.replace(/\D/g,'');
+        i.value = d ? (parseInt(d)/100).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '';
+    }
+    function hoje() { return new Date().toISOString().split('T')[0]; }
+    function toast(msg, tipo='sucesso') {
+        const t = Object.assign(document.createElement('div'), {
+            className: `toast ${tipo}`,
+            innerHTML: msg
+        });
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+    }
+    function mensagemAmigavel(e) {
+        const m = e?.message || String(e);
+        if(m.includes('Invalid login credentials')) return 'E-mail ou senha incorretos';
+        if(m.includes('Password should be at least 6 characters')) return 'Senha com mínimo 6 caracteres';
+        if(m.includes('User already registered')) return 'Este e-mail já está cadastrado';
+        return m;
+    }
+
+    // ---------- TEMA ----------
+    function alternarTema() {
+        document.getElementById('corpo').classList.toggle('tema-claro');
+        localStorage.setItem('tema', document.getElementById('corpo').classList.contains('tema-claro') ? 'claro' : 'escuro');
+    }
+    function carregarTema() {
+        if(localStorage.getItem('tema')==='claro') document.getElementById('corpo').classList.add('tema-claro');
+    }
+
+    // ---------- ABAS ----------
+    function selecionarAba(nome) {
+        document.querySelectorAll('.aba').forEach(a=>a.classList.remove('ativa'));
+        document.querySelectorAll('.painel-conteudo').forEach(p=>p.classList.remove('ativa'));
+        document.getElementById(`aba${nome[0].toUpperCase()+nome.slice(1)}`).classList.add('ativa');
+        document.getElementById(`painel${nome[0].toUpperCase()+nome.slice(1)}`).classList.add('ativa');
+    }
+
+    // ---------- LOGIN ----------
+    function mostrarCadastro() {
+        document.getElementById('formEntrar').style.display='none';
+        document.getElementById('formCadastro').style.display='block';
+        document.getElementById('mensagemLogin').innerHTML='';
+    }
+    function mostrarLogin() {
+        document.getElementById('formEntrar').style.display='block';
+        document.getElementById('formCadastro').style.display='none';
+        document.getElementById('mensagemLogin').innerHTML='';
+    }
+    async function fazerCadastro() {
+        const nome = document.getElementById('nomeCad').value.trim();
+        const email = document.getElementById('emailCad').value.trim();
+        const senha = document.getElementById('senhaCad').value;
+        if(!nome||!email||senha.length<6){
+            document.getElementById('mensagemLogin').innerHTML='<span style="color:var(--erro)">Preencha tudo. Senha: mínimo 6 caracteres.</span>';
+            return;
+        }
+        const {error} = await supabase.auth.signUp({email,password:senha,options:{data:{nome}}});
+        if(error){ document.getElementById('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`; return; }
+        document.getElementById('mensagemLogin').innerHTML='<span style="color:var(--sucesso)">✅ Conta criada! Confirme seu e-mail.</span>';
+        mostrarLogin();
+    }
+    async function fazerLogin() {
+        const email = document.getElementById('emailLogin').value.trim();
+        const senha = document.getElementById('senhaLogin').value;
+        if(!email||!senha){
+            document.getElementById('mensagemLogin').innerHTML='<span style="color:var(--erro)">Digite e-mail e senha.</span>';
+            return;
+        }
+        const {error} = await supabase.auth.signInWithPassword({email,password:senha});
+        if(error){ document.getElementById('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`; return; }
+    }
+    async function sairConta() {
+        await supabase.auth.signOut();
+        diarias=[]; descontos=[]; usuarioAtual=null; ehAdmin=false;
+        document.getElementById('telaLogin').style.display='flex';
+        document.getElementById('telaApp').style.display='none';
+    }
+
+    // ---------- ENTRAR NO APP ----------
+    function entrarApp(usuario) {
+        usuarioAtual = usuario;
+        ehAdmin = (usuario.email||'').toLowerCase() === ADM_EMAIL.toLowerCase();
+        document.getElementById('nomeUsuario').textContent = usuario.user_metadata?.nome || usuario.email?.split('@')[0] || 'Usuário';
+        document.getElementById('telaLogin').style.display='none';
+        document.getElementById('telaApp').style.display='block';
+        carregarTema();
+        carregarDados();
+    }
+
+    // ---------- CARREGAR DADOS ----------
+    async function carregarDados() {
+        try {
+            let qDiarias = supabase.from('diarias').select('*').order('data',{ascending:false});
+            if(!ehAdmin) qDiarias = qDiarias.eq('usuario_id', usuarioAtual.id);
+            const {data:d, error:e} = await qDiarias;
+            if(e) throw e;
+            diarias = d || [];
+            console.log('✅ Diárias carregadas:', diarias.length);
+            desenharTabelaDiarias();
+        } catch(erro) {
+            console.error('❌ Erro diárias:', erro);
+            toast('Erro ao carregar: ' + mensagemAmigavel(erro), 'erro');
+        }
+
+        try {
+            let qDesc = supabase.from('descontos').select('*').order('data',{ascending:false});
+            if(!ehAdmin) qDesc = qDesc.eq('usuario_id', usuarioAtual.id);
+            const {data:d, error:e} = await qDesc;
+            if(e) throw e;
+            descontos = d || [];
+            desenharTabelaDescontos();
+        } catch(erro) {
+            console.error('❌ Erro descontos:', erro);
+        }
+    }
+
+    // ---------- DESENHAR TABELA DIÁRIAS ----------
+    function desenharTabelaDiarias() {
+        const tb = document.getElementById('tabelaDiarias');
+        const vazio = document.getElementById('vazioDiarias');
+        tb.innerHTML='';
+        
+        if(diarias.length===0){
+            vazio.style.display='block';
+            document.getElementById('totalDiarias').textContent='R$ 0,00';
+            document.getElementById('qtdDiarias').textContent='0';
+            document.getElementById('maiorDiarias').textContent='R$ 0,00';
+            return;
+        }
+        vazio.style.display='none';
+
+        let total=0, maiorValor=0;
+        diarias.forEach(d=>{
+            total += Number(d.valor);
+            if(Number(d.valor) > maiorValor) maiorValor = Number(d.valor);
+            tb.innerHTML += `
+                <tr class="tbl-row">
+                    <td>${d.data}</td>
+                    <td>${d.descricao||'—'}</td>
+                    <td style="text-align:right;color:var(--accent);font-weight:500;">R$ ${moeda(d.valor)}</td>
+                    <td style="text-align:right;">
+                        <button onclick="App.editarDiaria('${d.id}')" class="btn-icone">✏️</button>
+                        <button onclick="App.excluirDiaria('${d.id}')" class="btn-icone">🗑️</button>
+                    </td>
+                </tr>`;
+        });
+
+        document.getElementById('totalDiarias').textContent='R$ '+moeda(total);
+        document.getElementById('qtdDiarias').textContent=diarias.length;
+        document.getElementById('maiorDiarias').textContent='R$ '+moeda(maiorValor);
+    }
+
+    // ---------- DESENHAR TABELA DESCONTOS ----------
+    function desenharTabelaDescontos() {
+        const tb = document.getElementById('tabelaDescontos');
+        const vazio = document.getElementById('vazioDescontos');
+        tb.innerHTML='';
+        
+        if(descontos.length===0){
+            vazio.style.display='block';
+            document.getElementById('totalDescontos').textContent='R$ 0,00';
+            document.getElementById('qtdDescontos').textContent='0';
+            document.getElementById('maiorDescontos').textContent='R$ 0,00';
+            return;
+        }
+        vazio.style.display='none';
+
+        let total=0, maiorValor=0;
+        descontos.forEach(d=>{
+            total += Number(d.valor);
+            if(Number(d.valor) > maiorValor) maiorValor = Number(d.valor);
+            tb.innerHTML += `
+                <tr class="tbl-row">
+                    <td>${d.data}</td>
+                    <td>${d.descricao||'—'}</td>
+                    <td style="text-align:right;color:var(--accent3);font-weight:500;">R$ ${moeda(d.valor)}</td>
+                    <td style="text-align:right;">
+                        <button onclick="App.editarDesconto('${d.id}')" class="btn-icone">✏️</button>
+                        <button onclick="App.excluirDesconto('${d.id}')" class="btn-icone">🗑️</button>
+                    </td>
+                </tr>`;
+        });
+
+        document.getElementById('totalDescontos').textContent='R$ '+moeda(total);
+        document.getElementById('qtdDescontos').textContent=descontos.length;
+        document.getElementById('maiorDescontos').textContent='R$ '+moeda(maiorValor);
+    }
+
+    // ---------- CRUD DIÁRIAS ----------
+    function abrirModalDiaria(id=null){
+        document.getElementById('modalDiaria').style.display='flex';
+        document.querySelector('#modalDiaria h3').textContent=id?'Editar Diária':'Nova Diária';
+        document.getElementById('editIdDiaria').value=id||'';
+        document.getElementById('dataDiaria').value=hoje();
+        document.getElementById('valorDiaria').value='';
+        document.getElementById('descricaoDiaria').value='';
+        if(id){
+            const d = diarias.find(x=>x.id===id);
+            if(d){
+                document.getElementById('valorDiaria').value=moeda(d.valor);
+                document.getElementById('dataDiaria').value=d.data;
+                document.getElementById('descricaoDiaria').value=d.descricao||'';
             }
+        }
+    }
+    function fecharModalDiaria(){ document.getElementById('modalDiaria').style.display='none'; }
+    async function salvarDiaria(e){
+        e.preventDefault();
+        const id = document.getElementById('editIdDiaria').value;
+        const valor = moedaParaNumero(document.getElementById('valorDiaria').value);
+        const data = document.getElementById('dataDiaria').value;
+        const desc = document.getElementById('descricaoDiaria').value.trim();
 
-            function garantirElementos() {
-                const ids = [
-                    'telaLogin', 'telaApp', 'statusConexao', 'nomeUsuario',
-                    'totalDiarias', 'totalDescontos', 'tabelaDiarias', 'tabelaDescontos',
-                    'vazioDiarias', 'vazioDescontos', 'grafico', 'graficoUsuario',
-                    'modalDiaria', 'modalDesconto', 'carregandoDiarias', 'carregandoDescontos',
-                    'paginacaoDiarias', 'paginacaoDescontos'
-                ];
-                ids.forEach(id => {
-                    if (!elExiste(id)) {
-                        console.error(`Elemento com id "${id}" não encontrado!`);
-                    }
-                });
+        if(valor<=0) return toast('Valor deve ser maior que zero','aviso');
+        if(data>hoje()) return toast('Data não pode ser futura','aviso');
+
+        const payload = { valor, data, descricao:desc, usuario_id:usuarioAtual.id, usuario_email:usuarioAtual.email };
+        const {error} = id ? await supabase.from('diarias').update(payload).eq('id',id) : await supabase.from('diarias').insert(payload);
+        if(error) return toast('Erro: '+mensagemAmigavel(error),'erro');
+        
+        fecharModalDiaria();
+        await carregarDados();
+        toast(id?'Diária atualizada! ✅':'Diária cadastrada! ✅');
+    }
+    function editarDiaria(id){ abrirModalDiaria(id); }
+    async function excluirDiaria(id){
+        if(!confirm('Excluir essa diária?')) return;
+        const {error} = await supabase.from('diarias').delete().eq('id',id);
+        if(error) return toast('Erro ao excluir','erro');
+        diarias = diarias.filter(x=>x.id!==id);
+        desenharTabelaDiarias();
+        toast('Diária excluída ✅');
+    }
+    function limparFiltrosDiarias() { carregarDados(); }
+
+    // ---------- CRUD DESCONTOS ----------
+    function abrirModalDesconto(id=null){
+        document.getElementById('modalDesconto').style.display='flex';
+        document.querySelector('#modalDesconto h3').textContent=id?'Editar Desconto':'Novo Desconto';
+        document.getElementById('editIdDesconto').value=id||'';
+        document.getElementById('dataDesconto').value=hoje();
+        document.getElementById('valorDesconto').value='';
+        document.getElementById('descricaoDesconto').value='';
+        if(id){
+            const d = descontos.find(x=>x.id===id);
+            if(d){
+                document.getElementById('valorDesconto').value=moeda(d.valor);
+                document.getElementById('dataDesconto').value=d.data;
+                document.getElementById('descricaoDesconto').value=d.descricao||'';
             }
+        }
+    }
+    function fecharModalDesconto(){ document.getElementById('modalDesconto').style.display='none'; }
+    async function salvarDesconto(e){
+        e.preventDefault();
+        const id = document.getElementById('editIdDesconto').value;
+        const desc = document.getElementById('descricaoDesconto').value.trim();
+        const valor = moedaParaNumero(document.getElementById('valorDesconto').value);
+        const data = document.getElementById('dataDesconto').value;
 
-            // ---------- UTILITÁRIOS ----------
-            function moeda(v){ return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-            function moedaParaNumero(v){ return Number(String(v||'').replace(/\D/g,''))/100; }
-            function formatarValor(i){
-                const digits = i.value.replace(/\D/g,'');
-                if(!digits){ i.value=''; return; }
-                const num = parseInt(digits,10);
-                i.value = (num/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-            }
-            function dataBr(d){ return new Date(d+'T00:00:00').toLocaleDateString('pt-BR'); }
-            function mesAno(d){ return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'}); }
-            function chaveMes(d){ const dt=new Date(d+'T00:00:00'); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; }
-            function nomeMes(m){ const nomes=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']; return nomes[Number(m)-1]||m; }
-            function hoje(){ return new Date().toISOString().split('T')[0]; }
-            function toast(msg,tipo='sucesso'){
-                const t=document.createElement('div');
-                t.className=`toast ${tipo}`;
-                t.innerHTML=msg;
-                document.body.appendChild(t);
-                setTimeout(()=>t.remove(),3500);
-            }
-            function mensagemAmigavel(erro){
-                const map={
-                    'Email not confirmed':'E-mail não confirmado — verifique sua caixa de entrada',
-                    'Invalid login credentials':'E-mail ou senha incorretos',
-                    'Password should be at least 6 characters':'Senha deve ter pelo menos 6 caracteres',
-                    'User already registered':'Este e-mail já está cadastrado',
-                    'data_nao_futura':'A data não pode ser futura',
-                    'valor_positivo':'O valor deve ser maior que zero',
-                    'desconto_valor_positivo':'O valor deve ser maior que zero',
-                    'desconto_data_nao_futura':'A data não pode ser futura',
-                    'relation "diarias" does not exist':'Tabela "diarias" não existe no banco. Execute o script SQL de criação.',
-                    'relation "descontos" does not exist':'Tabela "descontos" não existe no banco. Execute o script SQL de criação.'
-                };
-                const msg = erro?.message || erro?.details || 'Ocorreu um erro. Tente novamente.';
-                for(const [chave,texto] of Object.entries(map)){
-                    if(msg.includes(chave)) return texto;
-                }
-                return msg;
-            }
-            function setStatus(texto,cor){
-                const el=$('statusConexao');
-                if(!el) return;
-                el.innerHTML=texto;
-                if(cor) el.style.background=cor;
-            }
-            function verificarConexao(){
-                const off=$('avisoOffline');
-                if(!off) return;
-                if(navigator.onLine){
-                    off.style.display='none';
-                    setStatus('🟢 Online','rgba(74,222,128,.15)');
-                }else{
-                    off.style.display='block';
-                    setStatus('⚠️ Offline','rgba(250,204,21,.15)');
-                }
-            }
-            window.addEventListener('online',verificarConexao);
-            window.addEventListener('offline',verificarConexao);
+        if(!desc) return toast('Informe o que foi descontado','aviso');
+        if(valor<=0) return toast('Valor deve ser maior que zero','aviso');
+        if(data>hoje()) return toast('Data não pode ser futura','aviso');
 
-            function carregarTema(){
-                const t=localStorage.getItem('tema');
-                if(t==='claro'){
-                    temaEscuro=false;
-                    $('corpo')?.classList.add('tema-claro');
-                }
-            }
-            function alternarTema(){
-                temaEscuro=!temaEscuro;
-                $('corpo')?.classList.toggle('tema-claro',!temaEscuro);
-                localStorage.setItem('tema',temaEscuro?'escuro':'claro');
-                setTimeout(()=>{ if(graficoInstancia)graficoInstancia.resize(); if(graficoUsuarioInstancia)graficoUsuarioInstancia.resize(); },100);
-            }
+        const payload = { descricao:desc, valor, data, usuario_id:usuarioAtual.id, usuario_email:usuarioAtual.email };
+        const {error} = id ? await supabase.from('descontos').update(payload).eq('id',id) : await supabase.from('descontos').insert(payload);
+        if(error) return toast('Erro: '+mensagemAmigavel(error),'erro');
+        
+        fecharModalDesconto();
+        await carregarDados();
+        toast(id?'Desconto atualizado! ✅':'Desconto cadastrado! ✅');
+    }
+    function editarDesconto(id){ abrirModalDesconto(id); }
+    async function excluirDesconto(id){
+        if(!confirm('Excluir esse desconto?')) return;
+        const {error} = await supabase.from('descontos').delete().eq('id',id);
+        if(error) return toast('Erro ao excluir','erro');
+        descontos = descontos.filter(x=>x.id!==id);
+        desenharTabelaDescontos();
+        toast('Desconto excluído ✅');
+    }
+    function limparFiltrosDescontos() { carregarDados(); }
 
-            // ---------- ABAS ----------
-            function selecionarAba(nome){
-                abaAtiva=nome;
-                document.querySelectorAll('.aba').forEach(a=>a.classList.remove('ativa'));
-                document.querySelectorAll('.painel-conteudo').forEach(p=>p.classList.remove('ativa'));
-                $(`aba${nome.charAt(0).toUpperCase()+nome.slice(1)}`)?.classList.add('ativa');
-                $(`painel${nome.charAt(0).toUpperCase()+nome.slice(1)}`)?.classList.add('ativa');
-            }
+    // ---------- INICIALIZAÇÃO ----------
+    async function inicializar() {
+        console.log('🚀 Iniciando CashLog...');
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('✅ Supabase conectado');
 
-            // ---------- AUTENTICAÇÃO ----------
-            function mostrarCadastro(){ $('formEntrar').style.display='none'; $('formCadastro').style.display='block'; $('mensagemLogin').innerHTML=''; }
-            function mostrarLogin(){ $('formEntrar').style.display='block'; $('formCadastro').style.display='none'; $('mensagemLogin').innerHTML=''; }
+        // Sessão salva
+        const { data: { session } } = await supabase.auth.getSession();
+        if(session?.user){
+            console.log('✅ Sessão encontrada:', session.user.email);
+            entrarApp(session.user);
+        }
 
-            async function fazerCadastro(){
-                const nome=$('nomeCad').value.trim();
-                const email=$('emailCad').value.trim();
-                const senha=$('senhaCad').value;
-                if(!nome||!email||senha.length<6){
-                    $('mensagemLogin').innerHTML='<span style="color:var(--erro)">Preencha todos os campos. Senha com mínimo 6 caracteres.</span>';
-                    return;
-                }
-                const {error}=await supabase.auth.signUp({email,password:senha,options:{data:{nome}}});
-                if(error){ $('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`; return; }
-                $('mensagemLogin').innerHTML='<span style="color:var(--sucesso)">✅ Conta criada! Verifique seu e-mail para ativar.</span>';
-                toast('Conta criada! Confirme seu e-mail antes de entrar.','aviso');
-                mostrarLogin();
-            }
+        // Mudança de estado
+        supabase.auth.onAuthStateChange((_, session) => {
+            if(session?.user) entrarApp(session.user);
+            else sairConta();
+        });
+    }
 
-            async function fazerLogin(){
-                const email=$('emailLogin').value.trim();
-                const senha=$('senhaLogin').value;
-                if(!email||!senha){
-                    $('mensagemLogin').innerHTML='<span style="color:var(--erro)">Preencha e-mail e senha.</span>';
-                    return;
-                }
-                try{
-                    const {error}=await supabase.auth.signInWithPassword({email,password:senha});
-                    if(error){ 
-                        $('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`; 
-                        return; 
-                    }
-                    $('mensagemLogin').innerHTML='<span style="color:var(--sucesso)">✅ Entrando...</span>';
-                }catch(e){
-                    $('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(e)}</span>`;
-                }
-            }
+    // Expor funções
+    window.App = {
+        fazerLogin, fazerCadastro, mostrarCadastro, mostrarLogin, sairConta,
+        alternarTema, selecionarAba,
+        abrirModalDiaria, fecharModalDiaria, salvarDiaria, editarDiaria, excluirDiaria, limparFiltrosDiarias,
+        abrirModalDesconto, fecharModalDesconto, salvarDesconto, editarDesconto, excluirDesconto, limparFiltrosDescontos,
+        formatarValor
+    };
 
-            async function sairConta(){
-                await supabase.auth.signOut();
-                diarias=[];
-                descontos=[];
-                usuarioAtual=null;
-                ehAdmin=false;
-                if (elExiste('telaLogin')) $('telaLogin').style.display='flex';
-                if (elExiste('telaApp')) $('telaApp').style.display='none';
-                if (elExiste('emailLogin')) $('emailLogin').value='';
-                if (elExiste('senhaLogin')) $('senhaLogin').value='';
-                if (elExiste('mensagemLogin')) $('mensagemLogin').innerHTML='';
-            }
-
-            function entrarApp(usuario){
-                console.log('Entrando no app com usuário:', usuario?.email);
-                usuarioAtual=usuario;
-                ehAdmin=(usuario.email||'').toLowerCase()===ADM_EMAIL.toLowerCase();
-                if (elExiste('telaLogin')) $('telaLogin').style.display='none';
-                if (elExiste('telaApp')) $('telaApp').style.display='block';
-                carregarTema();
-                const nome=usuario.user_metadata?.nome||usuario.email?.split('@')[0]||'Usuário';
-                if (elExiste('nomeUsuario')) $('nomeUsuario').textContent=ehAdmin?`👑 ${nome}`:nome;
-                if (elExiste('graficoUsuarioSecao')) $('graficoUsuarioSecao').style.display=ehAdmin?'block':'none';
-                
-                carregarTudoDoBanco();
-            }
-
-            // ---------- BANCO DE DADOS ----------
-            async function carregarTudoDoBanco(){
-                verificarConexao();
-                if (!elExiste('carregandoDiarias') || !elExiste('carregandoDescontos')) return;
-                try{
-                    setStatus('🔄 Carregando...','rgba(14,165,233,.15)');
-                    $('carregandoDiarias').style.display='block';
-                    $('carregandoDescontos').style.display='block';
-
-                    let qDiarias=supabase.from('diarias').select('*').order('data',{ascending:false});
-                    if(!ehAdmin) qDiarias=qDiarias.eq('usuario_id',usuarioAtual.id);
-                    const {data:dadosDiarias,error:eDiarias}=await qDiarias;
-                    if(eDiarias) throw eDiarias;
-                    diarias = dadosDiarias || [];
-                    console.log('Diárias carregadas:', diarias.length);
-
-                    let qDescontos=supabase.from('descontos').select('*').order('data',{ascending:false});
-                    if(!ehAdmin) qDescontos=qDescontos.eq('usuario_id',usuarioAtual.id);
-                    const {data:dadosDescontos,error:eDescontos}=await qDescontos;
-                    if(eDescontos) throw eDescontos;
-                    descontos = dadosDescontos || [];
-                    console.log('Descontos carregados:', descontos.length);
-
-                    atualizarTudoDiarias();
-                    atualizarTudoDescontos();
-                    setStatus('🟢 Online','rgba(74,222,128,.15)');
-                    toast(`✅ ${diarias.length+descontos.length} registros carregados`,'sucesso');
-                }catch(erro){
-                    console.error('Erro ao carregar dados:', erro);
-                    setStatus('🔴 Erro','rgba(239,68,68,.15)');
-                    toast('Erro ao carregar dados: '+mensagemAmigavel(erro),'erro');
-                    diarias = [];
-                    descontos = [];
-                    atualizarTudoDiarias();
-                    atualizarTudoDescontos();
-                }finally{
-                    if (elExiste('carregandoDiarias')) $('carregandoDiarias').style.display='none';
-                    if (elExiste('carregandoDescontos')) $('carregandoDescontos').style.display='none';
-                }
-            }
-
-            // ---------- FILTROS DIÁRIAS ----------
-            function diariasFiltradas(){
-                let lista=[...diarias];
-                const busca=($('buscaDiarias')?.value||'').toLowerCase().trim();
-                const dataInicio=$('dataInicioDiarias')?.value;
-                const dataFim=$('dataFimDiarias')?.value;
-                const filtroMes=$('filtroMesDiarias')?.value;
-                const filtroAno=$('filtroAnoDiarias')?.value;
-
-                if(busca) lista=lista.filter(d=>
-                    (d.descricao||'').toLowerCase().includes(busca) ||
-                    (d.usuario_email||'').toLowerCase().includes(busca)
-                );
-                if(dataInicio) lista=lista.filter(d=>d.data>=dataInicio);
-                if(dataFim) lista=lista.filter(d=>d.data<=dataFim);
-                if(filtroMes&&filtroMes!=='todos') lista=lista.filter(d=>chaveMes(d.data)===filtroMes);
-                if(filtroAno&&filtroAno!=='todos') lista=lista.filter(d=>d.data?.startsWith(filtroAno));
-
-                return lista;
-            }
-
-            function preencherFiltrosDiarias(){
-                const meses=[...new Set(diarias.map(d=>chaveMes(d.data)))].sort().reverse();
-                const anos=[...new Set(diarias.map(d=>d.data?.substring(0,4)))].sort().reverse();
-                const selMes=$('filtroMesDiarias');
-                const selAno=$('filtroAnoDiarias');
-                if(!selMes||!selAno) return;
-                const atualMes=selMes.value||'todos';
-                const atualAno=selAno.value||'todos';
-                selMes.innerHTML='<option value="todos">Todos os meses</option>';
-                selAno.innerHTML='<option value="todos">Todos os anos</option>';
-                meses.forEach(m=>{
-                    const [ano,mes]=m.split('-');
-                    selMes.innerHTML+=`<option value="${m}">${nomeMes(Number(mes))} / ${ano}</option>`;
-                });
-                anos.forEach(a=>selAno.innerHTML+=`<option value="${a}">${a}</option>`);
-                selMes.value=atualMes;
-                selAno.value=atualAno;
-            }
-
-            function filtrarDiarias(){ paginaDiarias=1; atualizarTudoDiarias(); }
-            function limparFiltrosDiarias(){
-                $('buscaDiarias').value='';
-                $('dataInicioDiarias').value='';
-                $('dataFimDiarias').value='';
-                $('filtroMesDiarias').value='todos';
-                $('filtroAnoDiarias').value='todos';
-                paginaDiarias=1;
-                atualizarTudoDiarias();
-            }
-            function debounceAtualizarDiarias(){
-                clearTimeout(debounceTimerDiarias);
-                debounceTimerDiarias=setTimeout(filtrarDiarias,300);
-            }
-
-            // ---------- ATUALIZAÇÃO TELA DIÁRIAS ----------
-            function atualizarMetricasDiarias(){
-                const lista=diariasFiltradas();
-                if(!lista.length){
-                    if (elExiste('totalDiarias')) $('totalDiarias').textContent='R$ 0,00';
-                    if (elExiste('qtdDiarias')) $('qtdDiarias').textContent='0 registros';
-                    if (elExiste('mediaDiarias')) $('mediaDiarias').textContent='R$ 0,00';
-                    if (elExiste('maiorDiarias')) $('maiorDiarias').textContent='R$ 0,00';
-                    if (elExiste('maiorDataDiarias')) $('maiorDataDiarias').textContent='—';
-                    if (elExiste('mesAtualDiarias')) $('mesAtualDiarias').textContent='R$ 0,00';
-                    if (elExiste('mesInfoDiarias')) $('mesInfoDiarias').textContent='—';
-                    return;
-                }
-                const total=lista.reduce((s,d)=>s+Number(d.valor||0),0);
-                const diasUnicos=[...new Set(lista.map(d=>d.data))].length;
-                const maior=lista.reduce((a,d)=>Number(d.valor||0)>Number(a.valor||0)?d:a,lista[0]);
-                const hojeData=new Date();
-                const mesCorrente=lista.filter(d=>{
-                    const dt=new Date(d.data+'T00:00:00');
-                    return dt.getMonth()===hojeData.getMonth() && dt.getFullYear()===hojeData.getFullYear();
-                }).reduce((s,d)=>s+Number(d.valor||0),0);
-
-                $('totalDiarias').textContent='R$ '+moeda(total);
-                $('qtdDiarias').textContent=`${lista.length} registros`;
-                $('mediaDiarias').textContent='R$ '+moeda(diasUnicos?total/diasUnicos:0);
-                $('maiorDiarias').textContent='R$ '+moeda(maior.valor);
-                $('maiorDataDiarias').textContent=dataBr(maior.data);
-                $('mesAtualDiarias').textContent='R$ '+moeda(mesCorrente);
-                $('mesInfoDiarias').textContent=nomeMes(hojeData.getMonth()+1);
-            }
-
-            function atualizarTabelaDiarias(){
-                const lista=diariasFiltradas();
-                const tbody=$('tabelaDiarias');
-                const vazio=$('vazioDiarias');
-                if(!tbody || !vazio) return;
-                
-                if(lista.length===0){
-                    tbody.innerHTML='';
-                    vazio.style.display='block';
-                    if (elExiste('paginacaoDiarias')) $('paginacaoDiarias').innerHTML='';
-                    return;
-                }
-                vazio.style.display='none';
-                const totalPaginas=Math.ceil(lista.length/ITENS_POR_PAGINA);
-                const inicio=(paginaDiarias-1)*ITENS_POR_PAGINA;
-                const paged=lista.slice(inicio,inicio+ITENS_POR_PAGINA);
-                tbody.innerHTML='';
-                let ultimoMes='';
-                paged.forEach(d=>{
-                    const m=mesAno(d.data);
-                    if(m!==ultimoMes){
-                        ultimoMes=m;
-                        tbody.innerHTML+=`<tr class="mes-separador"><td colspan="5" style="padding:8px;">📅 ${m}</td></tr>`;
-                    }
-                    tbody.innerHTML+=`
-                        <tr class="tbl-row">
-                            <td style="padding:10px 8px;">${dataBr(d.data)}</td>
-                            <td style="padding:10px 8px;">${d.descricao||'—'}</td>
-                            <td style="padding:10px 8px;font-size:13px;color:var(--text-soft);">${(d.usuario_email||'').split('@')[0]||'—'}</td>
-                            <td style="padding:10px 8px;text-align:right;font-weight:500;color:var(--accent)">R$ ${moeda(d.valor)}</td>
-                            <td style="padding:10px 8px;text-align:right;">
-                                <button class="btn-icone" onclick="App.editarDiaria('${d.id}')" title="Editar">✏️</button>
-                                <button class="btn-icone excluir-btn" onclick="App.excluirDiaria('${d.id}')" title="Excluir">🗑️</button>
-                            </td>
-                        </tr>`;
-                });
-                const pag=$('paginacaoDiarias');
-                if(pag){
-                    if(totalPaginas<=1){ pag.innerHTML=''; return; }
-                    let pagHtml='';
-                    for(let i=1;i<=totalPaginas;i++){
-                        pagHtml+=`<button class="btn-secondary ${i===paginaDiarias?'ativo':''}" onclick="App.irPaginaDiarias(${i})">${i}</button>`;
-                    }
-                    pag.innerHTML=pagHtml;
-                }
-            }
-
-            function irPaginaDiarias(p){ paginaDiarias=p; atualizarTabelaDiarias(); }
-
-            function atualizarGraficoPrincipal(){
-                const lista=diariasFiltradas();
-                const el=$('grafico');
-                if(!el||!window.echarts) return;
-                if(!graficoInstancia) graficoInstancia=echarts.init(el);
-                const agrupado={};
-                lista.forEach(d=>{
-                    const ch=chaveMes(d.data);
-                    agrupado[ch]=(agrupado[ch]||0)+Number(d.valor||0);
-                });
-                const ordenado=Object.entries(agrupado).sort((a,b)=>a[0].localeCompare(b[0]));
-                const labels=ordenado.map(([k])=>{const [a,m]=k.split('-'); return `${nomeMes(Number(m)).substring(0,3)}/${a.substring(2)}`;});
-                const valores=ordenado.map(([,v])=>v);
-
-                const corTexto = getComputedStyle(document.body).getPropertyValue('--text').trim();
-                const corTextoSuave = getComputedStyle(document.body).getPropertyValue('--text-soft').trim();
-                const corBorda = getComputedStyle(document.body).getPropertyValue('--border').trim();
-
-                graficoInstancia.setOption({
-                    backgroundColor:'transparent',
-                    textStyle:{color:corTexto},
-                    tooltip:{
-                        trigger:'axis',
-                        backgroundColor:'rgba(17,24,39,.9)',
-                        borderColor:corBorda,
-                        textStyle:{color:'#fff'},
-                        formatter:p=>{
-                            const v=p[0].value;
-                            return `${p[0].axisValue}<br/>Total: <b>R$ ${moeda(v)}</b>`;
-                        }
-                    },
-                    grid:{left:'3%',right:'4%',bottom:'3%',containLabel:true},
-                    xAxis:{
-                        type:'category',
-                        data:labels,
-                        axisLine:{lineStyle:{color:corBorda}},
-                        axisLabel:{color:corTextoSuave}
-                    },
-                    yAxis:{
-                        type:'value',
-                        axisLine:{lineStyle:{color:corBorda}},
-                        axisLabel:{color:corTextoSuave},
-                        splitLine:{lineStyle:{color:corBorda}}
-                    },
-                    series:[{
-                        name:'Diárias',
-                        type:'bar',
-                        data:valores,
-                        itemStyle:{
-                            borderRadius:[6,6,0,0],
-                            color:new echarts.graphic.LinearGradient(0,0,0,1,[
-                                {offset:0,color:'#00d4ff'},
-                                {offset:1,color:'#0090ff'}
-                            ])
-                        },
-                        barWidth:'50%'
-                    }]
-                });
-            }
-
-            function atualizarGraficoPorUsuario(){
-                if(!ehAdmin) return;
-                const lista=diariasFiltradas();
-                const el=$('graficoUsuario');
-                if(!el||!window.echarts) return;
-                if(!graficoUsuarioInstancia) graficoUsuarioInstancia=echarts.init(el);
-                const porUser={};
-                lista.forEach(d=>{
-                    const email=d.usuario_email||'Desconhecido';
-                    porUser[email]=(porUser[email]||0)+Number(d.valor||0);
-                });
-                const ordenado=Object.entries(porUser).sort((a,b)=>b[1]-a[1]);
-                const corTexto = getComputedStyle(document.body).getPropertyValue('--text').trim();
-                const corBorda = getComputedStyle(document.body).getPropertyValue('--border').trim();
-                graficoUsuarioInstancia.setOption({
-                    backgroundColor:'transparent',
-                    tooltip:{
-                        trigger:'item',
-                        backgroundColor:'rgba(17,24,39,.9)',
-                        borderColor:corBorda,
-                        textStyle:{color:'#fff'},
-                        formatter:p=>`${p.name}<br/>Total: <b>R$ ${moeda(p.value)}</b>`
-                    },
-                    series:[{
-                        type:'pie',
-                        radius:['40%','70%'],
-                        center:['50%','50%'],
-                        data:ordenado.map(([k,v])=>({name:k.split('@')[0],value:v})),
-                        color:['#00d4ff','#a855f7','#ff4d6d','#facc15','#4ade80','#fb923c','#8b5cf6','#2dd4bf']
-                    }]
-                });
-            }
-
-            function atualizarTudoDiarias(){
-                preencherFiltrosDiarias();
-                atualizarMetricasDiarias();
-                atualizarTabelaDiarias();
-                atualizarGraficoPrincipal();
-                atualizarGraficoPorUsuario();
-            }
-
-            // ---------- CRUD DIÁRIAS ----------
-            function abrirModalDiaria(id=null){
-                if (!elExiste('modalDiaria')) return;
-                $('modalDiaria').style.display='flex';
-                $('tituloModalDiaria').textContent=id?'Editar Diária':'Nova Diária';
-                $('editIdDiaria').value=id||'';
-                $('valorDiaria').value='';
-                $('dataDiaria').value=hoje();
-                $('descricaoDiaria').value='';
-                if(id){
-                    const d=diarias.find(x=>x.id===id);
-                    if(d){
-                        $('valorDiaria').value=moeda(d.valor);
-                        $('dataDiaria').value=d.data;
-                        $('descricaoDiaria').value=d.descricao||'';
-                    }
-                }
-                $('valorDiaria')?.focus();
-            }
-            function fecharModalDiaria(){ if (elExiste('modalDiaria')) $('modalDiaria').style.display='none'; }
-
-            async function salvarDiaria(e){
-                e.preventDefault();
-                const id=$('editIdDiaria').value;
-                const valor=moedaParaNumero($('valorDiaria').value);
-                const data=$('dataDiaria').value;
-                const descricao=$('descricaoDiaria').value.trim();
-
-                if(valor<=0){ toast('O valor deve ser maior que zero','erro'); return; }
-                if(data>hoje()){ toast('A data não pode ser futura','erro'); return; }
-
-                const payload={
-                    valor,
-                    data,
-                    descricao,
-                    usuario_id:usuarioAtual.id,
-                    usuario_email:usuarioAtual.email
-                };
-
-                try{
-                    let error;
-                    if(id){
-                        ({error}=await supabase.from('diarias').update(payload).eq('id',id));
-                    } else {
-                        ({error}=await supabase.from('diarias').insert(payload));
-                    }
-                    if(error) throw error;
-                    fecharModalDiaria();
-                    await carregarTudoDoBanco();
-                    toast(id?'Diária atualizada! ✅':'Diária cadastrada! ✅','sucesso');
-                } catch(erro){
-                    toast('Erro: '+mensagemAmigavel(erro),'erro');
-                }
-            }
-
-            function editarDiaria(id){ abrirModalDiaria(id); }
-
-            async function excluirDiaria(id){
-                if(!confirm('Tem certeza? Essa ação pode ser desfeita nos próximos 10 segundos.')) return;
-                const d=diarias.find(x=>x.id===id);
-                if(!d) return;
-                ultimoDesfazer={tipo:'diaria',id:d.id,dados:d};
-                clearTimeout(desfazerTimer);
-                desfazerTimer=setTimeout(()=>{ ultimoDesfazer=null; },10000);
-
-                diarias=diarias.filter(x=>x.id!==id);
-                atualizarTudoDiarias();
-                toast(`Diária excluída. <button onclick="App.desfazer()" style="background:var(--sucesso);color:#000;border:none;padding:4px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">↩️ Desfazer</button>`,'aviso');
-
-                const {error}=await supabase.from('diarias').delete().eq('id',id);
-                if(error){
-                    diarias.unshift(d);
-                    atualizarTudoDiarias();
-                    toast('Erro ao excluir — restaurado.','erro');
-                }
-            }
-
-            // ---------- Descontos ----------
-            function descontosFiltrados(){
-                let lista=[...descontos];
-                const busca=($('buscaDescontos')?.value||'').toLowerCase().trim();
-                const dataInicio=$('dataInicioDescontos')?.value;
-                const dataFim=$('dataFimDescontos')?.value;
-                const filtroMes=$('filtroMesDescontos')?.value;
-                const filtroAno=$('filtroAnoDescontos')?.value;
-
-                if(busca) lista=lista.filter(d=>
-                    (d.descricao||'').toLowerCase().includes(busca) ||
-                    (d.usuario_email||'').toLowerCase().includes(busca)
-                );
-                if(dataInicio) lista=lista.filter(d=>d.data>=dataInicio);
-                if(dataFim) lista=lista.filter(d=>d.data<=dataFim);
-                if(filtroMes&&filtroMes!=='todos') lista=lista.filter(d=>chaveMes(d.data)===filtroMes);
-                if(filtroAno&&filtroAno!=='todos') lista=lista.filter(d=>d.data?.startsWith(filtroAno));
-
-                return lista;
-            }
-            function preencherFiltrosDescontos(){
-                const meses=[...new Set(descontos.map(d=>chaveMes(d.data)))].sort().reverse();
-                const anos=[...new Set(descontos.map(d=>d.data?.substring(0,4)))].sort().reverse();
-                const selMes=$('filtroMesDescontos');
-                const selAno=$('filtroAnoDescontos');
-                if(!selMes||!selAno) return;
-                const atualMes=selMes.value||'todos';
-                const atualAno=selAno.value||'todos';
-                selMes.innerHTML='<option value="todos">Todos os meses</option>';
-                selAno.innerHTML='<option value="todos">Todos os anos</option>';
-                meses.forEach(m=>{
-                    const [ano,mes]=m.split('-');
-                    selMes.innerHTML+=`<option value="${m}">${nomeMes(Number(mes))} / ${ano}</option>`;
-                });
-                anos.forEach(a=>selAno.innerHTML+=`<option value="${a}">${a}</option>`);
-                selMes.value=atualMes;
-                selAno.value=atualAno;
-            }
-            function filtrarDescontos(){ paginaDescontos=1; atualizarTudoDescontos(); }
-            function limparFiltrosDescontos(){
-                $('buscaDescontos').value='';
-                $('dataInicioDescontos').value='';
-                $('dataFimDescontos').value='';
-                $('filtroMesDescontos').value='todos';
-                $('filtroAnoDescontos').value='todos';
-                paginaDescontos=1;
-                atualizarTudoDescontos();
-            }
-            function debounceAtualizarDescontos(){
-                clearTimeout(debounceTimerDescontos);
-                debounceTimerDescontos=setTimeout(filtrarDescontos,300);
-            }
-            function atualizarMetricasDescontos(){
-                const lista=descontosFiltrados();
-                if(!lista.length){
-                    if (elExiste('totalDescontos')) $('totalDescontos').textContent='R$ 0,00';
-                    if (elExiste('qtdDescontos')) $('qtdDescontos').textContent='0 registros';
-                    if (elExiste('mediaDescontos')) $('mediaDescontos').textContent='R$ 0,00';
-                    if (elExiste('maiorDescontos')) $('maiorDescontos').textContent='R$ 0,00';
-                    if (elExiste('maiorDataDescontos')) $('maiorDataDescontos').textContent='—';
-                    if (elExiste('mesAtualDescontos')) $('mesAtualDescontos').textContent='R$ 0,00';
-                    if (elExiste('mesInfoDescontos')) $('mesInfoDescontos').textContent='—';
-                    return;
-                }
-                const total=lista.reduce((s,d)=>s+Number(d.valor||0),0);
-                const mesesUnicos=[...new Set(lista.map(d=>chaveMes(d.data)))].length;
-                const maior=lista.reduce((a,d)=>Number(d.valor||0)>Number(a.valor||0)?d:a,lista[0]);
-                const hojeData=new Date();
-                const mesCorrente=lista.filter(d=>{
-                    const dt=new Date(d.data+'T00:00:00');
-                    return dt.getMonth()===hojeData.getMonth() && dt.getFullYear()===hojeData.getFullYear();
-                }).reduce((s,d)=>s+Number(d.valor||0),0);
-
-                $('totalDescontos').textContent='R$ '+moeda(total);
-                $('qtdDescontos').textContent=`${lista.length} registros`;
-                $('mediaDescontos').textContent='R$ '+moeda(mesesUnicos?total/mesesUnicos:0);
-                $('maiorDescontos').textContent='R$ '+moeda(maior.valor);
-                $('maiorDataDescontos').textContent=dataBr(maior.data);
-                $('mesAtualDescontos').textContent='R$ '+moeda(mesCorrente);
-                $('mesInfoDescontos').textContent=nomeMes(hojeData.getMonth()+1);
-            }
-            function atualizarTabelaDescontos(){
-                const lista=descontosFiltrados();
-                const tbody=$('tabelaDescontos');
-                const vazio=$('vazioDescontos');
-                if(!tbody || !vazio) return;
-                if(lista.length===0){
-                    tbody.innerHTML='';
-                    vazio.style.display='block';
-                    if (elExiste('paginacaoDescontos')) $('paginacaoDescontos').innerHTML='';
-                    return;
-                }
-                vazio.style.display='none';
-                const totalPaginas=Math.ceil(lista.length/ITENS_POR_PAGINA);
-                const inicio=(paginaDescontos-1)*ITENS_POR_PAGINA;
-                const paged=lista.slice(inicio,inicio+ITENS_POR_PAGINA);
-                tbody.innerHTML='';
-                let ultimoMes='';
-                paged.forEach(d=>{
-                    const m=mesAno(d.data);
-                    if(m!==ultimoMes){
-                        ultimoMes=m;
-                        tbody.innerHTML+=`<tr class="mes-separador mes-separador-desconto"><td colspan="5" style="padding:8px;">📅 ${m}</td></tr>`;
-                    }
-                    tbody.innerHTML+=`
-                        <tr class="tbl-row tbl-row-desconto">
-                            <td style="padding:10px 8px;">${dataBr(d.data)}</td>
-                            <td style="padding:10px 8px;">${d.descricao||'—'}</td>
-                            <td style="padding:10px 8px;font-size:13px;color:var(--text-soft);">${(d.usuario_email||'').split('@')[0]||'—'}</td>
-                            <td style="padding:10px 8px;text-align:right;font-weight:500;color:var(--accent3)">R$ ${moeda(d.valor)}</td>
-                            <td style="padding:10px 8px;text-align:right;">
-                                <button class="btn-icone" onclick="App.editarDesconto('${d.id}')" title="Editar">✏️</button>
-                                <button class="btn-icone excluir-btn" onclick="App.excluirDesconto('${d.id}')" title="Excluir">🗑️</button>
-                            </td>
-                        </tr>`;
-                });
-                const pag=$('paginacaoDescontos');
-                if(pag){
-                    if(totalPaginas<=1){ pag.innerHTML=''; return; }
-                    let pagHtml='';
-                    for(let i=1;i<=totalPaginas;i++){
-                        pagHtml+=`<button class="btn-secondary ${i===paginaDescontos?'ativo':''}" onclick="App.irPaginaDescontos(${i})">${i}</button>`;
-                    }
-                    pag.innerHTML=pagHtml;
-                }
-            }
-            function irPaginaDescontos(p){ paginaDescontos=p; atualizarTabelaDescontos(); }
-            function atualizarTudoDescontos(){
-                preencherFiltrosDescontos();
-                atualizarMetricasDescontos();
-                atualizarTabelaDescontos();
-            }
-
-            // CRUD Descontos
-            function abrirModalDesconto(id=null){
-                if (!elExiste('modalDesconto')) return;
-                $('modalDesconto').style.display='flex';
-                $('tituloModalDesconto').textContent=id?'Editar Desconto':'Novo Desconto';
-                $('editIdDesconto').value=id||'';
-                $('descricaoDesconto').value='';
-                $('valorDesconto').value='';
-                $('dataDesconto').value=hoje();
-                if(id){
-                    const d=descontos.find(x=>x.id===id);
-                    if(d){
-                        $('descricaoDesconto').value=d.descricao||'';
-                        $('valorDesconto').value=moeda(d.valor);
-                        $('dataDesconto').value=d.data;
-                    }
-                }
-                $('descricaoDesconto')?.focus();
-            }
-            function fecharModalDesconto(){ if (elExiste('modalDesconto')) $('modalDesconto').style.display='none'; }
-            async function salvarDesconto(e){
-                e.preventDefault();
-                const id=$('editIdDesconto').value;
-                const descricao=$('descricaoDesconto').value.trim();
-                const valor=moedaParaNumero($('valorDesconto').value);
-                const data=$('dataDesconto').value;
-
-                if(!descricao){ toast('Informe o que foi descontado','erro'); return; }
-                if(valor<=0){ toast('O valor deve ser maior que zero','erro'); return; }
-                if(data>hoje()){ toast('A data não pode ser futura','erro'); return; }
-
-                const payload={
-                    descricao,
-                    valor,
-                    data,
-                    usuario_id:usuarioAtual.id,
-                    usuario_email:usuarioAtual.email
-                };
-
-                try{
-                    let error;
-                    if(id){
-                        ({error}=await supabase.from('descontos').update(payload).eq('id',id));
-                    } else {
-                        ({error}=await supabase.from('descontos').insert(payload));
-                    }
-                    if(error) throw error;
-                    fecharModalDesconto();
-                    await carregarTudoDoBanco();
-                    toast(id?'Desconto atualizado! ✅':'Desconto cadastrado! ✅','sucesso');
-                } catch(erro){
-                    toast('Erro: '+mensagemAmigavel(erro),'erro');
-                }
-            }
-            function editarDesconto(id){ abrirModalDesconto(id); }
-            async function excluirDesconto(id){
-                if(!confirm('Tem certeza? Pode desfazer em 10s.')) return;
-                const d=descontos.find(x=>x.id===id);
-                if(!d) return;
-                ultimoDesfazer={tipo:'desconto',id:d.id,dados:d};
-                clearTimeout(desfazerTimer);
-                desfazerTimer=setTimeout(()=>{ ultimoDesfazer=null; },10000);
-                descontos=descontos.filter(x=>x.id!==id);
-                atualizarTudoDescontos();
-                toast(`Desconto excluído. <button onclick="App.desfazer()" style="background:var(--sucesso);color:#000;border:none;padding:4px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">↩️ Desfazer</button>`,'aviso');
-                const {error}=await supabase.from('descontos').delete().eq('id',id);
-                if(error){
-                    descontos.unshift(d);
-                    atualizarTudoDescontos();
-                    toast('Erro ao excluir — restaurado.','erro');
-                }
-            }
-
-            async function desfazer(){
-                if(!ultimoDesfazer) return toast('Tempo esgotado. Não é mais possível desfazer.','aviso');
-                const {tipo,id,dados}=ultimoDesfazer;
-                ultimoDesfazer=null;
-                try{
-                    let error;
-                    if(tipo==='diaria'){
-                        ({error}=await supabase.from('diarias').insert(dados));
-                    }else{
-                        ({error}=await supabase.from('descontos').insert(dados));
-                    }
-                    if(error) throw error;
-                    await carregarTudoDoBanco();
-                    toast('✅ Ação desfeita com sucesso!','sucesso');
-                }catch(erro){
-                    toast('Não foi possível desfazer: '+mensagemAmigavel(erro),'erro');
-                }
-            }
-
-            // Exportações
-            function exportarDiarias(){
-                const lista=diariasFiltradas();
-                if(!lista.length) return toast('Sem dados para exportar','aviso');
-                const cabecalho='Data;Descrição;Usuário;Valor\n';
-                const linhas=lista.map(d=>`${d.data};"${(d.descricao||'').replace(/;/g,',')}";"${d.usuario_email||''}";${moeda(d.valor)}`).join('\n');
-                const blob=new Blob([cabecalho+linhas],{type:'text/csv;charset=utf-8'});
-                const url=URL.createObjectURL(blob);
-                const a=document.createElement('a');
-                a.href=url;
-                a.download=`Diarias_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast('✅ CSV de diárias exportado!','sucesso');
-            }
-            function exportarDescontos(){
-                const lista=descontosFiltrados();
-                if(!lista.length) return toast('Sem dados para exportar','aviso');
-                const cabecalho='Data;Descrição;Usuário;Valor\n';
-                const linhas=lista.map(d=>`${d.data};"${(d.descricao||'').replace(/;/g,',')}";"${d.usuario_email||''}";${moeda(d.valor)}`).join('\n');
-                const blob=new Blob([cabecalho+linhas],{type:'text/csv;charset=utf-8'});
-                const url=URL.createObjectURL(blob);
-                const a=document.createElement('a');
-                a.href=url;
-                a.download=`Descontos_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast('✅ CSV de descontos exportado!','sucesso');
-            }
-
-            // Inicialização
-            async function inicializar(){
-                console.log('Iniciando CashLog...');
-                garantirElementos();
-                try{
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    console.log('Cliente Supabase criado.');
-
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (session?.user) {
-                        console.log('Sessão encontrada:', session.user.email);
-                        entrarApp(session.user);
-                    } else {
-                        console.log('Nenhuma sessão, mostrando login.');
-                        if (elExiste('telaLogin')) $('telaLogin').style.display='flex';
-                    }
-
-                    supabase.auth.onAuthStateChange((event, session) => {
-                        console.log('Estado de autenticação mudou:', event);
-                        if (event === 'SIGNED_IN' && session?.user) {
-                            entrarApp(session.user);
-                        } else if (event === 'SIGNED_OUT') {
-                            sairConta();
-                        }
-                    });
-
-                    document.addEventListener('keydown', (e) => {
-                        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-                            e.preventDefault();
-                            if (abaAtiva === 'diarias') abrirModalDiaria();
-                            else abrirModalDesconto();
-                        }
-                        if (e.key === 'Escape') {
-                            fecharModalDiaria();
-                            fecharModalDesconto();
-                        }
-                    });
-
-                    window.addEventListener('resize', () => {
-                        if (graficoInstancia) graficoInstancia.resize();
-                        if (graficoUsuarioInstancia) graficoUsuarioInstancia.resize();
-                    });
-
-                    console.log('Inicialização concluída.');
-                } catch (erro) {
-                    console.error('Erro na inicialização:', erro);
-                    if (elExiste('mensagemLogin')) {
-                        $('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${erro.message || 'Erro ao inicializar o aplicativo.'}</span>`;
-                    }
-                    if (elExiste('telaLogin')) $('telaLogin').style.display='flex';
-                }
-            }
-
-            // Expor API pública
-            window.App = {
-                fazerCadastro, fazerLogin, mostrarCadastro, mostrarLogin,
-                sairConta, alternarTema, selecionarAba,
-                abrirModalDiaria, fecharModalDiaria, salvarDiaria, editarDiaria, excluirDiaria,
-                abrirModalDesconto, fecharModalDesconto, salvarDesconto, editarDesconto, excluirDesconto,
-                filtrarDiarias, limparFiltrosDiarias, debounceAtualizarDiarias, irPaginaDiarias,
-                filtrarDescontos, limparFiltrosDescontos, debounceAtualizarDescontos, irPaginaDescontos,
-                desfazer, exportarDiarias, exportarDescontos,
-                formatarValor,
-                carregarTudoDoBanco
-            };
-
-            // Inicializar após DOM estar pronto
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', inicializar);
-            } else {
-                inicializar();
-            }
-        })();
-    </script>
+    inicializar();
+})();
+</script>
 </body>
 </html>
