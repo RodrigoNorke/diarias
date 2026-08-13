@@ -795,19 +795,23 @@ function atualizarGraficosDiarias() {
       data: valores,
       itemStyle: {
         borderRadius: [6, 6, 0, 0],
-        color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [
-          { offset: 0, color: 'var(--accent)' },
-          { offset: 1, color: 'var(--accent2)' }
-        ]}
+        color: { 
+          type: 'linear', 
+          x: 0, y: 0, x2: 0, y2: 1, 
+          colorStops: [
+            { offset: 0, color: '#00d4ff' },   // cor exata do --accent
+            { offset: 1, color: '#a855f7' }    // cor exata do --accent2
+          ]
+        }
       },
-      label: {
-        show: true,
-        position: 'top',
-        color: 'var(--text)',
-        fontSize: 11,
-        formatter: p => `R$ ${moeda(p.value)}`
-      }
-    }]
+  label: {
+    show: true,
+    position: 'top',
+    color: '#e2e8f0',  // cor do texto (--text)
+    fontSize: 11,
+    formatter: p => `R$ ${moeda(p.value)}`
+  }
+}]
   };
 
   if (!graficoInstancia) graficoInstancia = echarts.init(document.getElementById('grafico'));
