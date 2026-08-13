@@ -1,603 +1,3 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CashLog</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-/* ============================================
-   CASHLOG – TEMA FUTURISTA
-   ============================================ */
-:root{
-  --bg: #0a0e17;
-  --bg-soft: #111827;
-  --card: rgba(20, 28, 45, 0.7);
-  --card-hover: rgba(30, 41, 66, 0.8);
-  --text: #e2e8f0;
-  --text-soft: #94a3b8;
-  --accent: #00d4ff;
-  --accent-soft: rgba(0, 212, 255, 0.12);
-  --accent2: #a855f7;
-  --accent2-soft: rgba(168, 85, 247, 0.12);
-  --accent3: #ff4d6d;
-  --accent3-soft: rgba(255, 77, 109, 0.12);
-  --border: rgba(148, 163, 184, 0.15);
-  --erro: #ff4d6d;
-  --sucesso: #4ade80;
-  --aviso: #facc15;
-  --glow: 0 0 20px rgba(0, 212, 255, 0.3);
-  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
-.tema-claro{
-  --bg: #f0f4fa;
-  --bg-soft: #e2e8f0;
-  --card: rgba(255, 255, 255, 0.85);
-  --card-hover: #ffffff;
-  --text: #0f172a;
-  --text-soft: #475569;
-  --accent: #0ea5e9;
-  --accent-soft: rgba(14, 165, 233, 0.08);
-  --accent2: #8b5cf6;
-  --accent2-soft: rgba(139, 92, 246, 0.08);
-  --accent3: #e11d48;
-  --accent3-soft: rgba(225, 29, 72, 0.08);
-  --border: rgba(100, 116, 139, 0.2);
-  --erro: #e11d48;
-  --sucesso: #22c55e;
-  --aviso: #eab308;
-  --glow: 0 0 20px rgba(14, 165, 233, 0.2);
-  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
-*{box-sizing:border-box;}
-body{
-  margin:0;padding:0;
-  font-family:'Inter',sans-serif;
-  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-soft) 100%);
-  min-height:100vh;
-  color:var(--text);
-  transition: background .3s ease, color .3s ease;
-  position: relative;
-  overflow-x: hidden;
-}
-/* Fundo animado sutil */
-body::before{
-  content:'';
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background:
-    radial-gradient(circle at 20% 50%, var(--accent-soft) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, var(--accent2-soft) 0%, transparent 50%),
-    radial-gradient(circle at 50% 80%, var(--accent3-soft) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
-  animation: bgGlow 15s ease-in-out infinite alternate;
-}
-@keyframes bgGlow{
-  0%{opacity:0.4;}
-  100%{opacity:0.8;}
-}
-.reveal{opacity:0;transform:translateY(16px);animation:fadeUp .7s ease forwards;}
-@keyframes fadeUp{to{opacity:1;transform:translateY(0);}}
-.abas{
-  display:flex;gap:8px;margin-bottom:24px;
-  border-bottom:1px solid var(--border);
-  padding-bottom:0;
-  position: relative;
-  z-index: 1;
-}
-.aba{
-  padding:12px 20px;cursor:pointer;
-  border-radius:12px 12px 0 0;
-  color:var(--text-soft);font-weight:500;
-  transition:all .2s ease;
-  border-bottom:3px solid transparent;
-  position: relative;
-  overflow: hidden;
-}
-.aba::after{
-  content:'';
-  position:absolute; bottom:0; left:0; right:0; height:3px;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
-  transform: scaleX(0);
-  transition: transform .3s ease;
-}
-.aba.ativa::after{transform: scaleX(1);}
-.aba.ativa{color:var(--accent);background:var(--accent-soft);}
-.aba:hover{color:var(--text);background:var(--bg-soft);}
-.aba-desconto.ativa{color:var(--accent3);background:var(--accent3-soft);}
-.aba-desconto.ativa::after{background: linear-gradient(90deg, var(--accent3), var(--accent2));}
-
-/* Cartões com vidro */
-.metric-card, .table-card, .login-card{
-  background: var(--card);
-  border:1px solid var(--border);
-  border-radius:20px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--shadow-card);
-  transition:all .3s ease;
-  position: relative;
-  overflow: hidden;
-}
-.metric-card::before, .table-card::before, .login-card::before{
-  content:'';
-  position:absolute; top:0; left:0; right:0; height:1px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity:0.6;
-}
-.metric-card:hover{
-  background: var(--card-hover);
-  transform: translateY(-4px);
-  box-shadow: var(--glow), 0 18px 45px rgba(0,0,0,.25);
-  border-color: var(--accent);
-}
-.tbl-row{transition:background .15s ease;}
-.tbl-row:hover{background: var(--accent-soft);}
-.tbl-row-desconto:hover{background: var(--accent3-soft);}
-.mes-separador{background: var(--accent-soft);color:var(--accent);font-weight:600;}
-.mes-separador-desconto{background: var(--accent3-soft);color:var(--accent3);font-weight:600;}
-
-input,select{
-  outline:none;transition:all .2s ease;
-  background: rgba(255,255,255,0.05);
-  border:1px solid var(--border);
-  color:var(--text);
-  border-radius:12px;
-  padding:10px 12px;
-  backdrop-filter: blur(5px);
-}
-input:focus,select:focus{
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft), var(--glow);
-}
-
-/* Botões */
-.btn-primary{
-  background: linear-gradient(135deg, #00d4ff, #0090ff);
-  color:#fff;
-  font-weight:600;
-  transition:all .25s ease;
-  border-radius:14px;
-  box-shadow: 0 4px 15px rgba(0,212,255,.3);
-  border:none;cursor:pointer;
-  padding:10px 16px;
-  text-shadow: 0 1px 2px rgba(0,0,0,.2);
-}
-.btn-primary:hover{
-  transform:translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,212,255,.5);
-}
-.btn-primary-vermelho{
-  background: linear-gradient(135deg, #ff4d6d, #c9184a);
-  box-shadow: 0 4px 15px rgba(255,77,109,.3);
-}
-.btn-primary-vermelho:hover{
-  box-shadow: 0 8px 25px rgba(255,77,109,.5);
-}
-.btn-secondary{
-  background: rgba(255,255,255,0.05);
-  color:var(--text);
-  border:1px solid var(--border);
-  border-radius:12px;
-  transition:all .25s ease;
-  cursor:pointer;
-  padding:10px 16px;
-  backdrop-filter: blur(5px);
-}
-.btn-secondary:hover{
-  border-color:var(--accent);
-  background: rgba(0,212,255,0.1);
-  box-shadow: var(--glow);
-}
-.btn-pequeno{padding:6px 10px;font-size:13px;}
-.btn-icone{
-  background:transparent;border:none;cursor:pointer;
-  padding:8px 10px;border-radius:8px;
-  transition:all .2s ease;font-size:18px;
-}
-.btn-icone:hover{background:var(--accent-soft);}
-.excluir-btn:hover{color:var(--erro);background:rgba(255,77,109,.12);}
-
-/* Modal */
-.modal-backdrop{
-  background:rgba(6,8,15,.85);
-  backdrop-filter:blur(10px);
-  position:fixed;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  z-index:50;
-}
-.modal-backdrop .table-card{
-  max-width:440px;width:100%;
-  max-height:90vh;overflow-y:auto;
-}
-
-/* Toast */
-.toast{
-  position:fixed;bottom:24px;right:24px;
-  background: var(--card);
-  border:1px solid var(--border);
-  padding:14px 20px;border-radius:14px;
-  box-shadow: 0 12px 40px rgba(0,0,0,.3), var(--glow);
-  z-index:9999;
-  animation:toastIn .3s ease;
-  max-width:400px;
-}
-.toast.sucesso{border-left:4px solid var(--sucesso);}
-.toast.erro{border-left:4px solid var(--erro);}
-.toast.aviso{border-left:4px solid var(--aviso);}
-@keyframes toastIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-
-.spinner{
-  width:20px;height:20px;
-  border:3px solid var(--border);
-  border-top-color:var(--accent);
-  border-radius:50%;
-  animation:spin .8s linear infinite;
-  display:inline-block;
-}
-@keyframes spin{to{transform:rotate(360deg);}}
-
-.user-tag{
-  background: var(--accent-soft);
-  color:var(--accent);
-  font-size:12px;padding:4px 12px;
-  border-radius:20px;font-weight:500;
-}
-.status-tag{
-  font-size:12px;padding:4px 12px;
-  border-radius:20px;font-weight:500;
-}
-.login-card{
-  max-width:400px;width:100%;
-  padding:32px;
-  border-radius:24px;
-  box-shadow: 0 25px 80px rgba(0,0,0,.35), var(--glow);
-}
-.header-icon{
-  background: linear-gradient(135deg, #00d4ff, #a855f7);
-  border-radius:16px;
-  box-shadow: 0 8px 24px rgba(0,212,255,.25);
-  display:flex;align-items:center;justify-content:center;
-}
-.carregando{text-align:center;padding:40px;color:var(--text-soft);}
-.paginacao{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:20px;}
-.paginacao button{min-width:36px;height:36px;padding:0;}
-.paginacao button.ativo{
-  background: var(--accent);
-  color:#fff;
-  border-color: var(--accent);
-  box-shadow: var(--glow);
-}
-.offline{
-  position:fixed;top:0;left:0;right:0;
-  background:var(--erro);color:white;
-  text-align:center;padding:6px;font-size:13px;
-  z-index:100;
-}
-.painel-conteudo{display:none;}
-.painel-conteudo.ativo{display:block;animation:fadeUp .3s ease;}
-
-@media(max-width:768px){
-  .tela-app{padding:12px!important;}
-  .metric-card{padding:16px!important;}
-  table{font-size:13px!important;}
-  .btn-primary,.btn-secondary{padding:10px 12px!important;font-size:14px;}
-  .btn-icone{padding:10px 12px;min-width:44px;min-height:44px;}
-  .toast{left:12px;right:12px;max-width:unset;}
-  .abas{overflow-x:auto;}
-  .aba{padding:10px 14px;font-size:14px;white-space:nowrap;}
-}
-::-webkit-scrollbar{width:8px;height:8px;}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
-::-webkit-scrollbar-thumb:hover{background:var(--text-soft);}
-
-/* Tipografia adicional */
-h1, h2, h3{
-  font-family:'Orbitron', sans-serif;
-  letter-spacing:1px;
-  text-transform: uppercase;
-}
-</style>
-</head>
-<body id="corpo">
-<div id="avisoOffline" class="offline" style="display:none;">⚠️ Sem conexão com a internet — os dados podem estar desatualizados</div>
-
-<!-- TELA DE LOGIN -->
-<div id="telaLogin" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;z-index:1;">
-  <div class="login-card reveal">
-    <div style="text-align:center;margin-bottom:32px;">
-      <div class="header-icon" style="width:68px;height:68px;margin:0 auto 16px;">
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      </div>
-      <h2 style="font-size:30px;color:var(--text);margin:0 0 8px;font-weight:700;">CashLog</h2>
-      <p style="color:var(--text-soft);font-size:15px;margin:0;">Onde cada centavo conta.</p>
-    </div>
-    <div id="formEntrar">
-      <input id="emailLogin" type="email" placeholder="Seu e-mail" class="w-full mb-3">
-      <input id="senhaLogin" type="password" placeholder="Sua senha" class="w-full mb-4">
-      <button onclick="App.fazerLogin()" class="btn-primary w-full mb-3">Entrar</button>
-      <p style="text-align:center;color:var(--text-soft);font-size:14px;margin:0;">Não tem conta? <a href="#" onclick="App.mostrarCadastro();return false;" style="color:var(--accent);font-weight:500;">Criar conta</a></p>
-    </div>
-    <div id="formCadastro" style="display:none;">
-      <input id="nomeCad" type="text" placeholder="Seu nome completo" class="w-full mb-3">
-      <input id="emailCad" type="email" placeholder="Seu e-mail" class="w-full mb-3">
-      <input id="senhaCad" type="password" placeholder="Criar senha (mínimo 6 caracteres)" class="w-full mb-3">
-      <button onclick="App.fazerCadastro()" class="btn-primary w-full mb-3">Criar conta</button>
-      <p style="text-align:center;color:var(--text-soft);font-size:14px;margin:0;">Já tem conta? <a href="#" onclick="App.mostrarLogin();return false;" style="color:var(--accent);font-weight:500;">Entrar</a></p>
-    </div>
-    <div id="mensagemLogin" style="margin-top:16px;text-align:center;font-size:14px;"></div>
-  </div>
-</div>
-
-<!-- TELA PRINCIPAL -->
-<div id="telaApp" class="tela-app" style="display:none;max-width:1200px;margin:0 auto;padding:24px;position:relative;z-index:1;">
-  <div class="reveal" style="margin-bottom:24px;">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <div class="header-icon" style="width:44px;height:44px;flex-shrink:0;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      </div>
-      <div style="flex:1;min-width:240px;">
-        <h1 style="font-size:24px;color:var(--text);margin:0 0 4px;font-weight:700;">CashLog</h1>
-        <p style="color:var(--text-soft);font-size:14px;margin:0;">Onde cada centavo conta.</p>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <button onclick="App.alternarTema()" class="btn-secondary btn-pequeno" title="Alternar tema">🌙</button>
-        <span id="nomeUsuario" class="user-tag"></span>
-        <span id="statusConexao" class="status-tag" style="background:var(--border);color:var(--text-soft);font-size:12px;">
-          <span class="spinner" style="width:10px;height:10px;border-width:2px;margin-right:6px;"></span> Conectando...
-        </span>
-        <button onclick="App.sairConta()" class="btn-secondary btn-pequeno">Sair</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ABAS -->
-  <div class="abas reveal">
-    <div class="aba ativa" id="abaDiarias" onclick="App.selecionarAba('diarias')">💰 Diárias</div>
-    <div class="aba aba-desconto" id="abaDescontos" onclick="App.selecionarAba('descontos')">📉 Descontos</div>
-  </div>
-
-  <!-- PAINEL DIÁRIAS -->
-  <div id="painelDiarias" class="painel-conteudo ativa">
-    <div class="reveal table-card p-4 mb-6">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <input id="buscaDiarias" type="text" placeholder="🔍 Buscar..." oninput="App.debounceAtualizarDiarias()" style="flex:1;min-width:180px;">
-        <div style="display:flex;gap:6px;align-items:center;">
-          <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">De:</label>
-          <input id="dataInicioDiarias" type="date" onchange="App.filtrarDiarias()" style="width:140px;">
-          <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">Até:</label>
-          <input id="dataFimDiarias" type="date" onchange="App.filtrarDiarias()" style="width:140px;">
-        </div>
-        <select id="filtroMesDiarias" onchange="App.filtrarDiarias()" class="min-w-[140px]">
-          <option value="todos">Todos os meses</option>
-        </select>
-        <select id="filtroAnoDiarias" onchange="App.filtrarDiarias()" class="min-w-[120px]">
-          <option value="todos">Todos os anos</option>
-        </select>
-        <button onclick="App.limparFiltrosDiarias()" class="btn-secondary btn-pequeno">Limpar</button>
-        <button onclick="App.abrirModalDiaria()" class="btn-primary btn-pequeno" title="Nova Diária (Ctrl+N)">+ Nova Diária</button>
-      </div>
-    </div>
-
-    <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
-      <div class="metric-card p-4">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);">💰</div>
-          <span style="color:var(--text-soft);font-size:13px;">Total de Diárias</span>
-        </div>
-        <div id="totalDiarias" style="font-size:26px;font-weight:600;color:var(--accent);">R$ 0,00</div>
-        <div id="qtdDiarias" style="color:var(--text-soft);font-size:12px;margin-top:4px;">0 registros</div>
-      </div>
-      <div class="metric-card p-4">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent2-soft);display:flex;align-items:center;justify-content:center;color:var(--accent2);">📊</div>
-          <span style="color:var(--text-soft);font-size:13px;">Média/dia</span>
-        </div>
-        <div id="mediaDiarias" style="font-size:26px;font-weight:600;">R$ 0,00</div>
-      </div>
-      <div class="metric-card p-4">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);">📈</div>
-          <span style="color:var(--text-soft);font-size:13px;">Maior valor</span>
-        </div>
-        <div id="maiorDiarias" style="font-size:26px;font-weight:600;">R$ 0,00</div>
-        <div id="maiorDataDiarias" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-      </div>
-      <div class="metric-card p-4">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent2-soft);display:flex;align-items:center;justify-content:center;color:var(--accent2);">📅</div>
-          <span style="color:var(--text-soft);font-size:13px;">Este mês</span>
-        </div>
-        <div id="mesAtualDiarias" style="font-size:26px;font-weight:600;color:var(--accent2);">R$ 0,00</div>
-        <div id="mesInfoDiarias" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-      </div>
-    </div>
-
-    <div class="reveal table-card p-4 mb-6">
-      <h3 style="margin:0 0 12px;font-size:16px;color:var(--accent);">Evolução Mensal</h3>
-      <div id="grafico" style="height:300px;"></div>
-    </div>
-
-    <div id="graficoUsuarioSecao" class="reveal table-card p-4 mb-6" style="display:none;">
-      <h3 style="margin:0 0 12px;font-size:16px;color:var(--accent2);">Gasto por Usuário</h3>
-      <div id="graficoUsuario" style="height:280px;"></div>
-    </div>
-
-    <div class="reveal table-card p-4">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-        <h3 style="margin:0;font-size:16px;">Histórico de Diárias</h3>
-        <button onclick="App.exportarDiarias()" class="btn-secondary btn-pequeno">📥 Exportar CSV</button>
-      </div>
-      <div id="carregandoDiarias" class="carregando" style="display:none;"><span class="spinner"></span> Carregando...</div>
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;">
-          <thead>
-            <tr style="color:var(--text-soft);border-bottom:1px solid var(--border);font-size:13px;">
-              <th style="text-align:left;padding:10px 8px;">Data</th>
-              <th style="text-align:left;padding:10px 8px;">Descrição</th>
-              <th style="text-align:left;padding:10px 8px;">Usuário</th>
-              <th style="text-align:right;padding:10px 8px;">Valor</th>
-              <th style="text-align:right;padding:10px 8px;width:100px;">Ações</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaDiarias"></tbody>
-        </table>
-      </div>
-      <div id="vazioDiarias" style="text-align:center;padding:40px 20px;color:var(--text-soft);display:none;">
-        <p style="margin:0;">Nenhuma diária encontrada.</p>
-        <button onclick="App.abrirModalDiaria()" class="btn-primary btn-pequeno" style="margin-top:10px;">+ Cadastrar primeira diária</button>
-      </div>
-      <div id="paginacaoDiarias" class="paginacao"></div>
-    </div>
-  </div>
-
-  <!-- PAINEL DESCONTOS -->
-  <div id="painelDescontos" class="painel-conteudo">
-    <div class="reveal table-card p-4 mb-6">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <input id="buscaDescontos" type="text" placeholder="🔍 Buscar..." oninput="App.debounceAtualizarDescontos()" style="flex:1;min-width:180px;">
-        <div style="display:flex;gap:6px;align-items:center;">
-          <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">De:</label>
-          <input id="dataInicioDescontos" type="date" onchange="App.filtrarDescontos()" style="width:140px;">
-          <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">Até:</label>
-          <input id="dataFimDescontos" type="date" onchange="App.filtrarDescontos()" style="width:140px;">
-        </div>
-        <select id="filtroMesDescontos" onchange="App.filtrarDescontos()" class="min-w-[140px]">
-          <option value="todos">Todos os meses</option>
-        </select>
-        <select id="filtroAnoDescontos" onchange="App.filtrarDescontos()" class="min-w-[120px]">
-          <option value="todos">Todos os anos</option>
-        </select>
-        <button onclick="App.limparFiltrosDescontos()" class="btn-secondary btn-pequeno">Limpar</button>
-        <button onclick="App.abrirModalDesconto()" class="btn-primary btn-pequeno btn-primary-vermelho" title="Novo Desconto">+ Novo Desconto</button>
-      </div>
-    </div>
-
-    <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
-      <div class="metric-card p-4">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">📉</div>
-          <span style="color:var(--text-soft);font-size:13px;">Total de Descontos</span>
-        </div>
-        <div id="totalDescontos" style="font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
-        <div id="qtdDescontos" style="color:var(--text-soft);font-size:12px;margin-top:4px;">0 registros</div>
-      </div>
-      <div class="metric-card p-4">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">📊</div>
-          <span style="color:var(--text-soft);font-size:13px;">Média/mês</span>
-        </div>
-        <div id="mediaDescontos" style="font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
-      </div>
-      <div class="metric-card p-4">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">⚠️</div>
-          <span style="color:var(--text-soft);font-size:13px;">Maior desconto</span>
-        </div>
-        <div id="maiorDescontos" style="font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
-        <div id="maiorDataDescontos" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-      </div>
-      <div class="metric-card p-4">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">📅</div>
-          <span style="color:var(--text-soft);font-size:13px;">Este mês</span>
-        </div>
-        <div id="mesAtualDescontos" style="font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
-        <div id="mesInfoDescontos" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-      </div>
-    </div>
-
-    <div class="reveal table-card p-4">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-        <h3 style="margin:0;font-size:16px;">Histórico de Descontos</h3>
-        <button onclick="App.exportarDescontos()" class="btn-secondary btn-pequeno">📥 Exportar CSV</button>
-      </div>
-      <div id="carregandoDescontos" class="carregando" style="display:none;"><span class="spinner"></span> Carregando...</div>
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;">
-          <thead>
-            <tr style="color:var(--text-soft);border-bottom:1px solid var(--border);font-size:13px;">
-              <th style="text-align:left;padding:10px 8px;">Data</th>
-              <th style="text-align:left;padding:10px 8px;">O que foi descontado</th>
-              <th style="text-align:left;padding:10px 8px;">Usuário</th>
-              <th style="text-align:right;padding:10px 8px;">Valor</th>
-              <th style="text-align:right;padding:10px 8px;width:100px;">Ações</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaDescontos"></tbody>
-        </table>
-      </div>
-      <div id="vazioDescontos" style="text-align:center;padding:40px 20px;color:var(--text-soft);display:none;">
-        <p style="margin:0;">Nenhum desconto cadastrado.</p>
-        <button onclick="App.abrirModalDesconto()" class="btn-primary btn-pequeno btn-primary-vermelho" style="margin-top:10px;">+ Cadastrar primeiro desconto</button>
-      </div>
-      <div id="paginacaoDescontos" class="paginacao"></div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL DIÁRIA -->
-<div id="modalDiaria" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true">
-  <div class="table-card p-5" style="width:100%;max-width:440px;max-height:90vh;overflow-y:auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <h3 id="tituloModalDiaria" style="margin:0;font-size:18px;">Nova Diária</h3>
-      <button onclick="App.fecharModalDiaria()" class="btn-icone" aria-label="Fechar">✕</button>
-    </div>
-    <form onsubmit="App.salvarDiaria(event)" style="display:flex;flex-direction:column;gap:16px;">
-      <input type="hidden" id="editIdDiaria">
-      <div>
-        <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Valor (R$)</label>
-        <input id="valorDiaria" type="text" required placeholder="0,00" oninput="App.formatarValor(this)" style="width:100%;font-size:16px;">
-      </div>
-      <div>
-        <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Data</label>
-        <input id="dataDiaria" type="date" required style="width:100%;font-size:16px;">
-      </div>
-      <div>
-        <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Descrição</label>
-        <input id="descricaoDiaria" type="text" placeholder="Ex: Alimentação, transporte..." style="width:100%;font-size:16px;">
-      </div>
-      <div style="display:flex;gap:10px;margin-top:8px;">
-        <button type="button" onclick="App.fecharModalDiaria()" class="btn-secondary" style="flex:1;">Cancelar</button>
-        <button id="btnSalvarDiaria" type="submit" class="btn-primary" style="flex:1;">Salvar</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- MODAL DESCONTO -->
-<div id="modalDesconto" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true">
-  <div class="table-card p-5" style="width:100%;max-width:440px;max-height:90vh;overflow-y:auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <h3 id="tituloModalDesconto" style="margin:0;font-size:18px;">Novo Desconto</h3>
-      <button onclick="App.fecharModalDesconto()" class="btn-icone" aria-label="Fechar">✕</button>
-    </div>
-    <form onsubmit="App.salvarDesconto(event)" style="display:flex;flex-direction:column;gap:16px;">
-      <input type="hidden" id="editIdDesconto">
-      <div>
-        <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">O que foi descontado? *</label>
-        <input id="descricaoDesconto" type="text" required placeholder="Ex: Multa, taxa, imposto, devolução..." style="width:100%;font-size:16px;">
-      </div>
-      <div>
-        <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Valor do Desconto (R$)</label>
-        <input id="valorDesconto" type="text" required placeholder="0,00" oninput="App.formatarValor(this)" style="width:100%;font-size:16px;">
-      </div>
-      <div>
-        <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Data</label>
-        <input id="dataDesconto" type="date" required style="width:100%;font-size:16px;">
-      </div>
-      <div style="display:flex;gap:10px;margin-top:8px;">
-        <button type="button" onclick="App.fecharModalDesconto()" class="btn-secondary" style="flex:1;">Cancelar</button>
-        <button id="btnSalvarDesconto" type="submit" class="btn-primary btn-primary-vermelho" style="flex:1;">Salvar</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <script>
 // ============================================================================
 // CASHLOG – APLICAÇÃO REFATORADA
@@ -795,13 +195,18 @@ const App = (() => {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
 
-    if (error) {
-      document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`;
-      return;
+      if (error) {
+        document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`;
+        return;
+      }
+      // Se não houver erro, o onAuthStateChange será acionado e entrará no app
+    } catch (erro) {
+      console.error('Erro no login:', erro);
+      document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--erro)">Erro ao conectar com o servidor. Verifique sua conexão.</span>`;
     }
-    // O callback onAuthStateChange cuidará do resto
   }
 
   async function sairConta() {
@@ -1552,52 +957,68 @@ const App = (() => {
   // INICIALIZAÇÃO
   // ========================
   async function inicializar() {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      realtime: { params: { eventsPerSecond: 10 } },
-      auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
-    });
+    try {
+      // Verifica se a biblioteca do Supabase foi carregada
+      if (!window.supabase) {
+        throw new Error('Biblioteca Supabase não carregada. Verifique sua conexão com a internet.');
+      }
 
-    carregarTema();
-    verificarConexao();
+      // Cria o cliente
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        realtime: { params: { eventsPerSecond: 10 } },
+        auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
+      });
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      usuarioAtual = session.user;
-      ehAdmin = (usuarioAtual.email || '').toLowerCase() === ADM_EMAIL.toLowerCase();
-      entrarApp(usuarioAtual);
-    } else {
-      document.getElementById('telaLogin').style.display = 'flex';
-    }
+      carregarTema();
+      verificarConexao();
 
-    // Listener de mudança de autenticação
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user && !usuarioAtual) {
+      // Verifica se já existe uma sessão ativa
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
         usuarioAtual = session.user;
         ehAdmin = (usuarioAtual.email || '').toLowerCase() === ADM_EMAIL.toLowerCase();
         entrarApp(usuarioAtual);
+      } else {
+        document.getElementById('telaLogin').style.display = 'flex';
       }
-    });
 
-    // Atalhos de teclado
-    document.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-        e.preventDefault();
-        if (abaAtiva === 'diarias') abrirModalDiaria();
-        else abrirModalDesconto();
-      }
-      if (e.key === 'Escape') {
-        fecharModalDiaria();
-        fecharModalDesconto();
-      }
-    });
+      // Listener de mudança de autenticação
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user && !usuarioAtual) {
+          usuarioAtual = session.user;
+          ehAdmin = (usuarioAtual.email || '').toLowerCase() === ADM_EMAIL.toLowerCase();
+          entrarApp(usuarioAtual);
+        }
+      });
 
-    // Fechar modais ao clicar fora
-    document.getElementById('modalDiaria').addEventListener('click', (e) => {
-      if (e.target.id === 'modalDiaria') fecharModalDiaria();
-    });
-    document.getElementById('modalDesconto').addEventListener('click', (e) => {
-      if (e.target.id === 'modalDesconto') fecharModalDesconto();
-    });
+      // Atalhos de teclado
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+          e.preventDefault();
+          if (abaAtiva === 'diarias') abrirModalDiaria();
+          else abrirModalDesconto();
+        }
+        if (e.key === 'Escape') {
+          fecharModalDiaria();
+          fecharModalDesconto();
+        }
+      });
+
+      // Fechar modais ao clicar fora
+      document.getElementById('modalDiaria').addEventListener('click', (e) => {
+        if (e.target.id === 'modalDiaria') fecharModalDiaria();
+      });
+      document.getElementById('modalDesconto').addEventListener('click', (e) => {
+        if (e.target.id === 'modalDesconto') fecharModalDesconto();
+      });
+    } catch (erro) {
+      console.error('Erro na inicialização:', erro);
+      const msg = document.getElementById('mensagemLogin');
+      if (msg) {
+        msg.innerHTML = `<span style="color:var(--erro)">${erro.message || 'Erro ao inicializar o aplicativo.'}</span>`;
+      }
+      document.getElementById('telaLogin').style.display = 'flex';
+    }
   }
 
   // Expor API pública
@@ -1632,8 +1053,6 @@ const App = (() => {
   };
 })();
 
-// Inicializa ao carregar a página
-window.addEventListener('DOMContentLoaded', () => App.iniciar());
+// Chama a inicialização imediatamente (o script está no final do body)
+App.iniciar();
 </script>
-</body>
-</html>
