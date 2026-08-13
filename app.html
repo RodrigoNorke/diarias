@@ -577,44 +577,75 @@ async function sairConta() {
 
 async function carregarDados() {
   if (!usuarioAtual) return;
-  
-  // Inicializa arrays vazios
-  diarias = [];
-  descontos = [];
-  
+  verificarConexao();
+
   try {
     // Carregar Diárias
-    let queryDiarias = supabase.from('diarias').select('*').order('data', { ascending: false });
-    if (!ehAdmin) queryDiarias = queryDiarias.eq('usuario_id', usuarioAtual.id);
-    const resDiarias = await queryDiarias;
-    
-    if (resDiarias.error) {
-      console.log("Erro diárias:", resDiarias.error);
-    } else {
-      diarias = resDiarias.data || [];
-    }
+    let query = supabase.from('diarias').select('*').order('data', { ascending: false });
+    if (!ehAdmin) query = query.eq('usuario_id', usuarioAtual.id);
+    const { data: d, error: e } = await query;
+    if (e) { console.error("Erro diárias:", e); diarias = []; }
+    else { diarias = d || []; console.log("✅ Diárias:", diarias); }
+  } catch (erro) {
+    console.error("Erro ao carregar diárias:", erro);
+    diarias = [];
+  }
 
+  try {
     // Carregar Descontos
     let queryDesc = supabase.from('descontos').select('*').order('data', { ascending: false });
     if (!ehAdmin) queryDesc = queryDesc.eq('usuario_id', usuarioAtual.id);
-    const resDesc = await queryDesc;
-    
-    if (resDesc.error) {
-      console.log("Erro descontos:", resDesc.error);
-    } else {
-      descontos = resDesc.data || [];
-    }
-
-  } catch (e) {
-    console.log("Erro geral:", e);
+    const { data: desc, error: eDesc } = await queryDesc;
+    if (eDesc) { console.error("Erro descontos:", eDesc); descontos = []; }
+    else { descontos = desc || []; console.log("✅ Descontos:", descontos); }
+  } catch (erro) {
+    console.error("Erro ao carregar descontos:", erro);
+    descontos = [];
   }
 
-  // Sempre renderiza, mesmo que esteja vazio
-  preencherFiltrosDiarias();
-  filtrarDiarias();
-  atualizarGraficosDiarias();
-  preencherFiltrosDescontos();
-  filtrarDescontos();
+  // ========== DESENHAR TABELA MANUALMENTE ==========
+  desenharTabelaDiarias();
+}
+
+// DESENHA A TABELA SEM DEPENDER DE OUTRAS FUNÇÕES
+function desenharTabelaDiarias() {
+  const corpo = document.getElementById('tabelaDiarias');
+  const vazio = document.getElementById('vazioDiarias');
+  const totalEl = document.getElementById('totalDiarias');
+  const qtdEl = document.getElementById('qtdDiarias');
+
+  if (!corpo) return;
+  corpo.innerHTML = '';
+
+  if (diarias.length === 0) {
+    if (vazio) vazio.style.display = 'block';
+    if (totalEl) totalEl.textContent = 'R$ 0,00';
+    if (qtdEl) qtdEl.textContent = '0 registros';
+    return;
+  }
+
+  if (vazio) vazio.style.display = 'none';
+
+  let total = 0;
+  diarias.forEach(d => {
+    total += Number(d.valor);
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(148,163,184,0.1)';
+    tr.innerHTML = `
+      <td style="padding:12px 10px">${d.data || ''}</td>
+      <td style="padding:12px 10px">${d.descricao || '—'}</td>
+      <td style="padding:12px 10px">${d.nome_usuario || '—'}</td>
+      <td style="padding:12px 10px; text-align:right; font-weight:600; color:#00d4ff">R$ ${Number(d.valor).toFixed(2).replace('.', ',')}</td>
+      <td style="padding:12px 10px; text-align:right">
+        <button onclick="editarDiaria('${d.id}')" style="margin:0 4px; padding:4px 8px; cursor:pointer; border:none; background:transparent; font-size:16px;">✏️</button>
+        <button onclick="excluirDiaria('${d.id}')" style="margin:0 4px; padding:4px 8px; cursor:pointer; border:none; background:transparent; font-size:16px;">🗑️</button>
+      </td>
+    `;
+    corpo.appendChild(tr);
+  });
+
+  if (totalEl) totalEl.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+  if (qtdEl) qtdEl.textContent = `${diarias.length} registro${diarias.length !== 1 ? 's' : ''}`;
 }
             
 // ========== DIÁRIAS ==========
