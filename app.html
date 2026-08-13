@@ -9,9 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ============================================
-           CASHLOG – TEMA FUTURISTA
-        ============================================ */
+        /* Estilos mantidos da versão anterior */
         :root{
             --bg: #0a0e17;
             --bg-soft: #111827;
@@ -203,6 +201,7 @@
 
         <!-- Painel Diárias -->
         <div id="painelDiarias" class="painel-conteudo ativa">
+            <!-- Filtros e botão Nova Diária -->
             <div class="reveal table-card p-4 mb-6">
                 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                     <input id="buscaDiarias" type="text" placeholder="🔍 Buscar..." oninput="App.debounceAtualizarDiarias()" style="flex:1;min-width:180px;">
@@ -223,6 +222,7 @@
                 </div>
             </div>
 
+            <!-- Métricas -->
             <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
                 <div class="metric-card p-4">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
@@ -257,16 +257,13 @@
                 </div>
             </div>
 
+            <!-- Gráfico -->
             <div class="reveal table-card p-4 mb-6">
                 <h3 style="margin:0 0 12px;font-size:16px;color:var(--accent);">Evolução Mensal</h3>
                 <div id="grafico" style="height:300px;"></div>
             </div>
 
-            <div id="graficoUsuarioSecao" class="reveal table-card p-4 mb-6" style="display:none;">
-                <h3 style="margin:0 0 12px;font-size:16px;color:var(--accent2);">Gasto por Usuário</h3>
-                <div id="graficoUsuario" style="height:280px;"></div>
-            </div>
-
+            <!-- Histórico -->
             <div class="reveal table-card p-4">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
                     <h3 style="margin:0;font-size:16px;">Histórico de Diárias</h3>
@@ -492,7 +489,9 @@
                     'data_nao_futura':'A data não pode ser futura',
                     'valor_positivo':'O valor deve ser maior que zero',
                     'desconto_valor_positivo':'O valor deve ser maior que zero',
-                    'desconto_data_nao_futura':'A data não pode ser futura'
+                    'desconto_data_nao_futura':'A data não pode ser futura',
+                    'relation "diarias" does not exist':'Tabela "diarias" não existe no banco. Execute o script SQL de criação.',
+                    'relation "descontos" does not exist':'Tabela "descontos" não existe no banco. Execute o script SQL de criação.'
                 };
                 const msg = erro?.message || erro?.details || 'Ocorreu um erro. Tente novamente.';
                 for(const [chave,texto] of Object.entries(map)){
@@ -594,6 +593,7 @@
             }
 
             function entrarApp(usuario){
+                console.log('Entrando no app com usuário:', usuario?.email);
                 usuarioAtual=usuario;
                 ehAdmin=(usuario.email||'').toLowerCase()===ADM_EMAIL.toLowerCase();
                 document.getElementById('telaLogin').style.display='none';
@@ -603,9 +603,8 @@
                 document.getElementById('nomeUsuario').textContent=ehAdmin?`👑 ${nome}`:nome;
                 document.getElementById('graficoUsuarioSecao').style.display=ehAdmin?'block':'none';
                 
-                setTimeout(() => {
-                    carregarTudoDoBanco();
-                }, 300);
+                // Carregar dados imediatamente
+                carregarTudoDoBanco();
             }
 
             // ---------- BANCO DE DADOS ----------
@@ -616,26 +615,36 @@
                     document.getElementById('carregandoDiarias').style.display='block';
                     document.getElementById('carregandoDescontos').style.display='block';
 
+                    // Carregar diárias
                     let qDiarias=supabase.from('diarias').select('*').order('data',{ascending:false});
                     if(!ehAdmin) qDiarias=qDiarias.eq('usuario_id',usuarioAtual.id);
                     const {data:dadosDiarias,error:eDiarias}=await qDiarias;
                     if(eDiarias) throw eDiarias;
-                    diarias=dadosDiarias||[];
+                    diarias = dadosDiarias || [];
+                    console.log('Diárias carregadas:', diarias.length);
 
+                    // Carregar descontos
                     let qDescontos=supabase.from('descontos').select('*').order('data',{ascending:false});
                     if(!ehAdmin) qDescontos=qDescontos.eq('usuario_id',usuarioAtual.id);
                     const {data:dadosDescontos,error:eDescontos}=await qDescontos;
                     if(eDescontos) throw eDescontos;
-                    descontos=dadosDescontos||[];
+                    descontos = dadosDescontos || [];
+                    console.log('Descontos carregados:', descontos.length);
 
+                    // Atualizar interface
                     atualizarTudoDiarias();
                     atualizarTudoDescontos();
                     setStatus('🟢 Online','rgba(74,222,128,.15)');
                     toast(`✅ ${diarias.length+descontos.length} registros carregados`,'sucesso');
                 }catch(erro){
-                    console.error(erro);
+                    console.error('Erro ao carregar dados:', erro);
                     setStatus('🔴 Erro','rgba(239,68,68,.15)');
                     toast('Erro ao carregar dados: '+mensagemAmigavel(erro),'erro');
+                    // Garantir que arrays estejam vazios e interface mostre vazio
+                    diarias = [];
+                    descontos = [];
+                    atualizarTudoDiarias();
+                    atualizarTudoDescontos();
                 }finally{
                     document.getElementById('carregandoDiarias').style.display='none';
                     document.getElementById('carregandoDescontos').style.display='none';
@@ -730,11 +739,20 @@
 
             function atualizarTabelaDiarias(){
                 const lista=diariasFiltradas();
+                const tbody=document.getElementById('tabelaDiarias');
+                const vazio=document.getElementById('vazioDiarias');
+                if(!tbody || !vazio) return;
+                
+                if(lista.length===0){
+                    tbody.innerHTML='';
+                    vazio.style.display='block';
+                    document.getElementById('paginacaoDiarias').innerHTML='';
+                    return;
+                }
+                vazio.style.display='none';
                 const totalPaginas=Math.ceil(lista.length/ITENS_POR_PAGINA);
                 const inicio=(paginaDiarias-1)*ITENS_POR_PAGINA;
                 const paged=lista.slice(inicio,inicio+ITENS_POR_PAGINA);
-                const tbody=document.getElementById('tabelaDiarias');
-                if(!tbody) return;
                 tbody.innerHTML='';
                 let ultimoMes='';
                 paged.forEach(d=>{
@@ -768,6 +786,9 @@
 
             function atualizarGraficoPrincipal(){
                 const lista=diariasFiltradas();
+                const el=document.getElementById('grafico');
+                if(!el||!window.echarts) return;
+                if(!graficoInstancia) graficoInstancia=echarts.init(el);
                 const agrupado={};
                 lista.forEach(d=>{
                     const ch=chaveMes(d.data);
@@ -776,10 +797,6 @@
                 const ordenado=Object.entries(agrupado).sort((a,b)=>a[0].localeCompare(b[0]));
                 const labels=ordenado.map(([k])=>{const [a,m]=k.split('-'); return `${nomeMes(Number(m)).substring(0,3)}/${a.substring(2)}`;});
                 const valores=ordenado.map(([,v])=>v);
-
-                const el=document.getElementById('grafico');
-                if(!el||!window.echarts) return;
-                if(!graficoInstancia) graficoInstancia=echarts.init(el);
 
                 const corTexto = getComputedStyle(document.body).getPropertyValue('--text').trim();
                 const corTextoSuave = getComputedStyle(document.body).getPropertyValue('--text-soft').trim();
@@ -830,23 +847,20 @@
             function atualizarGraficoPorUsuario(){
                 if(!ehAdmin) return;
                 const lista=diariasFiltradas();
+                const el=document.getElementById('graficoUsuario');
+                if(!el||!window.echarts) return;
+                if(!graficoUsuarioInstancia) graficoUsuarioInstancia=echarts.init(el);
                 const porUser={};
                 lista.forEach(d=>{
                     const email=d.usuario_email||'Desconhecido';
                     porUser[email]=(porUser[email]||0)+Number(d.valor||0);
                 });
                 const ordenado=Object.entries(porUser).sort((a,b)=>b[1]-a[1]);
-                const el=document.getElementById('graficoUsuario');
-                if(!el||!window.echarts) return;
-                if(!graficoUsuarioInstancia) graficoUsuarioInstancia=echarts.init(el);
-
                 const corTexto = getComputedStyle(document.body).getPropertyValue('--text').trim();
                 const corTextoSuave = getComputedStyle(document.body).getPropertyValue('--text-soft').trim();
                 const corBorda = getComputedStyle(document.body).getPropertyValue('--border').trim();
-
                 graficoUsuarioInstancia.setOption({
                     backgroundColor:'transparent',
-                    textStyle:{color:corTexto},
                     tooltip:{
                         trigger:'item',
                         backgroundColor:'rgba(17,24,39,.9)',
@@ -870,8 +884,6 @@
                 atualizarTabelaDiarias();
                 atualizarGraficoPrincipal();
                 atualizarGraficoPorUsuario();
-                const lista = diariasFiltradas();
-                document.getElementById('vazioDiarias').style.display = lista.length === 0 ? 'block' : 'none';
             }
 
             // ---------- CRUD DIÁRIAS ----------
@@ -913,17 +925,15 @@
                 };
 
                 try{
+                    let error;
                     if(id){
-                        const {error}=await supabase.from('diarias').update(payload).eq('id',id);
-                        if(error) throw error;
-                        diarias=diarias.map(d=>d.id===id?{...d,...payload}:d);
+                        ({error}=await supabase.from('diarias').update(payload).eq('id',id));
                     } else {
-                        const {error}=await supabase.from('diarias').insert(payload);
-                        if(error) throw error;
-                        await carregarTudoDoBanco();
+                        ({error}=await supabase.from('diarias').insert(payload));
                     }
+                    if(error) throw error;
                     fecharModalDiaria();
-                    atualizarTudoDiarias();
+                    await carregarTudoDoBanco();
                     toast(id?'Diária atualizada! ✅':'Diária cadastrada! ✅','sucesso');
                 } catch(erro){
                     toast('Erro: '+mensagemAmigavel(erro),'erro');
@@ -952,7 +962,7 @@
                 }
             }
 
-            // ---------- FILTROS DESCONTOS ----------
+            // ---------- Descontos (similar) ----------
             function descontosFiltrados(){
                 let lista=[...descontos];
                 const busca=(document.getElementById('buscaDescontos')?.value||'').toLowerCase().trim();
@@ -972,7 +982,6 @@
 
                 return lista;
             }
-
             function preencherFiltrosDescontos(){
                 const meses=[...new Set(descontos.map(d=>chaveMes(d.data)))].sort().reverse();
                 const anos=[...new Set(descontos.map(d=>d.data?.substring(0,4)))].sort().reverse();
@@ -991,7 +1000,6 @@
                 selMes.value=atualMes;
                 selAno.value=atualAno;
             }
-
             function filtrarDescontos(){ paginaDescontos=1; atualizarTudoDescontos(); }
             function limparFiltrosDescontos(){
                 document.getElementById('buscaDescontos').value='';
@@ -1006,8 +1014,6 @@
                 clearTimeout(debounceTimerDescontos);
                 debounceTimerDescontos=setTimeout(filtrarDescontos,300);
             }
-
-            // ---------- ATUALIZAÇÃO TELA DESCONTOS ----------
             function atualizarMetricasDescontos(){
                 const lista=descontosFiltrados();
                 if(!lista.length){
@@ -1028,7 +1034,6 @@
                     const dt=new Date(d.data+'T00:00:00');
                     return dt.getMonth()===hojeData.getMonth() && dt.getFullYear()===hojeData.getFullYear();
                 }).reduce((s,d)=>s+Number(d.valor||0),0);
-
                 document.getElementById('totalDescontos').textContent='R$ '+moeda(total);
                 document.getElementById('qtdDescontos').textContent=`${lista.length} registros`;
                 document.getElementById('mediaDescontos').textContent='R$ '+moeda(mesesUnicos?total/mesesUnicos:0);
@@ -1037,14 +1042,21 @@
                 document.getElementById('mesAtualDescontos').textContent='R$ '+moeda(mesCorrente);
                 document.getElementById('mesInfoDescontos').textContent=nomeMes(hojeData.getMonth()+1);
             }
-
             function atualizarTabelaDescontos(){
                 const lista=descontosFiltrados();
+                const tbody=document.getElementById('tabelaDescontos');
+                const vazio=document.getElementById('vazioDescontos');
+                if(!tbody || !vazio) return;
+                if(lista.length===0){
+                    tbody.innerHTML='';
+                    vazio.style.display='block';
+                    document.getElementById('paginacaoDescontos').innerHTML='';
+                    return;
+                }
+                vazio.style.display='none';
                 const totalPaginas=Math.ceil(lista.length/ITENS_POR_PAGINA);
                 const inicio=(paginaDescontos-1)*ITENS_POR_PAGINA;
                 const paged=lista.slice(inicio,inicio+ITENS_POR_PAGINA);
-                const tbody=document.getElementById('tabelaDescontos');
-                if(!tbody) return;
                 tbody.innerHTML='';
                 let ultimoMes='';
                 paged.forEach(d=>{
@@ -1073,18 +1085,14 @@
                 }
                 pag.innerHTML=pagHtml;
             }
-
             function irPaginaDescontos(p){ paginaDescontos=p; atualizarTabelaDescontos(); }
-
             function atualizarTudoDescontos(){
                 preencherFiltrosDescontos();
                 atualizarMetricasDescontos();
                 atualizarTabelaDescontos();
-                const lista = descontosFiltrados();
-                document.getElementById('vazioDescontos').style.display = lista.length === 0 ? 'block' : 'none';
             }
 
-            // ---------- CRUD DESCONTOS ----------
+            // CRUD Descontos
             function abrirModalDesconto(id=null){
                 document.getElementById('modalDesconto').style.display='flex';
                 document.getElementById('tituloModalDesconto').textContent=id?'Editar Desconto':'Novo Desconto';
@@ -1103,7 +1111,6 @@
                 document.getElementById('descricaoDesconto').focus();
             }
             function fecharModalDesconto(){ document.getElementById('modalDesconto').style.display='none'; }
-
             async function salvarDesconto(e){
                 e.preventDefault();
                 const id=document.getElementById('editIdDesconto').value;
@@ -1124,25 +1131,21 @@
                 };
 
                 try{
+                    let error;
                     if(id){
-                        const {error}=await supabase.from('descontos').update(payload).eq('id',id);
-                        if(error) throw error;
-                        descontos=descontos.map(d=>d.id===id?{...d,...payload}:d);
+                        ({error}=await supabase.from('descontos').update(payload).eq('id',id));
                     } else {
-                        const {error}=await supabase.from('descontos').insert(payload);
-                        if(error) throw error;
-                        await carregarTudoDoBanco();
+                        ({error}=await supabase.from('descontos').insert(payload));
                     }
+                    if(error) throw error;
                     fecharModalDesconto();
-                    atualizarTudoDescontos();
+                    await carregarTudoDoBanco();
                     toast(id?'Desconto atualizado! ✅':'Desconto cadastrado! ✅','sucesso');
                 } catch(erro){
                     toast('Erro: '+mensagemAmigavel(erro),'erro');
                 }
             }
-
             function editarDesconto(id){ abrirModalDesconto(id); }
-
             async function excluirDesconto(id){
                 if(!confirm('Tem certeza? Pode desfazer em 10s.')) return;
                 const d=descontos.find(x=>x.id===id);
@@ -1150,11 +1153,9 @@
                 ultimoDesfazer={tipo:'desconto',id:d.id,dados:d};
                 clearTimeout(desfazerTimer);
                 desfazerTimer=setTimeout(()=>{ ultimoDesfazer=null; },10000);
-
                 descontos=descontos.filter(x=>x.id!==id);
                 atualizarTudoDescontos();
                 toast(`Desconto excluído. <button onclick="App.desfazer()" style="background:var(--sucesso);color:#000;border:none;padding:4px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">↩️ Desfazer</button>`,'aviso');
-
                 const {error}=await supabase.from('descontos').delete().eq('id',id);
                 if(error){
                     descontos.unshift(d);
@@ -1163,29 +1164,26 @@
                 }
             }
 
-            // ---------- DESFAZER ----------
             async function desfazer(){
                 if(!ultimoDesfazer) return toast('Tempo esgotado. Não é mais possível desfazer.','aviso');
                 const {tipo,id,dados}=ultimoDesfazer;
                 ultimoDesfazer=null;
                 try{
-                    let res;
+                    let error;
                     if(tipo==='diaria'){
-                        res=await supabase.from('diarias').insert(dados).select().single();
-                        diarias.unshift(res.data);
-                        atualizarTudoDiarias();
+                        ({error}=await supabase.from('diarias').insert(dados));
                     }else{
-                        res=await supabase.from('descontos').insert(dados).select().single();
-                        descontos.unshift(res.data);
-                        atualizarTudoDescontos();
+                        ({error}=await supabase.from('descontos').insert(dados));
                     }
+                    if(error) throw error;
+                    await carregarTudoDoBanco();
                     toast('✅ Ação desfeita com sucesso!','sucesso');
                 }catch(erro){
                     toast('Não foi possível desfazer: '+mensagemAmigavel(erro),'erro');
                 }
             }
 
-            // ---------- EXPORTAÇÃO CSV ----------
+            // Exportações
             function exportarDiarias(){
                 const lista=diariasFiltradas();
                 if(!lista.length) return toast('Sem dados para exportar','aviso');
@@ -1215,54 +1213,73 @@
                 toast('✅ CSV de descontos exportado!','sucesso');
             }
 
-            // ---------- INICIALIZAÇÃO ----------
+            // Inicialização
             async function inicializar(){
-                supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-                
-                supabase.auth.onAuthStateChange(async (evento,sessao)=>{
-                    if(sessao?.user){
-                        entrarApp(sessao.user);
-                    }else{
-                        document.getElementById('telaLogin').style.display='flex';
-                        document.getElementById('telaApp').style.display='none';
-                    }
-                });
+                console.log('Iniciando CashLog...');
+                try{
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    console.log('Cliente Supabase criado.');
 
-                const {data:{session}}=await supabase.auth.getSession();
-                if(session?.user){
-                    entrarApp(session.user);
-                }else{
+                    // Verificar sessão inicial
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user) {
+                        console.log('Sessão encontrada:', session.user.email);
+                        entrarApp(session.user);
+                    } else {
+                        console.log('Nenhuma sessão, mostrando login.');
+                        document.getElementById('telaLogin').style.display='flex';
+                    }
+
+                    // Listener para mudanças de autenticação
+                    supabase.auth.onAuthStateChange((event, session) => {
+                        console.log('Estado de autenticação mudou:', event);
+                        if (event === 'SIGNED_IN' && session?.user) {
+                            entrarApp(session.user);
+                        } else if (event === 'SIGNED_OUT') {
+                            sairConta();
+                        }
+                    });
+
+                    // Atalhos de teclado
+                    document.addEventListener('keydown', (e) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                            e.preventDefault();
+                            if (abaAtiva === 'diarias') abrirModalDiaria();
+                            else abrirModalDesconto();
+                        }
+                        if (e.key === 'Escape') {
+                            fecharModalDiaria();
+                            fecharModalDesconto();
+                        }
+                    });
+
+                    window.addEventListener('resize', () => {
+                        if (graficoInstancia) graficoInstancia.resize();
+                        if (graficoUsuarioInstancia) graficoUsuarioInstancia.resize();
+                    });
+
+                    console.log('Inicialização concluída.');
+                } catch (erro) {
+                    console.error('Erro na inicialização:', erro);
+                    const mensagemLogin = document.getElementById('mensagemLogin');
+                    if (mensagemLogin) {
+                        mensagemLogin.innerHTML = `<span style="color:var(--erro)">${erro.message || 'Erro ao inicializar o aplicativo.'}</span>`;
+                    }
                     document.getElementById('telaLogin').style.display='flex';
                 }
-
-                document.addEventListener('keydown',e=>{
-                    if(e.ctrlKey&&e.key==='n'){
-                        e.preventDefault();
-                        if(abaAtiva==='diarias') abrirModalDiaria();
-                        else abrirModalDesconto();
-                    }
-                    if(e.key==='Escape'){
-                        fecharModalDiaria();
-                        fecharModalDesconto();
-                    }
-                });
-
-                window.addEventListener('resize',()=>{
-                    if(graficoInstancia) graficoInstancia.resize();
-                    if(graficoUsuarioInstancia) graficoUsuarioInstancia.resize();
-                });
             }
 
             // Expor API pública
-            window.App={
-                fazerCadastro,fazerLogin,mostrarCadastro,mostrarLogin,
-                sairConta,alternarTema,selecionarAba,
-                abrirModalDiaria,fecharModalDiaria,salvarDiaria,editarDiaria,excluirDiaria,
-                abrirModalDesconto,fecharModalDesconto,salvarDesconto,editarDesconto,excluirDesconto,
-                filtrarDiarias,limparFiltrosDiarias,debounceAtualizarDiarias,irPaginaDiarias,
-                filtrarDescontos,limparFiltrosDescontos,debounceAtualizarDescontos,irPaginaDescontos,
-                desfazer,exportarDiarias,exportarDescontos,
-                formatarValor
+            window.App = {
+                fazerCadastro, fazerLogin, mostrarCadastro, mostrarLogin,
+                sairConta, alternarTema, selecionarAba,
+                abrirModalDiaria, fecharModalDiaria, salvarDiaria, editarDiaria, excluirDiaria,
+                abrirModalDesconto, fecharModalDesconto, salvarDesconto, editarDesconto, excluirDesconto,
+                filtrarDiarias, limparFiltrosDiarias, debounceAtualizarDiarias, irPaginaDiarias,
+                filtrarDescontos, limparFiltrosDescontos, debounceAtualizarDescontos, irPaginaDescontos,
+                desfazer, exportarDiarias, exportarDescontos,
+                formatarValor,
+                carregarTudoDoBanco // expor para debug
             };
 
             inicializar();
