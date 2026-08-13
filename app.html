@@ -18,12 +18,15 @@ const app = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
 let temaEscuro = true;
+let abaAtiva = 'diarias';
 let diarias = [];
+let descontos = [];
 let graficoInstancia = null;
 let graficoUsuarioInstancia = null;
 let usuarioAtual = null;
 let ehAdmin = false;
-let paginaAtual = 1;
+let paginaDiarias = 1;
+let paginaDescontos = 1;
 const ITENS_POR_PAGINA = 15;
 let ultimoDesfazer = null;
 let desfazerTimer = null;
@@ -33,30 +36,38 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 :root{
   --bg:#0f1118; --bg-soft:#171a25; --card:#1c1f2e; --card-hover:#222638;
   --text:#e6e9f2; --text-soft:#a8b0c8; --accent:#d4a048; --accent-soft:rgba(212,160,72,.12);
-  --accent2:#58a590; --accent2-soft:rgba(88,165,144,.12); --border:rgba(168,176,200,.1);
+  --accent2:#58a590; --accent2-soft:rgba(88,165,144,.12); --accent3:#f87171; --accent3-soft:rgba(248,113,113,.12);
+  --border:rgba(168,176,200,.1);
   --erro:#f87171; --sucesso:#4ade80; --aviso:#facc15;
 }
 .tema-claro{
   --bg:#f8fafc; --bg-soft:#eff1f7; --card:#ffffff; --card-hover:#f4f6fc;
   --text:#1e293b; --text-soft:#64748b; --accent:#b47f2e; --accent-soft:rgba(180,127,46,.08);
-  --accent2:#3d8b76; --accent2-soft:rgba(61,139,118,.08); --border:rgba(148,163,184,.15);
+  --accent2:#3d8b76; --accent2-soft:rgba(61,139,118,.08); --accent3:#dc2626; --accent3-soft:rgba(220,38,38,.08);
+  --border:rgba(148,163,184,.15);
 }
 *{box-sizing:border-box;}
 body{margin:0;padding:0;font-family:'Inter',sans-serif;background:linear-gradient(135deg,var(--bg)0%,var(--bg-soft)100%);min-height:100vh;color:var(--text);transition:background .3s ease,color .3s ease;}
 .reveal{opacity:0;transform:translateY(16px);animation:fadeUp .7s ease forwards;}
-.reveal:nth-child(2){animation-delay:.08s;}
-.reveal:nth-child(3){animation-delay:.16s;}
-.reveal:nth-child(4){animation-delay:.24s;}
 @keyframes fadeUp{to{opacity:1;transform:translateY(0);}}
+.abas{display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;}
+.aba{padding:12px 20px;cursor:pointer;border-radius:12px 12px 0 0;color:var(--text-soft);font-weight:500;transition:all .2s ease;border-bottom:3px solid transparent;}
+.aba.ativa{color:var(--accent);background:var(--accent-soft);border-bottom:3px solid var(--accent);}
+.aba:hover{color:var(--text);background:var(--bg-soft);}
+.aba-desconto.ativa{color:var(--accent3);background:var(--accent3-soft);border-bottom-color:var(--accent3);}
 .metric-card{background:var(--card);border:1px solid var(--border);border-radius:20px;transition:all .3s ease;}
 .metric-card:hover{background:var(--card-hover);transform:translateY(-4px);box-shadow:0 18px 45px rgba(0,0,0,.25),0 0 0 1px var(--accent-soft);border-color:var(--accent-soft);}
 .tbl-row{transition:background .15s ease;}
 .tbl-row:hover{background:var(--accent-soft);}
+.tbl-row-desconto:hover{background:var(--accent3-soft);}
 .mes-separador{background:var(--accent-soft);color:var(--accent);font-weight:600;}
+.mes-separador-desconto{background:var(--accent3-soft);color:var(--accent3);font-weight:600;}
 input,select{outline:none;transition:all .2s ease;background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:10px 12px;}
 input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
 .btn-primary{background:linear-gradient(135deg,#d4a048,#c48f38);color:#1a1405;font-weight:600;transition:all .25s ease;border-radius:14px;box-shadow:0 4px 12px rgba(212,160,72,.15);border:none;cursor:pointer;padding:10px 16px;}
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(212,160,72,.25);}
+.btn-primary-vermelho{background:linear-gradient(135deg,#f87171,#dc2626);color:#fff;box-shadow:0 4px 12px rgba(248,113,113,.2);}
+.btn-primary-vermelho:hover{box-shadow:0 8px 24px rgba(248,113,113,.3);}
 .btn-secondary{background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:12px;transition:all .25s ease;cursor:pointer;padding:10px 16px;}
 .btn-secondary:hover{border-color:var(--text-soft);background:var(--card);}
 .btn-pequeno{padding:6px 10px;font-size:13px;}
@@ -75,13 +86,14 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a
 .header-icon{background:linear-gradient(135deg,#d4a048,#b87f2f);border-radius:16px;box-shadow:0 8px 24px rgba(212,160,72,.25);}
 .btn-icone{background:transparent;border:none;cursor:pointer;padding:8px 10px;border-radius:8px;transition:all .2s ease;font-size:18px;}
 .btn-icone:hover{background:var(--accent-soft);}
-.editar-btn:hover{color:var(--accent);}
 .excluir-btn:hover{color:var(--erro);background:rgba(248,113,113,.12);}
 .carregando{text-align:center;padding:40px;color:var(--text-soft);}
 .paginacao{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:20px;}
 .paginacao button{min-width:36px;height:36px;padding:0;}
 .paginacao button.ativo{background:var(--accent);color:#1a1405;border-color:var(--accent);}
 .offline{position:fixed;top:0;left:0;right:0;background:var(--erro);color:white;text-align:center;padding:6px;font-size:13px;z-index:100;}
+.painel-conteudo{display:none;}
+.painel-conteudo.ativo{display:block;animation:fadeUp .3s ease;}
 @media(max-width:768px){
   .tela-app{padding:12px!important;}
   .metric-card{padding:16px!important;}
@@ -89,6 +101,8 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a
   .btn-primary,.btn-secondary{padding:10px 12px!important;font-size:14px;}
   .btn-icone{padding:10px 12px;min-width:44px;min-height:44px;}
   .toast{left:12px;right:12px;max-width:unset;}
+  .abas{overflow-x:auto;}
+  .aba{padding:10px 14px;font-size:14px;white-space:nowrap;}
 }
 ::-webkit-scrollbar{width:8px;height:8px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
@@ -128,14 +142,14 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a
 
 <!-- TELA PRINCIPAL -->
 <div id="telaApp" class="tela-app" style="display:none;max-width:1200px;margin:0 auto;padding:24px;">
-  <div class="reveal" style="margin-bottom:32px;">
+  <div class="reveal" style="margin-bottom:24px;">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <div class="header-icon" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1405" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       </div>
       <div style="flex:1;min-width:240px;">
         <h1 style="font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--text);margin:0 0 4px;font-weight:600;">Meu Livro de Diárias</h1>
-        <p style="color:var(--text-soft);font-size:14px;margin:0;">Gerencie seus gastos e relatórios</p>
+        <p style="color:var(--text-soft);font-size:14px;margin:0;">Gerencie seus gastos e descontos</p>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <button onclick="alternarTema()" class="btn-secondary btn-pequeno" title="Alternar tema">🌙</button>
@@ -144,131 +158,256 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a
           <span class="spinner" style="width:10px;height:10px;border-width:2px;margin-right:6px;"></span> Conectando...
         </span>
         <button onclick="sairConta()" class="btn-secondary btn-pequeno">Sair</button>
-        <button onclick="abrirModal()" class="btn-primary btn-pequeno" title="Nova Diária (Ctrl+N)">+ Nova Diária</button>
       </div>
     </div>
   </div>
 
-  <!-- FILTROS -->
-  <div class="reveal table-card p-4 mb-6">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-      <input id="busca" type="text" placeholder="🔍 Buscar..." oninput="paginaAtual=1;atualizarTabela()" style="flex:1;min-width:180px;">
-      <div style="display:flex;gap:6px;align-items:center;">
-        <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">De:</label>
-        <input id="dataInicio" type="date" onchange="paginaAtual=1;atualizarTudo()" style="width:140px;">
-        <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">Até:</label>
-        <input id="dataFim" type="date" onchange="paginaAtual=1;atualizarTudo()" style="width:140px;">
+  <!-- ABAS -->
+  <div class="abas reveal">
+    <div class="aba ativa" id="abaDiarias" onclick="selecionarAba('diarias')">💰 Diárias</div>
+    <div class="aba aba-desconto" id="abaDescontos" onclick="selecionarAba('descontos')">📉 Descontos</div>
+  </div>
+
+  <!-- PAINEL DIÁRIAS -->
+  <div id="painelDiarias" class="painel-conteudo ativa">
+    <!-- FILTROS -->
+    <div class="reveal table-card p-4 mb-6">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <input id="buscaDiarias" type="text" placeholder="🔍 Buscar..." oninput="paginaDiarias=1;atualizarTabelaDiarias()" style="flex:1;min-width:180px;">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">De:</label>
+          <input id="dataInicioDiarias" type="date" onchange="paginaDiarias=1;atualizarTudoDiarias()" style="width:140px;">
+          <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">Até:</label>
+          <input id="dataFimDiarias" type="date" onchange="paginaDiarias=1;atualizarTudoDiarias()" style="width:140px;">
+        </div>
+        <select id="filtroMesDiarias" onchange="paginaDiarias=1;atualizarTudoDiarias()" class="min-w-[140px]">
+          <option value="todos">Todos os meses</option>
+        </select>
+        <select id="filtroAnoDiarias" onchange="paginaDiarias=1;atualizarTudoDiarias()" class="min-w-[120px]">
+          <option value="todos">Todos os anos</option>
+        </select>
+        <button onclick="limparFiltrosDiarias()" class="btn-secondary btn-pequeno">Limpar</button>
+        <button onclick="abrirModalDiaria()" class="btn-primary btn-pequeno" title="Nova Diária (Ctrl+N)">+ Nova Diária</button>
       </div>
-      <select id="filtroMes" onchange="paginaAtual=1;atualizarTudo()" class="min-w-[140px]">
-        <option value="todos">Todos os meses</option>
-      </select>
-      <select id="filtroAno" onchange="paginaAtual=1;atualizarTudo()" class="min-w-[120px]">
-        <option value="todos">Todos os anos</option>
-      </select>
-      <button onclick="limparFiltros()" class="btn-secondary btn-pequeno">Limpar</button>
+    </div>
+
+    <!-- MÉTRICAS DIÁRIAS -->
+    <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
+      <div class="metric-card p-4">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);">💰</div>
+          <span style="color:var(--text-soft);font-size:13px;">Total de Diárias</span>
+        </div>
+        <div id="totalDiarias" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--accent);">R$ 0,00</div>
+        <div id="qtdDiarias" style="color:var(--text-soft);font-size:12px;margin-top:4px;">0 registros</div>
+      </div>
+      <div class="metric-card p-4">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent2-soft);display:flex;align-items:center;justify-content:center;color:var(--accent2);">📊</div>
+          <span style="color:var(--text-soft);font-size:13px;">Média/dia</span>
+        </div>
+        <div id="mediaDiarias" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;">R$ 0,00</div>
+      </div>
+      <div class="metric-card p-4">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);">📈</div>
+          <span style="color:var(--text-soft);font-size:13px;">Maior valor</span>
+        </div>
+        <div id="maiorDiarias" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;">R$ 0,00</div>
+        <div id="maiorDataDiarias" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
+      </div>
+      <div class="metric-card p-4">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent2-soft);display:flex;align-items:center;justify-content:center;color:var(--accent2);">📅</div>
+          <span style="color:var(--text-soft);font-size:13px;">Este mês</span>
+        </div>
+        <div id="mesAtualDiarias" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--accent2);">R$ 0,00</div>
+        <div id="mesInfoDiarias" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
+      </div>
+    </div>
+
+    <!-- GRÁFICO -->
+    <div class="reveal table-card p-4 mb-6">
+      <h3 style="margin:0 0 12px;font-size:16px;">Evolução Mensal</h3>
+      <div id="grafico" style="height:300px;"></div>
+    </div>
+
+    <!-- GRÁFICO ADM -->
+    <div id="graficoUsuarioSecao" class="reveal table-card p-4 mb-6" style="display:none;">
+      <h3 style="margin:0 0 12px;font-size:16px;">Gasto por Usuário</h3>
+      <div id="graficoUsuario" style="height:280px;"></div>
+    </div>
+
+    <!-- TABELA DIÁRIAS -->
+    <div class="reveal table-card p-4">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <h3 style="margin:0;font-size:16px;">Histórico de Diárias</h3>
+        <button onclick="exportarDiarias()" class="btn-secondary btn-pequeno">📥 Exportar CSV</button>
+      </div>
+      <div id="carregandoDiarias" class="carregando" style="display:none;"><span class="spinner"></span> Carregando...</div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="color:var(--text-soft);border-bottom:1px solid var(--border);font-size:13px;">
+              <th style="text-align:left;padding:10px 8px;">Data</th>
+              <th style="text-align:left;padding:10px 8px;">Descrição</th>
+              <th style="text-align:left;padding:10px 8px;">Usuário</th>
+              <th style="text-align:right;padding:10px 8px;">Valor</th>
+              <th style="text-align:right;padding:10px 8px;width:100px;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaDiarias"></tbody>
+        </table>
+      </div>
+      <div id="vazioDiarias" style="text-align:center;padding:40px 20px;color:var(--text-soft);display:none;">
+        <p style="margin:0;">Nenhuma diária encontrada.</p>
+        <button onclick="abrirModalDiaria()" class="btn-primary btn-pequeno" style="margin-top:10px;">+ Cadastrar primeira diária</button>
+      </div>
+      <div id="paginacaoDiarias" class="paginacao"></div>
     </div>
   </div>
 
-  <!-- MÉTRICAS -->
-  <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
-    <div class="metric-card p-4">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);">💰</div>
-        <span style="color:var(--text-soft);font-size:13px;">Total</span>
+  <!-- PAINEL DESCONTOS -->
+  <div id="painelDescontos" class="painel-conteudo">
+    <!-- FILTROS DESCONTOS -->
+    <div class="reveal table-card p-4 mb-6">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <input id="buscaDescontos" type="text" placeholder="🔍 Buscar..." oninput="paginaDescontos=1;atualizarTabelaDescontos()" style="flex:1;min-width:180px;">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">De:</label>
+          <input id="dataInicioDescontos" type="date" onchange="paginaDescontos=1;atualizarTudoDescontos()" style="width:140px;">
+          <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">Até:</label>
+          <input id="dataFimDescontos" type="date" onchange="paginaDescontos=1;atualizarTudoDescontos()" style="width:140px;">
+        </div>
+        <select id="filtroMesDescontos" onchange="paginaDescontos=1;atualizarTudoDescontos()" class="min-w-[140px]">
+          <option value="todos">Todos os meses</option>
+        </select>
+        <select id="filtroAnoDescontos" onchange="paginaDescontos=1;atualizarTudoDescontos()" class="min-w-[120px]">
+          <option value="todos">Todos os anos</option>
+        </select>
+        <button onclick="limparFiltrosDescontos()" class="btn-secondary btn-pequeno">Limpar</button>
+        <button onclick="abrirModalDesconto()" class="btn-primary btn-pequeno btn-primary-vermelho" title="Novo Desconto">+ Novo Desconto</button>
       </div>
-      <div id="total" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--accent);">R$ 0,00</div>
-      <div id="subtotalInfo" style="color:var(--text-soft);font-size:12px;margin-top:4px;">0 registros</div>
     </div>
-    <div class="metric-card p-4">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent2-soft);display:flex;align-items:center;justify-content:center;color:var(--accent2);">📊</div>
-        <span style="color:var(--text-soft);font-size:13px;">Média/dia</span>
-      </div>
-      <div id="media" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;">R$ 0,00</div>
-    </div>
-    <div class="metric-card p-4">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);">📈</div>
-        <span style="color:var(--text-soft);font-size:13px;">Maior valor</span>
-      </div>
-      <div id="maior" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;">R$ 0,00</div>
-      <div id="maiorData" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-    </div>
-    <div class="metric-card p-4">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent2-soft);display:flex;align-items:center;justify-content:center;color:var(--accent2);">📅</div>
-        <span style="color:var(--text-soft);font-size:13px;">Este mês</span>
-      </div>
-      <div id="mesAtual" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--accent2);">R$ 0,00</div>
-      <div id="mesInfo" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-    </div>
-  </div>
 
-  <!-- GRÁFICO -->
-  <div class="reveal table-card p-4 mb-6">
-    <h3 style="margin:0 0 12px;font-size:16px;">Evolução Mensal</h3>
-    <div id="grafico" style="height:300px;"></div>
-  </div>
+    <!-- MÉTRICAS DESCONTOS -->
+    <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
+      <div class="metric-card p-4">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">📉</div>
+          <span style="color:var(--text-soft);font-size:13px;">Total de Descontos</span>
+        </div>
+        <div id="totalDescontos" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
+        <div id="qtdDescontos" style="color:var(--text-soft);font-size:12px;margin-top:4px;">0 registros</div>
+      </div>
+      <div class="metric-card p-4">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">📊</div>
+          <span style="color:var(--text-soft);font-size:13px;">Média/mês</span>
+        </div>
+        <div id="mediaDescontos" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
+      </div>
+      <div class="metric-card p-4">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">⚠️</div>
+          <span style="color:var(--text-soft);font-size:13px;">Maior desconto</span>
+        </div>
+        <div id="maiorDescontos" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
+        <div id="maiorDataDescontos" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
+      </div>
+      <div class="metric-card p-4">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">📅</div>
+          <span style="color:var(--text-soft);font-size:13px;">Este mês</span>
+        </div>
+        <div id="mesAtualDescontos" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
+        <div id="mesInfoDescontos" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
+      </div>
+    </div>
 
-  <!-- GRÁFICO ADM -->
-  <div id="graficoUsuarioSecao" class="reveal table-card p-4 mb-6" style="display:none;">
-    <h3 style="margin:0 0 12px;font-size:16px;">Gasto por Usuário</h3>
-    <div id="graficoUsuario" style="height:280px;"></div>
-  </div>
-
-  <!-- TABELA -->
-  <div class="reveal table-card p-4">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-      <h3 style="margin:0;font-size:16px;">Histórico de Diárias</h3>
-      <button onclick="exportarDados()" class="btn-secondary btn-pequeno">📥 Exportar CSV</button>
+    <!-- TABELA DESCONTOS -->
+    <div class="reveal table-card p-4">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <h3 style="margin:0;font-size:16px;">Histórico de Descontos</h3>
+        <button onclick="exportarDescontos()" class="btn-secondary btn-pequeno">📥 Exportar CSV</button>
+      </div>
+      <div id="carregandoDescontos" class="carregando" style="display:none;"><span class="spinner"></span> Carregando...</div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="color:var(--text-soft);border-bottom:1px solid var(--border);font-size:13px;">
+              <th style="text-align:left;padding:10px 8px;">Data</th>
+              <th style="text-align:left;padding:10px 8px;">O que foi descontado</th>
+              <th style="text-align:left;padding:10px 8px;">Usuário</th>
+              <th style="text-align:right;padding:10px 8px;">Valor</th>
+              <th style="text-align:right;padding:10px 8px;width:100px;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaDescontos"></tbody>
+        </table>
+      </div>
+      <div id="vazioDescontos" style="text-align:center;padding:40px 20px;color:var(--text-soft);display:none;">
+        <p style="margin:0;">Nenhum desconto cadastrado.</p>
+        <button onclick="abrirModalDesconto()" class="btn-primary btn-pequeno btn-primary-vermelho" style="margin-top:10px;">+ Cadastrar primeiro desconto</button>
+      </div>
+      <div id="paginacaoDescontos" class="paginacao"></div>
     </div>
-    <div id="carregandoTabela" class="carregando" style="display:none;"><span class="spinner"></span> Carregando...</div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr style="color:var(--text-soft);border-bottom:1px solid var(--border);font-size:13px;">
-            <th style="text-align:left;padding:10px 8px;">Data</th>
-            <th style="text-align:left;padding:10px 8px;">Descrição</th>
-            <th style="text-align:left;padding:10px 8px;">Usuário</th>
-            <th style="text-align:right;padding:10px 8px;">Valor</th>
-            <th style="text-align:right;padding:10px 8px;width:100px;">Ações</th>
-          </tr>
-        </thead>
-        <tbody id="tabelaDiarias"></tbody>
-      </table>
-    </div>
-    <div id="vazio" style="text-align:center;padding:40px 20px;color:var(--text-soft);display:none;">
-      <p style="margin:0;">Nenhuma diária encontrada.</p>
-      <button onclick="abrirModal()" class="btn-primary btn-pequeno" style="margin-top:10px;">+ Cadastrar primeira diária</button>
-    </div>
-    <div id="paginacao" class="paginacao"></div>
   </div>
 </div>
 
-<!-- MODAL -->
-<div id="modal" class="modal-backdrop" style="display:none;">
+<!-- MODAL DIÁRIA -->
+<div id="modalDiaria" class="modal-backdrop" style="display:none;">
   <div class="table-card p-5" style="width:100%;max-width:440px;max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <h3 id="tituloModal" style="margin:0;font-size:18px;">Nova Diária</h3>
-      <button onclick="fecharModal()" class="btn-icone">✕</button>
+      <h3 id="tituloModalDiaria" style="margin:0;font-size:18px;">Nova Diária</h3>
+      <button onclick="fecharModalDiaria()" class="btn-icone">✕</button>
     </div>
     <form onsubmit="salvarDiaria(event)" style="display:flex;flex-direction:column;gap:16px;">
-      <input type="hidden" id="editId">
+      <input type="hidden" id="editIdDiaria">
       <div>
         <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Valor (R$)</label>
-        <input id="valor" type="text" required placeholder="0,00" oninput="formatarValor(this)" style="width:100%;font-size:16px;">
+        <input id="valorDiaria" type="text" required placeholder="0,00" oninput="formatarValor(this)" style="width:100%;font-size:16px;">
       </div>
       <div>
         <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Data</label>
-        <input id="data" type="date" required style="width:100%;font-size:16px;">
+        <input id="dataDiaria" type="date" required style="width:100%;font-size:16px;">
       </div>
       <div>
         <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Descrição</label>
-        <input id="descricao" type="text" placeholder="Ex: Alimentação, transporte..." style="width:100%;font-size:16px;">
+        <input id="descricaoDiaria" type="text" placeholder="Ex: Alimentação, transporte..." style="width:100%;font-size:16px;">
       </div>
       <div style="display:flex;gap:10px;margin-top:8px;">
-        <button type="button" onclick="fecharModal()" class="btn-secondary" style="flex:1;">Cancelar</button>
-        <button id="btnSalvar" type="submit" class="btn-primary" style="flex:1;">Salvar</button>
+        <button type="button" onclick="fecharModalDiaria()" class="btn-secondary" style="flex:1;">Cancelar</button>
+        <button id="btnSalvarDiaria" type="submit" class="btn-primary" style="flex:1;">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL DESCONTO -->
+<div id="modalDesconto" class="modal-backdrop" style="display:none;">
+  <div class="table-card p-5" style="width:100%;max-width:440px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 id="tituloModalDesconto" style="margin:0;font-size:18px;">Novo Desconto</h3>
+      <button onclick="fecharModalDesconto()" class="btn-icone">✕</button>
+    </div>
+    <form onsubmit="salvarDesconto(event)" style="display:flex;flex-direction:column;gap:16px;">
+      <input type="hidden" id="editIdDesconto">
+      <div>
+        <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">O que foi descontado? *</label>
+        <input id="descricaoDesconto" type="text" required placeholder="Ex: Multa, taxa, imposto, devolução..." style="width:100%;font-size:16px;">
+      </div>
+      <div>
+        <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Valor do Desconto (R$)</label>
+        <input id="valorDesconto" type="text" required placeholder="0,00" oninput="formatarValor(this)" style="width:100%;font-size:16px;">
+      </div>
+      <div>
+        <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Data</label>
+        <input id="dataDesconto" type="date" required style="width:100%;font-size:16px;">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="button" onclick="fecharModalDesconto()" class="btn-secondary" style="flex:1;">Cancelar</button>
+        <button id="btnSalvarDesconto" type="submit" class="btn-primary btn-primary-vermelho" style="flex:1;">Salvar</button>
       </div>
     </form>
   </div>
@@ -288,7 +427,6 @@ function formatarValor(i){
     const dec = v.slice(-2);
     i.value = `${int.replace(/\B(?=(\d{3})+(?!\d))/g,'.')},${dec}`;
   }
-  salvarRascunho();
 }
 function dataBr(d){return new Date(d+'T00:00:00').toLocaleDateString('pt-BR');}
 function mesAno(d){return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});}
@@ -297,7 +435,7 @@ function nomeMes(chave){const m=['Janeiro','Fevereiro','Março','Abril','Maio','
 function hoje(){return new Date().toISOString().split('T')[0];}
 
 function toast(msg,tipo='sucesso'){
-  const t=Object.assign(document.createElement('div'),{className:`toast ${tipo}`,textContent:msg});
+  const t=Object.assign(document.createElement('div'),{className:`toast ${tipo}`,innerHTML:msg});
   document.body.appendChild(t);
   setTimeout(()=>t.remove(),3500);
 }
@@ -308,7 +446,9 @@ function mensagemAmigavel(erro){
     'Password should be at least 6 characters':'Senha deve ter pelo menos 6 caracteres',
     'User already registered':'Este e-mail já está cadastrado',
     'data_nao_futura':'A data não pode ser futura',
-    'valor_positivo':'O valor deve ser maior que zero'
+    'valor_positivo':'O valor deve ser maior que zero',
+    'desconto_valor_positivo':'O valor deve ser maior que zero',
+    'desconto_data_nao_futura':'A data não pode ser futura'
   };
   for(const [chave,texto] of Object.entries(map)){
     if(erro?.message?.includes(chave)||erro?.details?.includes(chave)) return texto;
@@ -321,6 +461,15 @@ function setStatus(texto,cor){
   else if(texto.includes('Erro')) el.innerHTML='🔴 Erro';
   else el.innerHTML=texto;
   el.style.background=cor||'transparent';
+}
+
+// === SISTEMA DE ABAS ===
+function selecionarAba(nomeAba){
+  abaAtiva = nomeAba;
+  document.querySelectorAll('.aba').forEach(a=>a.classList.remove('ativa'));
+  document.querySelectorAll('.painel-conteudo').forEach(p=>p.classList.remove('ativa'));
+  document.getElementById(`aba${nomeAba.charAt(0).toUpperCase()+nomeAba.slice(1)}`).classList.add('ativa');
+  document.getElementById(`painel${nomeAba.charAt(0).toUpperCase()+nomeAba.slice(1)}`).classList.add('ativa');
 }
 
 // === INTERNET ===
@@ -344,33 +493,14 @@ function carregarTema(){
   if(t==='claro'){temaEscuro=false;document.getElementById('corpo').classList.add('tema-claro');}
 }
 
-// === RASCUNHO ===
-function salvarRascunho(){
-  const id=document.getElementById('editId').value;
-  localStorage.setItem(`rascunho_${id||'novo'}`,JSON.stringify({
-    valor:document.getElementById('valor').value,
-    data:document.getElementById('data').value,
-    descricao:document.getElementById('descricao').value
-  }));
-}
-function carregarRascunho(id='novo'){
-  try{
-    const r=JSON.parse(localStorage.getItem(`rascunho_${id}`)||'null');
-    if(r){
-      document.getElementById('valor').value=r.valor;
-      document.getElementById('data').value=r.data;
-      document.getElementById('descricao').value=r.descricao;
-    }
-  }catch{}
-}
-function limparRascunho(id='novo'){
-  localStorage.removeItem(`rascunho_${id}`);
-}
-
 // === ATALHOS ===
 document.addEventListener('keydown',e=>{
-  if((e.ctrlKey||e.metaKey)&&e.key==='n'){e.preventDefault();if(document.getElementById('telaApp').style.display!=='none')abrirModal();}
-  if(e.key==='Escape')fecharModal();
+  if((e.ctrlKey||e.metaKey)&&e.key==='n'){
+    e.preventDefault();
+    if(abaAtiva==='diarias') abrirModalDiaria();
+    else abrirModalDesconto();
+  }
+  if(e.key==='Escape'){fecharModalDiaria();fecharModalDesconto();}
 });
 
 // === LOGIN ===
@@ -403,7 +533,7 @@ async function fazerLogin(){
 async function sairConta(){
   if(!confirm('Sair da conta?'))return;
   await app.auth.signOut();
-  diarias=[];
+  diarias=[]; descontos=[];
   document.getElementById('telaLogin').style.display='flex';
   document.getElementById('telaApp').style.display='none';
 }
@@ -417,79 +547,149 @@ function entrarApp(usuario){
   const nome=usuario.user_metadata?.nome||usuario.email?.split('@')[0]||'Usuário';
   document.getElementById('nomeUsuario').textContent=ehAdmin?`👑 ${nome}`:nome;
   document.getElementById('graficoUsuarioSecao').style.display=ehAdmin?'block':'none';
-  carregarDoBanco();
+  carregarTudoDoBanco();
   verificarConexao();
-  app.channel('diarias-sync').on('postgres_changes',{event:'*',schema:'public',table:'diarias'},()=>carregarDoBanco()).subscribe();
+  app.channel('diarias-sync').on('postgres_changes',{event:'*',schema:'public',table:'diarias'},()=>carregarDiarias()).subscribe();
+  app.channel('descontos-sync').on('postgres_changes',{event:'*',schema:'public',table:'descontos'},()=>carregarDescontos()).subscribe();
 }
 
-// === BANCO ===
-async function carregarDoBanco(){
-  document.getElementById('carregandoTabela').style.display='block';
+// === CARREGAR DADOS DO BANCO ===
+async function carregarTudoDoBanco(){
+  await Promise.all([carregarDiarias(),carregarDescontos()]);
+}
+
+async function carregarDiarias(){
+  document.getElementById('carregandoDiarias').style.display='block';
   try{
     let q=app.from('diarias').select('*');
-    if(!ehAdmin)q=q.eq('usuario_id',usuarioAtual.id);
+    if(!ehAdmin) q=q.eq('usuario_id',usuarioAtual.id);
     q=q.order('data',{ascending:false});
     const {data,error}=await q;
-    if(error)throw error;
+    if(error) throw error;
     diarias=data||[];
     setStatus('🟢 Online','rgba(74,222,128,.15)');
-    atualizarTudo();
+    atualizarTudoDiarias();
   }catch(e){
     setStatus('🔴 Erro','rgba(248,113,113,.15)');
     toast(mensagemAmigavel(e),'erro');
   }finally{
-    document.getElementById('carregandoTabela').style.display='none';
+    document.getElementById('carregandoDiarias').style.display='none';
   }
 }
 
-// === MODAL ===
-function abrirModal(dados=null){
-  document.getElementById('modal').style.display='flex';
-  if(dados){
-    document.getElementById('tituloModal').textContent='Editar Diária';
-    document.getElementById('editId').value=dados.id;
-    document.getElementById('valor').value=moeda(dados.valor);
-    document.getElementById('data').value=dados.data;
-    document.getElementById('descricao').value=dados.descricao||'';
-  }else{
-    document.getElementById('tituloModal').textContent='Nova Diária';
-    document.getElementById('editId').value='';
-    document.getElementById('valor').value='';
-    document.getElementById('data').value=hoje();
-    document.getElementById('descricao').value='';
+async function carregarDescontos(){
+  document.getElementById('carregandoDescontos').style.display='block';
+  try{
+    let q=app.from('descontos').select('*');
+    if(!ehAdmin) q=q.eq('usuario_id',usuarioAtual.id);
+    q=q.order('data',{ascending:false});
+    const {data,error}=await q;
+    if(error) throw error;
+    descontos=data||[];
+    atualizarTudoDescontos();
+  }catch(e){
+    toast(mensagemAmigavel(e),'erro');
+  }finally{
+    document.getElementById('carregandoDescontos').style.display='none';
   }
-  carregarRascunho(document.getElementById('editId').value||'novo');
-  document.getElementById('valor').focus();
 }
-function fecharModal(){
-  document.getElementById('modal').style.display='none';
-  document.getElementById('editId').value?limparRascunho(document.getElementById('editId').value):limparRascunho();
+
+// === MODAL DIÁRIA ===
+function abrirModalDiaria(dados=null){
+  document.getElementById('modalDiaria').style.display='flex';
+  if(dados){
+    document.getElementById('tituloModalDiaria').textContent='Editar Diária';
+    document.getElementById('editIdDiaria').value=dados.id;
+    document.getElementById('valorDiaria').value=moeda(dados.valor);
+    document.getElementById('dataDiaria').value=dados.data;
+    document.getElementById('descricaoDiaria').value=dados.descricao||'';
+  }else{
+    document.getElementById('tituloModalDiaria').textContent='Nova Diária';
+    document.getElementById('editIdDiaria').value='';
+    document.getElementById('valorDiaria').value='';
+    document.getElementById('dataDiaria').value=hoje();
+    document.getElementById('descricaoDiaria').value='';
+  }
+  document.getElementById('valorDiaria').focus();
+}
+function fecharModalDiaria(){
+  document.getElementById('modalDiaria').style.display='none';
 }
 
 async function salvarDiaria(e){
   e.preventDefault();
-  const btn=document.getElementById('btnSalvar');
+  const btn=document.getElementById('btnSalvarDiaria');
   btn.disabled=true;btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Salvando...';
   try{
-    const valor=moedaParaNumero(document.getElementById('valor').value);
-    const data=document.getElementById('data').value;
-    const descricao=document.getElementById('descricao').value.trim()||null;
-    if(valor<=0)throw {message:'valor_positivo'};
-    if(data>hoje())throw {message:'data_nao_futura'};
-    const id=document.getElementById('editId').value;
+    const valor=moedaParaNumero(document.getElementById('valorDiaria').value);
+    const data=document.getElementById('dataDiaria').value;
+    const descricao=document.getElementById('descricaoDiaria').value.trim()||null;
+    if(valor<=0) throw {message:'valor_positivo'};
+    if(data>hoje()) throw {message:'data_nao_futura'};
+    const id=document.getElementById('editIdDiaria').value;
     if(id){
-      const idx=diarias.findIndex(d=>d.id===id);
-      const antiga={...diarias[idx]};
       const {error}=await app.from('diarias').update({valor,data,descricao}).eq('id',id);
-      if(error)throw error;
+      if(error) throw error;
       toast('✅ Diária atualizada!');
     }else{
       const {error}=await app.from('diarias').insert({valor,data,descricao,usuario_id:usuarioAtual.id,nome_usuario:usuarioAtual.user_metadata?.nome||usuarioAtual.email?.split('@')[0]});
-      if(error)throw error;
+      if(error) throw error;
       toast('✅ Diária cadastrada!');
     }
-    limparRascunho(id||'novo');
-    fecharModal();
+    fecharModalDiaria();
+    await carregarDiarias();
+  }catch(erro){
+    toast('❌ '+mensagemAmigavel(erro),'erro');
+  }finally{
+    btn.disabled=false;btn.textContent='Salvar';
+  }
+}
+
+// === MODAL DESCONTO ===
+function abrirModalDesconto(dados=null){
+  document.getElementById('modalDesconto').style.display='flex';
+  if(dados){
+    document.getElementById('tituloModalDesconto').textContent='Editar Desconto';
+    document.getElementById('editIdDesconto').value=dados.id;
+    document.getElementById('descricaoDesconto').value=dados.descricao||'';
+    document.getElementById('valorDesconto').value=moeda(dados.valor);
+    document.getElementById('dataDesconto').value=dados.data;
+  }else{
+    document.getElementById('tituloModalDesconto').textContent='Novo Desconto';
+    document.getElementById('editIdDesconto').value='';
+    document.getElementById('descricaoDesconto').value='';
+    document.getElementById('valorDesconto').value='';
+    document.getElementById('dataDesconto').value=hoje();
+  }
+  document.getElementById('descricaoDesconto').focus();
+}
+function fecharModalDesconto(){
+  document.getElementById('modalDesconto').style.display='none';
+}
+
+async function salvarDesconto(e){
+  e.preventDefault();
+  const btn=document.getElementById('btnSalvarDesconto');
+  btn.disabled=true;btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Salvando...';
+  try{
+    const descricao=document.getElementById('descricaoDesconto').value.trim();
+    const valor=moedaParaNumero(document.getElementById('valorDesconto').value);
+    const data=document.getElementById('dataDesconto').value;
+    if(!descricao) throw {message:'Informe o que foi descontado'};
+    if(valor<=0) throw {message:'desconto_valor_positivo'};
+    if(data>hoje()) throw {message:'desconto_data_nao_futura'};
+    const id=document.getElementById('editIdDesconto').value;
+    if(id){
+      const {error}=await app.from('descontos').update({descricao,valor,data}).eq('id',id);
+      if(error) throw error;
+      toast('✅ Desconto atualizado!');
+    }else{
+      const {error}=await app.from('descontos').insert({descricao,valor,data,usuario_id:usuarioAtual.id,nome_usuario:usuarioAtual.user_metadata?.nome||usuarioAtual.email?.split('@')[0]});
+      if(error) throw error;
+      toast('✅ Desconto cadastrado!');
+    }
+    fecharModalDesconto();
+    await carregarDescontos();
   }catch(erro){
     toast('❌ '+mensagemAmigavel(erro),'erro');
   }finally{
@@ -503,36 +703,52 @@ async function excluirDiaria(id,usuarioId){
   const diaria=diarias.find(d=>d.id===id);
   if(!diaria)return;
   if(desfazerTimer)clearTimeout(desfazerTimer);
-  ultimoDesfazer={diaria};
-  const temp=diarias.filter(d=>d.id!==id);
-  diarias=temp;
-  atualizarTudo();
+  ultimoDesfazer={tipo:'diaria',dado:diaria};
+  diarias=diarias.filter(d=>d.id!==id);
+  atualizarTudoDiarias();
   toast(`Diária excluída. <button onclick="desfazerExclusao()" style="background:var(--aviso);color:#000;border:none;padding:2px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">Desfazer</button>`,'aviso');
   desfazerTimer=setTimeout(async()=>{
-    try{
-      await app.from('diarias').delete().eq('id',id);
-      ultimoDesfazer=null;
-    }catch{carregarDoBanco();}
+    try{await app.from('diarias').delete().eq('id',id);ultimoDesfazer=null;}catch{carregarDiarias();}
   },10000);
 }
+
+async function excluirDesconto(id,usuarioId){
+  if(!ehAdmin && usuarioId!==usuarioAtual.id){toast('Você só pode excluir seus próprios descontos.','aviso');return;}
+  const desconto=descontos.find(d=>d.id===id);
+  if(!desconto)return;
+  if(desfazerTimer)clearTimeout(desfazerTimer);
+  ultimoDesfazer={tipo:'desconto',dado:desconto};
+  descontos=descontos.filter(d=>d.id!==id);
+  atualizarTudoDescontos();
+  toast(`Desconto excluído. <button onclick="desfazerExclusao()" style="background:var(--aviso);color:#000;border:none;padding:2px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">Desfazer</button>`,'aviso');
+  desfazerTimer=setTimeout(async()=>{
+    try{await app.from('descontos').delete().eq('id',id);ultimoDesfazer=null;}catch{carregarDescontos();}
+  },10000);
+}
+
 async function desfazerExclusao(){
   if(!ultimoDesfazer)return;
   clearTimeout(desfazerTimer);
-  const {diaria}=ultimoDesfazer;
-  diarias.unshift(diaria);
-  diarias.sort((a,b)=>b.data.localeCompare(a.data));
-  atualizarTudo();
+  if(ultimoDesfazer.tipo==='diaria'){
+    diarias.unshift(ultimoDesfazer.dado);
+    diarias.sort((a,b)=>b.data.localeCompare(a.data));
+    atualizarTudoDiarias();
+  }else{
+    descontos.unshift(ultimoDesfazer.dado);
+    descontos.sort((a,b)=>b.data.localeCompare(a.data));
+    atualizarTudoDescontos();
+  }
   ultimoDesfazer=null;
   toast('✅ Exclusão desfeita!');
 }
 
-// === FILTROS ===
+// === FILTROS DIÁRIAS ===
 function diariasFiltradas(){
-  const busca=(document.getElementById('busca')?.value||'').toLowerCase().trim();
-  const mesSel=document.getElementById('filtroMes').value;
-  const anoSel=document.getElementById('filtroAno').value;
-  const dataIn=document.getElementById('dataInicio').value;
-  const dataFim=document.getElementById('dataFim').value;
+  const busca=(document.getElementById('buscaDiarias')?.value||'').toLowerCase().trim();
+  const mesSel=document.getElementById('filtroMesDiarias').value;
+  const anoSel=document.getElementById('filtroAnoDiarias').value;
+  const dataIn=document.getElementById('dataInicioDiarias').value;
+  const dataFim=document.getElementById('dataFimDiarias').value;
   return diarias.filter(d=>{
     const cm=chaveMes(d.data);
     const [ano,mes]=cm.split('-');
@@ -543,32 +759,66 @@ function diariasFiltradas(){
     return okMes&&okAno&&okData&&okBusca;
   });
 }
-function preencherFiltros(){
-  const selA=document.getElementById('filtroAno');
-  const selM=document.getElementById('filtroMes');
+function preencherFiltrosDiarias(){
+  const selA=document.getElementById('filtroAnoDiarias');
+  const selM=document.getElementById('filtroMesDiarias');
   const anos=[...new Set(diarias.map(d=>d.data.slice(0,4)))].sort((a,b)=>b.localeCompare(a));
   selA.innerHTML='<option value="todos">Todos os anos</option>'+anos.map(a=>`<option value="${a}">${a}</option>`).join('');
   const meses=[...new Set(diarias.map(d=>chaveMes(d.data)))].sort((a,b)=>b.localeCompare(a));
   selM.innerHTML='<option value="todos">Todos os meses</option>'+meses.map(m=>`<option value="${m}">${nomeMes(m.split('-')[1])} de ${m.split('-')[0]}</option>`).join('');
 }
-function limparFiltros(){
-  document.getElementById('busca').value='';
-  document.getElementById('filtroMes').value='todos';
-  document.getElementById('filtroAno').value='todos';
-  document.getElementById('dataInicio').value='';
-  document.getElementById('dataFim').value='';
-  paginaAtual=1;
-  atualizarTudo();
-  toast('✅ Filtros limpos');
+function limparFiltrosDiarias(){
+  document.getElementById('buscaDiarias').value='';
+  document.getElementById('filtroMesDiarias').value='todos';
+  document.getElementById('filtroAnoDiarias').value='todos';
+  document.getElementById('dataInicioDiarias').value='';
+  document.getElementById('dataFimDiarias').value='';
+  paginaDiarias=1;
+  atualizarTudoDiarias();
+}
+
+// === FILTROS DESCONTOS ===
+function descontosFiltrados(){
+  const busca=(document.getElementById('buscaDescontos')?.value||'').toLowerCase().trim();
+  const mesSel=document.getElementById('filtroMesDescontos').value;
+  const anoSel=document.getElementById('filtroAnoDescontos').value;
+  const dataIn=document.getElementById('dataInicioDescontos').value;
+  const dataFim=document.getElementById('dataFimDescontos').value;
+  return descontos.filter(d=>{
+    const cm=chaveMes(d.data);
+    const [ano,mes]=cm.split('-');
+    const okMes=mesSel==='todos'||cm===mesSel;
+    const okAno=anoSel==='todos'||ano===anoSel;
+    const okData=(!dataIn||d.data>=dataIn)&&(!dataFim||d.data<=dataFim);
+    const okBusca=!busca||d.data.includes(busca)||(d.descricao||'').toLowerCase().includes(busca)||String(d.valor).includes(busca);
+    return okMes&&okAno&&okData&&okBusca;
+  });
+}
+function preencherFiltrosDescontos(){
+  const selA=document.getElementById('filtroAnoDescontos');
+  const selM=document.getElementById('filtroMesDescontos');
+  const anos=[...new Set(descontos.map(d=>d.data.slice(0,4)))].sort((a,b)=>b.localeCompare(a));
+  selA.innerHTML='<option value="todos">Todos os anos</option>'+anos.map(a=>`<option value="${a}">${a}</option>`).join('');
+  const meses=[...new Set(descontos.map(d=>chaveMes(d.data)))].sort((a,b)=>b.localeCompare(a));
+  selM.innerHTML='<option value="todos">Todos os meses</option>'+meses.map(m=>`<option value="${m}">${nomeMes(m.split('-')[1])} de ${m.split('-')[0]}</option>`).join('');
+}
+function limparFiltrosDescontos(){
+  document.getElementById('buscaDescontos').value='';
+  document.getElementById('filtroMesDescontos').value='todos';
+  document.getElementById('filtroAnoDescontos').value='todos';
+  document.getElementById('dataInicioDescontos').value='';
+  document.getElementById('dataFimDescontos').value='';
+  paginaDescontos=1;
+  atualizarTudoDescontos();
 }
 
 // === PAGINAÇÃO ===
-function atualizarPaginacao(total){
-  const pag=document.getElementById('paginacao');
+function atualizarPaginacao(paginaAtual,total,idContainer){
+  const pag=document.getElementById(idContainer);
   const totalPag=Math.ceil(total/ITENS_POR_PAGINA);
   if(totalPag<=1){pag.innerHTML='';return;}
   let botoes=[];
-  botoes.push(`<button class="btn-secondary btn-pequeno" onclick="paginaAtual--;atualizarTabela()" ${paginaAtual===1?'disabled':''}>‹</button>`);
+  botoes.push(`<button class="btn-secondary btn-pequeno" onclick="${paginaAtual===1?'':'paginaAtual--;atualizarTabela()'}" ${paginaAtual===1?'disabled':''}>‹</button>`);
   for(let i=1;i<=totalPag;i++){
     if(i===1||i===totalPag||(i>=paginaAtual-1&&i<=paginaAtual+1))){
       botoes.push(`<button class="btn-secondary btn-pequeno ${i===paginaAtual?'ativo':''}" onclick="paginaAtual=${i};atualizarTabela()">${i}</button>`);
@@ -576,18 +826,18 @@ function atualizarPaginacao(total){
       botoes.push(`<span style="padding:0 4px;">...</span>`);
     }
   }
-  botoes.push(`<button class="btn-secondary btn-pequeno" onclick="paginaAtual++;atualizarTabela()" ${paginaAtual===totalPag?'disabled':''}>›</button>`);
+  botoes.push(`<button class="btn-secondary btn-pequeno" onclick="${paginaAtual===totalPag?'':'paginaAtual++;atualizarTabela()'}" ${paginaAtual===totalPag?'disabled':''}>›</button>`);
   pag.innerHTML=botoes.join('');
 }
 
-// === TABELA ===
-function atualizarTabela(){
+// === TABELA DIÁRIAS ===
+function atualizarTabelaDiarias(){
   const lista=diariasFiltradas();
   const tb=document.getElementById('tabelaDiarias');
-  const vazio=document.getElementById('vazio');
-  if(lista.length===0){tb.innerHTML='';vazio.style.display='block';document.getElementById('paginacao').innerHTML='';return;}
+  const vazio=document.getElementById('vazioDiarias');
+  if(lista.length===0){tb.innerHTML='';vazio.style.display='block';document.getElementById('paginacaoDiarias').innerHTML='';return;}
   vazio.style.display='none';
-  const inicio=(paginaAtual-1)*ITENS_POR_PAGINA;
+  const inicio=(paginaDiarias-1)*ITENS_POR_PAGINA;
   const listaPag=lista.slice(inicio,inicio+ITENS_POR_PAGINA);
   const grupos={};
   listaPag.forEach(d=>{const cm=chaveMes(d.data);if(!grupos[cm])grupos[cm]=[];grupos[cm].push(d);});
@@ -603,245 +853,233 @@ function atualizarTabela(){
         <td style="padding:10px 8px;">${d.nome_usuario||'—'}</td>
         <td style="padding:10px 8px;text-align:right;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--accent);">R$ ${moeda(d.valor)}</td>
         <td style="padding:10px 8px;text-align:right;">
-          <button onclick='abrirModal(${JSON.stringify(d).replace(/'/g,"&#39;")})' class="btn-icone editar-btn" title="Editar">✏️</button>
+          <button onclick='abrirModalDiaria(${JSON.stringify(d).replace(/'/g,"&#39;")})' class="btn-icone editar-btn" title="Editar">✏️</button>
           <button onclick="excluirDiaria('${d.id}','${d.usuario_id}')" class="btn-icone excluir-btn" title="Excluir">🗑️</button>
-          </td>
+        </td>
       </tr>`;
     });
   });
-  tb.innerHTML = html;
-  atualizarPaginacao(lista.length);
+  tb.innerHTML=html;
+  atualizarPaginacao(paginaDiarias,lista.length,'paginacaoDiarias');
 }
 
-// === MÉTRICAS ===
-function atualizarMetricas(){
-  const lista = diariasFiltradas();
-  const total = lista.reduce((s,d) => s + Number(d.valor), 0);
-  const qtd = lista.length;
-  const media = qtd > 0 ? total / qtd : 0;
-  const maior = qtd > 0 ? lista.reduce((m,d) => Number(d.valor) > Number(m.valor) ? d : m) : null;
-  const hojeData = new Date();
-  const chaveHoje = chaveMes(hojeData.toISOString().split('T')[0]);
-  const mesLista = lista.filter(d => chaveMes(d.data) === chaveHoje);
-  const totalMes = mesLista.reduce((s,d) => s + Number(d.valor), 0);
+// === TABELA DESCONTOS ===
+function atualizarTabelaDescontos(){
+  const lista=descontosFiltrados();
+  const tb=document.getElementById('tabelaDescontos');
+  const vazio=document.getElementById('vazioDescontos');
+  if(lista.length===0){tb.innerHTML='';vazio.style.display='block';document.getElementById('paginacaoDescontos').innerHTML='';return;}
+  vazio.style.display='none';
+  const inicio=(paginaDescontos-1)*ITENS_POR_PAGINA;
+  const listaPag=lista.slice(inicio,inicio+ITENS_POR_PAGINA);
+  const grupos={};
+  listaPag.forEach(d=>{const cm=chaveMes(d.data);if(!grupos[cm])grupos[cm]=[];grupos[cm].push(d);});
+  let html='';
+  Object.keys(grupos).sort((a,b)=>b.localeCompare(a)).forEach(cm=>{
+    const [ano,mes]=cm.split('-');
+    const totalGrupo=grupos[cm].reduce((s,d)=>s+Number(d.valor),0);
+    html+=`<tr class="mes-separador-desconto"><td colspan="5" style="padding:8px 10px;"><strong>${nomeMes(mes)} de ${ano}</strong><span style="float:right;color:var(--accent3);">R$ ${moeda(totalGrupo)}</span></td></tr>`;
+    grupos[cm].forEach(d=>{
+      html+=`<tr class="tbl-row tbl-row-desconto" style="border-bottom:1px solid var(--border);">
+        <td style="padding:10px 8px;">${dataBr(d.data)}</td>
+        <td style="padding:10px 8px;color:var(--text);font-weight:500;">${d.descricao||'—'}</td>
+        <td style="padding:10px 8px;">${d.nome_usuario||'—'}</td>
+        <td style="padding:10px 8px;text-align:right;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--accent3);">R$ ${moeda(d.valor)}</td>
+        <td style="padding:10px 8px;text-align:right;">
+          <button onclick='abrirModalDesconto(${JSON.stringify(d).replace(/'/g,"&#39;")})' class="btn-icone editar-btn" title="Editar">✏️</button>
+          <button onclick="excluirDesconto('${d.id}','${d.usuario_id}')" class="btn-icone excluir-btn" title="Excluir">🗑️</button>
+        </td>
+      </tr>`;
+    });
+  });
+  tb.innerHTML=html;
+  atualizarPaginacao(paginaDescontos,lista.length,'paginacaoDescontos');
+}
 
-  document.getElementById('total').textContent = `R$ ${moeda(total)}`;
-  document.getElementById('subtotalInfo').textContent = `${qtd} registro${qtd !== 1 ? 's' : ''}`;
-  document.getElementById('media').textContent = `R$ ${moeda(media)}`;
-  document.getElementById('maior').textContent = maior ? `R$ ${moeda(maior.valor)}` : 'R$ 0,00';
-  document.getElementById('maiorData').textContent = maior ? dataBr(maior.data) : '—';
-  document.getElementById('mesAtual').textContent = `R$ ${moeda(totalMes)}`;
-  document.getElementById('mesInfo').textContent = `${mesLista.length} em ${mesAno(hojeData.toISOString().split('T')[0])}`;
+// === MÉTRICAS DIÁRIAS ===
+function atualizarMetricasDiarias(){
+  const lista=diariasFiltradas();
+  const total=lista.reduce((s,d)=>s+Number(d.valor),0);
+  const qtd=lista.length;
+  const media=qtd>0?total/qtd:0;
+  const maior=qtd>0?lista.reduce((m,d)=>Number(d.valor)>Number(m.valor)?d:m):null;
+  const hojeData=new Date();
+  const chaveHoje=chaveMes(hojeData.toISOString().split('T')[0]);
+  const mesLista=lista.filter(d=>chaveMes(d.data)===chaveHoje);
+  const totalMes=mesLista.reduce((s,d)=>s+Number(d.valor),0);
+
+  document.getElementById('totalDiarias').textContent=`R$ ${moeda(total)}`;
+  document.getElementById('qtdDiarias').textContent=`${qtd} registro${qtd!==1?'s':''}`;
+  document.getElementById('mediaDiarias').textContent=`R$ ${moeda(media)}`;
+  document.getElementById('maiorDiarias').textContent=maior?`R$ ${moeda(maior.valor)}`:'R$ 0,00';
+  document.getElementById('maiorDataDiarias').textContent=maior?dataBr(maior.data):'—';
+  document.getElementById('mesAtualDiarias').textContent=`R$ ${moeda(totalMes)}`;
+  document.getElementById('mesInfoDiarias').textContent=`${mesLista.length} em ${mesAno(hojeData.toISOString().split('T')[0])}`;
+}
+
+// === MÉTRICAS DESCONTOS ===
+function atualizarMetricasDescontos(){
+  const lista=descontosFiltrados();
+  const total=lista.reduce((s,d)=>s+Number(d.valor),0);
+  const qtd=lista.length;
+  const mesesUnicos=[...new Set(lista.map(d=>chaveMes(d.data)))].length;
+  const media=mesesUnicos>0?total/mesesUnicos:0;
+  const maior=qtd>0?lista.reduce((m,d)=>Number(d.valor)>Number(m.valor)?d:m):null;
+  const hojeData=new Date();
+  const chaveHoje=chaveMes(hojeData.toISOString().split('T')[0]);
+  const mesLista=lista.filter(d=>chaveMes(d.data)===chaveHoje);
+  const totalMes=mesLista.reduce((s,d)=>s+Number(d.valor),0);
+
+  document.getElementById('totalDescontos').textContent=`R$ ${moeda(total)}`;
+  document.getElementById('qtdDescontos').textContent=`${qtd} registro${qtd!==1?'s':''}`;
+  document.getElementById('mediaDescontos').textContent=`R$ ${moeda(media)}`;
+  document.getElementById('maiorDescontos').textContent=maior?`R$ ${moeda(maior.valor)}`:'R$ 0,00';
+  document.getElementById('maiorDataDescontos').textContent=maior?dataBr(maior.data):'—';
+  document.getElementById('mesAtualDescontos').textContent=`R$ ${moeda(totalMes)}`;
+  document.getElementById('mesInfoDescontos').textContent=`${mesLista.length} em ${mesAno(hojeData.toISOString().split('T')[0])}`;
 }
 
 // === GRÁFICO PRINCIPAL ===
 function atualizarGraficoPrincipal(){
-  const lista = diariasFiltradas();
-  const el = document.getElementById('grafico');
-  if(!el || typeof echarts === 'undefined') {
-    setTimeout(atualizarGraficoPrincipal, 250);
-    return;
-  }
-  if(!graficoInstancia) graficoInstancia = echarts.init(el);
+  const lista=diariasFiltradas();
+  const el=document.getElementById('grafico');
+  if(!el || typeof echarts === 'undefined') {setTimeout(atualizarGraficoPrincipal,250);return;}
+  if(!graficoInstancia) graficoInstancia=echarts.init(el);
 
-  const meses = {};
-  lista.forEach(d => {
-    const k = chaveMes(d.data);
-    meses[k] = (meses[k] || 0) + Number(d.valor);
-  });
+  const meses={};
+  lista.forEach(d=>{const k=chaveMes(d.data);meses[k]=(meses[k]||0)+Number(d.valor);});
+  const chaves=Object.keys(meses).sort();
+  const rotulos=chaves.map(k=>{const [ano,mes]=k.split('-');return `${nomeMes(mes).slice(0,3)}/${ano.slice(-2)}`;});
+  const valores=chaves.map(k=>Number(meses[k].toFixed(2)));
 
-  const chaves = Object.keys(meses).sort();
-  const rotulos = chaves.map(k => {
-    const [ano, mes] = k.split('-');
-    return `${nomeMes(mes).slice(0,3)}/${ano.slice(-2)}`;
-  });
-  const valores = chaves.map(k => Number(meses[k].toFixed(2)));
-
-  const corTexto = getComputedStyle(document.body).getPropertyValue('--text').trim();
-  const corTextoSoft = getComputedStyle(document.body).getPropertyValue('--text-soft').trim();
-  const corBorda = getComputedStyle(document.body).getPropertyValue('--border').trim();
-  const corDourada = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const corTexto=getComputedStyle(document.body).getPropertyValue('--text').trim();
+  const corTextoSoft=getComputedStyle(document.body).getPropertyValue('--text-soft').trim();
+  const corBorda=getComputedStyle(document.body).getPropertyValue('--border').trim();
+  const corDourada=getComputedStyle(document.body).getPropertyValue('--accent').trim();
 
   graficoInstancia.setOption({
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(28,31,46,.95)',
-      borderColor: corBorda,
-      textStyle: { color: corTexto },
-      borderRadius: 10,
-      padding: [12, 16],
-      formatter: p => {
-        const ponto = p[0];
-        return `<div style="font-weight:600;margin-bottom:4px">${ponto.axisValue}</div>
-                <div style="color:${corDourada};font-weight:600;font-size:16px">R$ ${moeda(ponto.value)}</div>`;
-      }
+    backgroundColor:'transparent',
+    tooltip:{
+      trigger:'axis',backgroundColor:'rgba(28,31,46,.95)',borderColor:corBorda,textStyle:{color:corTexto},borderRadius:10,padding:[12,16],
+      formatter:p=>{const ponto=p[0];return `<div style="font-weight:600;margin-bottom:4px">${ponto.axisValue}</div><div style="color:${corDourada};font-weight:600;font-size:16px">R$ ${moeda(ponto.value)}</div>`;}
     },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '12%',
-      top: '10%',
-      containLabel: true
+    grid:{left:'3%',right:'4%',bottom:'12%',top:'10%',containLabel:true},
+    xAxis:{
+      type:'category',data:rotulos.length?rotulos:['Sem dados'],
+      axisLabel:{color:corTextoSoft,fontSize:11,rotate:rotulos.length>8?30:0},
+      axisTick:{show:false},axisLine:{lineStyle:{color:corBorda}}
     },
-    xAxis: {
-      type: 'category',
-      data: rotulos.length ? rotulos : ['Sem dados'],
-      axisLabel: {
-        color: corTextoSoft,
-        fontSize: 11,
-        rotate: rotulos.length > 8 ? 30 : 0
-      },
-      axisTick: { show: false },
-      axisLine: { lineStyle: { color: corBorda } }
+    yAxis:{
+      type:'value',scale:true,
+      axisLabel:{color:corTextoSoft,fontSize:11,formatter:v=>`R$ ${moeda(v)}`},
+      splitLine:{lineStyle:{color:corBorda,type:'dashed'}}
     },
-    yAxis: {
-      type: 'value',
-      scale: true,
-      axisLabel: {
-        color: corTextoSoft,
-        fontSize: 11,
-        formatter: v => `R$ ${moeda(v)}`
-      },
-      splitLine: { lineStyle: { color: corBorda, type: 'dashed' } }
-    },
-    series: [{
-      type: 'bar',
-      data: valores.length ? valores : [0],
-      barWidth: '52%',
-      itemStyle: {
-        borderRadius: [8, 8, 0, 0],
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: '#d4a048' },
-          { offset: 1, color: 'rgba(212,160,72,.25)' }
-        ])
-      },
-      label: {
-        show: valores.length > 0 && valores.length <= 12,
-        position: 'top',
-        color: corTexto,
-        fontSize: 11,
-        formatter: p => `R$ ${moeda(p.value)}`
-      }
+    series:[{
+      type:'bar',data:valores.length?valores:[0],barWidth:'52%',
+      itemStyle:{borderRadius:[8,8,0,0],color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#d4a048'},{offset:1,color:'rgba(212,160,72,.25)'}])},
+      label:{show:valores.length>0&&valores.length<=12,position:'top',color:corTexto,fontSize:11,formatter:p=>`R$ ${moeda(p.value)}`}
     }]
-  }, true);
-
-  window.addEventListener('resize', () => graficoInstancia?.resize());
+  },true);
+  window.addEventListener('resize',()=>graficoInstancia?.resize());
 }
 
 // === GRÁFICO POR USUÁRIO (ADM) ===
 function atualizarGraficoPorUsuario(){
   if(!ehAdmin) return;
-  const el = document.getElementById('graficoUsuario');
-  if(!el || typeof echarts === 'undefined') {
-    setTimeout(atualizarGraficoPorUsuario, 250);
-    return;
-  }
-  if(!graficoUsuarioInstancia) graficoUsuarioInstancia = echarts.init(el);
+  const el=document.getElementById('graficoUsuario');
+  if(!el || typeof echarts === 'undefined') {setTimeout(atualizarGraficoPorUsuario,250);return;}
+  if(!graficoUsuarioInstancia) graficoUsuarioInstancia=echarts.init(el);
 
-  const porUser = {};
-  diarias.forEach(d => {
-    const nome = d.nome_usuario || 'Desconhecido';
-    porUser[nome] = (porUser[nome] || 0) + Number(d.valor);
-  });
+  const porUser={};
+  diarias.forEach(d=>{const nome=d.nome_usuario||'Desconhecido';porUser[nome]=(porUser[nome]||0)+Number(d.valor);});
+  const nomes=Object.keys(porUser);
+  const valores=nomes.map(n=>Number(porUser[n].toFixed(2)));
 
-  const nomes = Object.keys(porUser);
-  const valores = nomes.map(n => Number(porUser[n].toFixed(2)));
-
-  const corTexto = getComputedStyle(document.body).getPropertyValue('--text').trim();
-  const corTextoSoft = getComputedStyle(document.body).getPropertyValue('--text-soft').trim();
-  const corBorda = getComputedStyle(document.body).getPropertyValue('--border').trim();
+  const corTexto=getComputedStyle(document.body).getPropertyValue('--text').trim();
+  const corTextoSoft=getComputedStyle(document.body).getPropertyValue('--text-soft').trim();
+  const corBorda=getComputedStyle(document.body).getPropertyValue('--border').trim();
 
   graficoUsuarioInstancia.setOption({
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: 'rgba(28,31,46,.95)',
-      borderColor: corBorda,
-      textStyle: { color: corTexto },
-      borderRadius: 10,
-      padding: [12, 16],
-      formatter: p => `<div style="font-weight:600;margin-bottom:4px">${p.name}</div>
-                      <div style="color:#d4a048;font-weight:600;font-size:16px">R$ ${moeda(p.value)}</div>
-                      <div style="color:${corTextoSoft};font-size:12px;margin-top:4px">${p.percent}% do total</div>`
+    backgroundColor:'transparent',
+    tooltip:{
+      trigger:'item',backgroundColor:'rgba(28,31,46,.95)',borderColor:corBorda,textStyle:{color:corTexto},borderRadius:10,padding:[12,16],
+      formatter:p=>`<div style="font-weight:600;margin-bottom:4px">${p.name}</div><div style="color:#d4a048;font-weight:600;font-size:16px">R$ ${moeda(p.value)}</div><div style="color:${corTextoSoft};font-size:12px;margin-top:4px">${p.percent}% do total</div>`
     },
-    legend: {
-      orient: 'horizontal',
-      bottom: 0,
-      textStyle: { color: corTextoSoft, fontSize: 11 }
-    },
-    series: [{
-      type: 'pie',
-      radius: ['40%', '70%'],
-      center: ['50%', '42%'],
-      label: {
-        show: true,
-        color: corTexto,
-        fontSize: 11,
-        formatter: p => `${p.name}: R$ ${moeda(p.value)}`
-      },
-      labelLine: { lineStyle: { color: corBorda } },
-      data: nomes.map((n, i) => ({ value: valores[i], name: n })),
-      color: ['#d4a048','#58a590','#6393d9','#d9638c','#9363d9','#63d9c9','#d9c563','#8cd963']
+    legend:{orient:'horizontal',bottom:0,textStyle:{color:corTextoSoft,fontSize:11}},
+    series:[{
+      type:'pie',radius:['40%','70%'],center:['50%','42%'],
+      label:{show:true,color:corTexto,fontSize:11,formatter:p=>`${p.name}: R$ ${moeda(p.value)}`},
+      labelLine:{lineStyle:{color:corBorda}},
+      data:nomes.map((n,i)=>({value:valores[i],name:n})),
+      color:['#d4a048','#58a590','#6393d9','#d9638c','#9363d9','#63d9c9','#d9c563','#8cd963']
     }]
-  }, true);
-
-  window.addEventListener('resize', () => graficoUsuarioInstancia?.resize());
+  },true);
 }
 
 // === ATUALIZAÇÃO GERAL ===
-function atualizarTudo(){
-  preencherFiltros();
-  atualizarMetricas();
-  atualizarTabela();
+function atualizarTudoDiarias(){
+  preencherFiltrosDiarias();
+  atualizarMetricasDiarias();
+  atualizarTabelaDiarias();
   atualizarGraficoPrincipal();
   atualizarGraficoPorUsuario();
 }
+function atualizarTudoDescontos(){
+  preencherFiltrosDescontos();
+  atualizarMetricasDescontos();
+  atualizarTabelaDescontos();
+}
 
 // === EXPORTAR CSV ===
-function exportarDados(){
-  const lista = diariasFiltradas();
-  if(lista.length === 0){
-    toast('Nenhum dado para exportar','aviso');
-    return;
-  }
-  const csv = '\ufeff' + [
+function exportarDiarias(){
+  const lista=diariasFiltradas();
+  if(lista.length===0){toast('Nenhum dado para exportar','aviso');return;}
+  const csv='\ufeff'+[
     ['Data','Descrição','Usuário','Valor (R$)'].join(';'),
-    ...lista.sort((a,b) => a.data.localeCompare(b.data)).map(d => [
-      dataBr(d.data),
-      `"${(d.descricao||'').replace(/"/g,'""')}"`,
-      `"${(d.nome_usuario||'').replace(/"/g,'""')}"`,
-      moeda(d.valor).replace('.','').replace(',','.')
+    ...lista.sort((a,b)=>a.data.localeCompare(b.data)).map(d=>[
+      dataBr(d.data),`"${(d.descricao||'').replace(/"/g,'""')}"`,`"${(d.nome_usuario||'').replace(/"/g,'""')}"`,moeda(d.valor).replace('.','').replace(',','.')
     ].join(';'))
   ].join('\n');
-
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `Diarias_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`Diarias_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  URL.revokeObjectURL(url);
+  toast(`✅ ${lista.length} registros exportados!`);
+}
+function exportarDescontos(){
+  const lista=descontosFiltrados();
+  if(lista.length===0){toast('Nenhum dado para exportar','aviso');return;}
+  const csv='\ufeff'+[
+    ['Data','O que foi descontado','Usuário','Valor (R$)'].join(';'),
+    ...lista.sort((a,b)=>a.data.localeCompare(b.data)).map(d=>[
+      dataBr(d.data),`"${(d.descricao||'').replace(/"/g,'""')}"`,`"${(d.nome_usuario||'').replace(/"/g,'""')}"`,moeda(d.valor).replace('.','').replace(',','.')
+    ].join(';'))
+  ].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`Descontos_${new Date().toISOString().slice(0,10)}.csv`;a.click();
   URL.revokeObjectURL(url);
   toast(`✅ ${lista.length} registros exportados!`);
 }
 
 // === INICIALIZAÇÃO ===
-window.onload = async function(){
+window.onload=async function(){
   carregarTema();
-  const {data:{session}} = await app.auth.getSession();
+  const {data:{session}}=await app.auth.getSession();
   if(session?.user){
-    usuarioAtual = session.user;
-    ehAdmin = (usuarioAtual.email || '').toLowerCase() === ADM_EMAIL.toLowerCase();
+    usuarioAtual=session.user;
+    ehAdmin=(usuarioAtual.email||'').toLowerCase()===ADM_EMAIL.toLowerCase();
     entrarApp(usuarioAtual);
-  } else {
-    document.getElementById('telaLogin').style.display = 'flex';
+  }else{
+    document.getElementById('telaLogin').style.display='flex';
   }
 };
 
-// Fechar modal ao clicar fora
-document.getElementById('modal').addEventListener('click', e => {
-  if(e.target.id === 'modal') fecharModal();
-});
+// Fechar modais ao clicar fora
+document.getElementById('modalDiaria').addEventListener('click',e=>{if(e.target.id==='modalDiaria')fecharModalDiaria();});
+document.getElementById('modalDesconto').addEventListener('click',e=>{if(e.target.id==='modalDesconto')fecharModalDesconto();});
 </script>
 </body>
 </html>
