@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CashLog</title>
     <link rel="icon" href="data:,">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Supabase opcional: se não carregar, o app usa modo convidado -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* ---------- ESTILOS FUTURISTAS (sem dependências externas) ---------- */
         :root{
             --bg:#0a0e17; --bg-soft:#111827; --card:#1c1f2e; --card-hover:#222638;
             --text:#e2e8f0; --text-soft:#94a3b8; --accent:#00d4ff; --accent-soft:rgba(0,212,255,.12);
@@ -47,33 +45,8 @@
     </style>
 </head>
 <body>
-    <!-- TELA DE LOGIN -->
-    <div class="container" id="telaLogin">
-        <div class="card" style="max-width:400px;margin:auto;margin-top:80px;">
-            <h2 style="text-align:center;margin-bottom:20px;">CashLog</h2>
-            <p style="text-align:center;color:var(--text-soft);">Onde cada centavo conta.</p>
-            <form id="formLogin">
-                <input class="input" type="email" id="emailLogin" placeholder="E-mail" required>
-                <input class="input" type="password" id="senhaLogin" placeholder="Senha" required>
-                <button class="btn btn-primary" style="width:100%;" type="submit">Entrar</button>
-            </form>
-            <div style="text-align:center;margin:12px 0;">
-                <a href="#" id="linkCadastro">Criar conta</a> |
-                <a href="#" id="linkConvidado">Entrar como convidado</a>
-            </div>
-            <form id="formCadastro" class="hidden">
-                <input class="input" type="text" id="nomeCad" placeholder="Nome completo" required>
-                <input class="input" type="email" id="emailCad" placeholder="E-mail" required>
-                <input class="input" type="password" id="senhaCad" placeholder="Senha (mín. 6)" required>
-                <button class="btn btn-primary" style="width:100%;" type="submit">Criar conta</button>
-                <div style="text-align:center;margin-top:12px;"><a href="#" id="linkLogin">Já tem conta? Entrar</a></div>
-            </form>
-            <div id="mensagemLogin" style="margin-top:12px;text-align:center;"></div>
-        </div>
-    </div>
-
-    <!-- TELA PRINCIPAL -->
-    <div class="container hidden" id="telaApp">
+    <div class="container" id="telaApp">
+        <!-- Cabeçalho -->
         <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;">
             <div>
                 <h2 style="margin:0;">CashLog</h2>
@@ -81,7 +54,7 @@
             </div>
             <div>
                 <span id="nomeUsuario" style="background:var(--accent-soft);color:var(--accent);padding:6px 12px;border-radius:20px;font-size:14px;margin-right:10px;">Convidado</span>
-                <button class="btn btn-secondary" id="btnSair">Sair</button>
+                <button class="btn btn-secondary" id="btnLimparDados">Limpar dados</button>
             </div>
         </div>
 
@@ -156,19 +129,12 @@
 
     <script>
         (function() {
-            // Configuração Supabase (opcional)
-            const SUPABASE_URL = "https://ompukaiwkovmjzlfadpp.supabase.co";
-            const SUPABASE_KEY = "sb_publishable_l7bWwOwGNWaTQuENabb3Fw_YZMaAv_Y";
-            const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
-
-            let supabase = null;
-            let usandoBanco = false;
-            let usuarioAtual = null;
-            let ehAdmin = false;
-            let abaAtiva = 'diarias';
+            // ---------- ESTADO ----------
             let diarias = [];
             let descontos = [];
+            let abaAtiva = 'diarias';
 
+            // ---------- UTILITÁRIOS ----------
             const $ = (id) => document.getElementById(id);
 
             function toast(msg) {
@@ -179,16 +145,20 @@
                 setTimeout(() => t.remove(), 3000);
             }
 
-            function moeda(v) { return Number(v||0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); }
-            function moedaParaNumero(v) { return Number(String(v||'').replace(/\D/g,'')) / 100; }
-            function hoje() { return new Date().toISOString().split('T')[0]; }
-            function dataBr(d) { return new Date(d+'T00:00:00').toLocaleDateString('pt-BR'); }
+            function moeda(v) {
+                return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            }
 
-            function salvarLocal() {
-                if (!usandoBanco) {
-                    localStorage.setItem('cashlog_diarias', JSON.stringify(diarias));
-                    localStorage.setItem('cashlog_descontos', JSON.stringify(descontos));
-                }
+            function moedaParaNumero(v) {
+                return Number(String(v || '').replace(/\D/g, '')) / 100;
+            }
+
+            function hoje() {
+                return new Date().toISOString().split('T')[0];
+            }
+
+            function dataBr(d) {
+                return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
             }
 
             function carregarLocal() {
@@ -196,6 +166,11 @@
                 const e = localStorage.getItem('cashlog_descontos');
                 diarias = d ? JSON.parse(d) : [];
                 descontos = e ? JSON.parse(e) : [];
+            }
+
+            function salvarLocal() {
+                localStorage.setItem('cashlog_diarias', JSON.stringify(diarias));
+                localStorage.setItem('cashlog_descontos', JSON.stringify(descontos));
             }
 
             function selecionarAba(nome) {
@@ -219,6 +194,7 @@
                         tbodyD.innerHTML += `<tr><td>${dataBr(d.data)}</td><td>${d.descricao || '—'}</td><td>R$ ${moeda(d.valor)}</td><td><button class="btn btn-secondary" onclick="App.excluirDiaria('${d.id}')">Excluir</button></td></tr>`;
                     });
                 }
+
                 // Descontos
                 const tbodyE = $('tabelaDescontos');
                 const vazioE = $('vazioDescontos');
@@ -233,6 +209,7 @@
                 }
             }
 
+            // ---------- MODAIS ----------
             function abrirModalDiaria() {
                 $('modalDiaria').classList.remove('hidden');
                 $('valorDiaria').value = '';
@@ -251,7 +228,8 @@
             }
             function fecharModalDesconto() { $('modalDesconto').classList.add('hidden'); }
 
-            async function salvarDiaria(e) {
+            // ---------- SALVAR ----------
+            function salvarDiaria(e) {
                 e.preventDefault();
                 const valor = moedaParaNumero($('valorDiaria').value);
                 const data = $('dataDiaria').value;
@@ -260,21 +238,14 @@
                 if (valor <= 0) { toast('Valor deve ser maior que zero'); return; }
                 if (data > hoje()) { toast('Data não pode ser futura'); return; }
 
-                const nova = { id: Date.now().toString(), valor, data, descricao };
-                if (usandoBanco && supabase && usuarioAtual) {
-                    const { error } = await supabase.from('diarias').insert({ ...nova, usuario_id: usuarioAtual.id, usuario_email: usuarioAtual.email });
-                    if (error) { toast('Erro ao salvar: ' + error.message); return; }
-                } else {
-                    diarias.push(nova);
-                    salvarLocal();
-                }
+                diarias.push({ id: Date.now().toString(), valor, data, descricao });
+                salvarLocal();
                 toast('Diária cadastrada!');
                 fecharModalDiaria();
-                if (!usandoBanco) atualizarTabelas();
-                else await carregarDados();
+                atualizarTabelas();
             }
 
-            async function salvarDesconto(e) {
+            function salvarDesconto(e) {
                 e.preventDefault();
                 const descricao = $('descricaoDesconto').value.trim();
                 const valor = moedaParaNumero($('valorDesconto').value);
@@ -284,162 +255,52 @@
                 if (valor <= 0) { toast('Valor deve ser maior que zero'); return; }
                 if (data > hoje()) { toast('Data não pode ser futura'); return; }
 
-                const novo = { id: Date.now().toString(), descricao, valor, data };
-                if (usandoBanco && supabase && usuarioAtual) {
-                    const { error } = await supabase.from('descontos').insert({ ...novo, usuario_id: usuarioAtual.id, usuario_email: usuarioAtual.email });
-                    if (error) { toast('Erro ao salvar: ' + error.message); return; }
-                } else {
-                    descontos.push(novo);
-                    salvarLocal();
-                }
+                descontos.push({ id: Date.now().toString(), descricao, valor, data });
+                salvarLocal();
                 toast('Desconto cadastrado!');
                 fecharModalDesconto();
-                if (!usandoBanco) atualizarTabelas();
-                else await carregarDados();
+                atualizarTabelas();
             }
 
-            async function excluirDiaria(id) {
+            // ---------- EXCLUIR ----------
+            function excluirDiaria(id) {
                 if (!confirm('Excluir diária?')) return;
-                if (usandoBanco && supabase && usuarioAtual) {
-                    const { error } = await supabase.from('diarias').delete().eq('id', id);
-                    if (error) { toast('Erro ao excluir: ' + error.message); return; }
-                    await carregarDados();
-                } else {
-                    diarias = diarias.filter(d => d.id !== id);
-                    salvarLocal();
-                    atualizarTabelas();
-                }
+                diarias = diarias.filter(d => d.id !== id);
+                salvarLocal();
+                atualizarTabelas();
                 toast('Diária excluída.');
             }
 
-            async function excluirDesconto(id) {
+            function excluirDesconto(id) {
                 if (!confirm('Excluir desconto?')) return;
-                if (usandoBanco && supabase && usuarioAtual) {
-                    const { error } = await supabase.from('descontos').delete().eq('id', id);
-                    if (error) { toast('Erro ao excluir: ' + error.message); return; }
-                    await carregarDados();
-                } else {
-                    descontos = descontos.filter(d => d.id !== id);
-                    salvarLocal();
-                    atualizarTabelas();
-                }
+                descontos = descontos.filter(d => d.id !== id);
+                salvarLocal();
+                atualizarTabelas();
                 toast('Desconto excluído.');
             }
 
-            async function carregarDados() {
-                if (!usandoBanco || !supabase || !usuarioAtual) return;
-                try {
-                    const { data, error } = await supabase.from('diarias').select('*').eq('usuario_id', usuarioAtual.id).order('data', { ascending: false });
-                    if (error) throw error;
-                    diarias = data || [];
-                    const { data: dataD, error: errorD } = await supabase.from('descontos').select('*').eq('usuario_id', usuarioAtual.id).order('data', { ascending: false });
-                    if (errorD) throw errorD;
-                    descontos = dataD || [];
-                    atualizarTabelas();
-                } catch (e) {
-                    console.warn('Erro ao carregar dados do banco, usando modo local.');
-                    usandoBanco = false;
-                    carregarLocal();
-                    atualizarTabelas();
-                }
-            }
-
-            function mostrarLogin() {
-                $('telaLogin').classList.remove('hidden');
-                $('telaApp').classList.add('hidden');
-            }
-
-            function mostrarApp() {
-                $('telaLogin').classList.add('hidden');
-                $('telaApp').classList.remove('hidden');
-            }
-
-            // Autenticação
-            $('formLogin').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                if (!supabase) { toast('Supabase não disponível. Use modo convidado.'); return; }
-                const email = $('emailLogin').value.trim();
-                const senha = $('senhaLogin').value;
-                try {
-                    const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
-                    if (error) throw error;
-                    toast('Login realizado!');
-                } catch (err) {
-                    $('mensagemLogin').innerHTML = '<span style="color:var(--erro)">' + err.message + '</span>';
-                }
-            });
-
-            $('formCadastro').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                if (!supabase) { toast('Supabase não disponível. Use modo convidado.'); return; }
-                const nome = $('nomeCad').value.trim();
-                const email = $('emailCad').value.trim();
-                const senha = $('senhaCad').value;
-                try {
-                    const { error } = await supabase.auth.signUp({ email, password: senha, options: { data: { nome } } });
-                    if (error) throw error;
-                    toast('Conta criada! Verifique seu e-mail.');
-                    $('formCadastro').classList.add('hidden');
-                    $('formLogin').classList.remove('hidden');
-                } catch (err) {
-                    $('mensagemLogin').innerHTML = '<span style="color:var(--erro)">' + err.message + '</span>';
-                }
-            });
-
-            $('linkCadastro').addEventListener('click', (e) => {
-                e.preventDefault();
-                $('formLogin').classList.add('hidden');
-                $('formCadastro').classList.remove('hidden');
-            });
-            $('linkLogin').addEventListener('click', (e) => {
-                e.preventDefault();
-                $('formCadastro').classList.add('hidden');
-                $('formLogin').classList.remove('hidden');
-            });
-
-            // Entrar como convidado
-            $('linkConvidado').addEventListener('click', (e) => {
-                e.preventDefault();
-                usuarioAtual = null;
-                usandoBanco = false;
-                carregarLocal();
-                mostrarApp();
-                $('nomeUsuario').textContent = 'Convidado';
+            // ---------- LIMPAR DADOS ----------
+            function limparDados() {
+                if (!confirm('Apagar todos os dados?')) return;
+                diarias = [];
+                descontos = [];
+                salvarLocal();
                 atualizarTabelas();
-            });
-
-            $('btnSair').addEventListener('click', async () => {
-                if (supabase && usuarioAtual) await supabase.auth.signOut();
-                usuarioAtual = null;
-                usandoBanco = false;
-                mostrarLogin();
-            });
-
-            // Inicialização
-            async function inicializar() {
-                try {
-                    if (window.supabase) {
-                        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                        const { data: { session } } = await supabase.auth.getSession();
-                        if (session?.user) {
-                            usuarioAtual = session.user;
-                            usandoBanco = true;
-                            ehAdmin = (usuarioAtual.email || '').toLowerCase() === ADM_EMAIL.toLowerCase();
-                            mostrarApp();
-                            $('nomeUsuario').textContent = ehAdmin ? '👑 ' + (usuarioAtual.user_metadata?.nome || usuarioAtual.email) : (usuarioAtual.user_metadata?.nome || usuarioAtual.email);
-                            await carregarDados();
-                            return;
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Supabase indisponível, iniciando como convidado.');
-                    supabase = null;
-                }
-                // Sem sessão ou sem Supabase
-                mostrarLogin();
+                toast('Dados removidos.');
             }
 
-            // Expor App
+            // ---------- INICIALIZAÇÃO ----------
+            function inicializar() {
+                carregarLocal();
+                atualizarTabelas();
+            }
+
+            // Eventos
+            $('formDiaria').addEventListener('submit', salvarDiaria);
+            $('formDesconto').addEventListener('submit', salvarDesconto);
+            $('btnLimparDados').addEventListener('click', limparDados);
+
+            // Expor API
             window.App = {
                 selecionarAba,
                 abrirModalDiaria,
@@ -452,11 +313,6 @@
                 excluirDesconto
             };
 
-            // Eventos dos formulários
-            $('formDiaria').addEventListener('submit', salvarDiaria);
-            $('formDesconto').addEventListener('submit', salvarDesconto);
-
-            // Iniciar
             inicializar();
         })();
     </script>
