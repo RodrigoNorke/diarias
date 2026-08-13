@@ -1,8 +1,8 @@
 <script>
 // ============================================================================
-// CASHLOG – APLICAÇÃO REFATORADA
+// CASHLOG – APLICAÇÃO REFATORADA (CORRIGIDA)
 // ============================================================================
-const App = (() => {
+(function() {
   // Configuração
   const SUPABASE_URL = "https://xptujmysydmczmhpoebn.supabase.co";
   const SUPABASE_KEY = "sb_publishable_jPJMaONcjw2IqqKBiRkt9A_P33ZYNY_";
@@ -202,10 +202,10 @@ const App = (() => {
         document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`;
         return;
       }
-      // Se não houver erro, o onAuthStateChange será acionado e entrará no app
+      // O onAuthStateChange cuidará da entrada
     } catch (erro) {
       console.error('Erro no login:', erro);
-      document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--erro)">Erro ao conectar com o servidor. Verifique sua conexão.</span>`;
+      document.getElementById('mensagemLogin').innerHTML = '<span style="color:var(--erro)">Erro ao conectar com o servidor. Verifique sua conexão.</span>';
     }
   }
 
@@ -400,7 +400,7 @@ const App = (() => {
   // ========================
   function criarBotaoPagina(texto, novaPagina, desabilitado, ativo) {
     const classe = `btn-secondary btn-pequeno ${ativo ? 'ativo' : ''}`;
-    const onclick = desabilitado ? '' : `App.paginar(${novaPagina})`;
+    const onclick = desabilitado ? '' : `paginar(${novaPagina})`;
     return `<button class="${classe}" ${desabilitado ? 'disabled' : ''} onclick="${onclick}">${texto}</button>`;
   }
 
@@ -472,8 +472,8 @@ const App = (() => {
           <td style="padding:10px 8px;">${d.nome_usuario || '—'}</td>
           <td style="padding:10px 8px;text-align:right;font-size:16px;font-weight:600;color:var(--accent);">R$ ${moeda(d.valor)}</td>
           <td style="padding:10px 8px;text-align:right;">
-            <button onclick='App.abrirModalDiaria(${JSON.stringify(d).replace(/'/g, "&#39;")})' class="btn-icone editar-btn" title="Editar">✏️</button>
-            <button onclick="App.excluirDiaria('${d.id}','${d.usuario_id}')" class="btn-icone excluir-btn" title="Excluir">🗑️</button>
+            <button onclick='abrirModalDiaria(${JSON.stringify(d).replace(/'/g, "&#39;")})' class="btn-icone editar-btn" title="Editar">✏️</button>
+            <button onclick="excluirDiaria('${d.id}','${d.usuario_id}')" class="btn-icone excluir-btn" title="Excluir">🗑️</button>
           </td>
         </tr>`;
       });
@@ -516,8 +516,8 @@ const App = (() => {
           <td style="padding:10px 8px;">${d.nome_usuario || '—'}</td>
           <td style="padding:10px 8px;text-align:right;font-size:16px;font-weight:600;color:var(--accent3);">R$ ${moeda(d.valor)}</td>
           <td style="padding:10px 8px;text-align:right;">
-            <button onclick='App.abrirModalDesconto(${JSON.stringify(d).replace(/'/g, "&#39;")})' class="btn-icone editar-btn" title="Editar">✏️</button>
-            <button onclick="App.excluirDesconto('${d.id}','${d.usuario_id}')" class="btn-icone excluir-btn" title="Excluir">🗑️</button>
+            <button onclick='abrirModalDesconto(${JSON.stringify(d).replace(/'/g, "&#39;")})' class="btn-icone editar-btn" title="Editar">✏️</button>
+            <button onclick="excluirDesconto('${d.id}','${d.usuario_id}')" class="btn-icone excluir-btn" title="Excluir">🗑️</button>
           </td>
         </tr>`;
       });
@@ -850,7 +850,7 @@ const App = (() => {
     ultimoDesfazer = { tipo: 'diaria', dado: diaria };
     diarias = diarias.filter(d => d.id !== id);
     atualizarTudoDiarias();
-    toast(`Diária excluída. <button onclick="App.desfazerExclusao()" style="background:var(--aviso);color:#000;border:none;padding:2px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">Desfazer</button>`, 'aviso');
+    toast(`Diária excluída. <button onclick="desfazerExclusao()" style="background:var(--aviso);color:#000;border:none;padding:2px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">Desfazer</button>`, 'aviso');
 
     desfazerTimer = setTimeout(async () => {
       try {
@@ -874,7 +874,7 @@ const App = (() => {
     ultimoDesfazer = { tipo: 'desconto', dado: desconto };
     descontos = descontos.filter(d => d.id !== id);
     atualizarTudoDescontos();
-    toast(`Desconto excluído. <button onclick="App.desfazerExclusao()" style="background:var(--aviso);color:#000;border:none;padding:2px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">Desfazer</button>`, 'aviso');
+    toast(`Desconto excluído. <button onclick="desfazerExclusao()" style="background:var(--aviso);color:#000;border:none;padding:2px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">Desfazer</button>`, 'aviso');
 
     desfazerTimer = setTimeout(async () => {
       try {
@@ -954,10 +954,44 @@ const App = (() => {
   }
 
   // ========================
+  // EXPOSIÇÃO GLOBAL DAS FUNÇÕES
+  // ========================
+  window.App = {
+    selecionarAba,
+    alternarTema,
+    mostrarCadastro,
+    mostrarLogin,
+    fazerLogin,
+    fazerCadastro,
+    sairConta,
+    formatarValor,
+    abrirModalDiaria,
+    fecharModalDiaria,
+    salvarDiaria,
+    abrirModalDesconto,
+    fecharModalDesconto,
+    salvarDesconto,
+    excluirDiaria,
+    excluirDesconto,
+    desfazerExclusao,
+    exportarDiarias,
+    exportarDescontos,
+    limparFiltrosDiarias,
+    limparFiltrosDescontos,
+    debounceAtualizarDiarias,
+    debounceAtualizarDescontos,
+    filtrarDiarias,
+    filtrarDescontos,
+    paginar
+  };
+
+  // ========================
   // INICIALIZAÇÃO
   // ========================
-  async function inicializar() {
+  async function iniciar() {
     try {
+      console.log('Iniciando CashLog...');
+
       // Verifica se a biblioteca do Supabase foi carregada
       if (!window.supabase) {
         throw new Error('Biblioteca Supabase não carregada. Verifique sua conexão com a internet.');
@@ -1011,6 +1045,8 @@ const App = (() => {
       document.getElementById('modalDesconto').addEventListener('click', (e) => {
         if (e.target.id === 'modalDesconto') fecharModalDesconto();
       });
+
+      console.log('CashLog iniciado com sucesso!');
     } catch (erro) {
       console.error('Erro na inicialização:', erro);
       const msg = document.getElementById('mensagemLogin');
@@ -1021,38 +1057,7 @@ const App = (() => {
     }
   }
 
-  // Expor API pública
-  return {
-    iniciar,
-    selecionarAba,
-    alternarTema,
-    mostrarCadastro,
-    mostrarLogin,
-    fazerLogin,
-    fazerCadastro,
-    sairConta,
-    formatarValor,
-    abrirModalDiaria,
-    fecharModalDiaria,
-    salvarDiaria,
-    abrirModalDesconto,
-    fecharModalDesconto,
-    salvarDesconto,
-    excluirDiaria,
-    excluirDesconto,
-    desfazerExclusao,
-    exportarDiarias,
-    exportarDescontos,
-    limparFiltrosDiarias,
-    limparFiltrosDescontos,
-    debounceAtualizarDiarias,
-    debounceAtualizarDescontos,
-    filtrarDiarias,
-    filtrarDescontos,
-    paginar
-  };
+  // Inicia imediatamente (o script está no final do body)
+  iniciar();
 })();
-
-// Chama a inicialização imediatamente (o script está no final do body)
-App.iniciar();
 </script>
