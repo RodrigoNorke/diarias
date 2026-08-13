@@ -765,12 +765,12 @@ function atualizarGraficosDiarias() {
 
   const opt = {
     backgroundColor: 'transparent',
-    textStyle: { color: 'var(--text-soft)' },
+    textStyle: { color: '#94a3b8' },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: 'var(--card)',
-      borderColor: 'var(--border)',
-      textStyle: { color: 'var(--text)' },
+      backgroundColor: 'rgba(20, 28, 45, 0.85)',
+      borderColor: 'rgba(148, 163, 184, 0.15)',
+      textStyle: { color: '#e2e8f0' },
       formatter: p => {
         const d = p[0];
         return `${d.name}<br/>R$ ${moeda(d.value)}`;
@@ -780,14 +780,14 @@ function atualizarGraficosDiarias() {
     xAxis: {
       type: 'category',
       data: labelsNomes,
-      axisLine: { lineStyle: { color: 'var(--border)' } },
-      axisLabel: { color: 'var(--text-soft)' }
+      axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.15)' } },
+      axisLabel: { color: '#94a3b8' }
     },
     yAxis: {
       type: 'value',
-      axisLine: { lineStyle: { color: 'var(--border)' } },
-      splitLine: { lineStyle: { color: 'var(--border)', opacity: 0.4 } },
-      axisLabel: { color: 'var(--text-soft)', formatter: v => `R$ ${moeda(v)}` }
+      axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.15)' } },
+      splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.15)', opacity: 0.4 } },
+      axisLabel: { color: '#94a3b8', formatter: v => `R$ ${moeda(v)}` }
     },
     series: [{
       name: 'Diárias',
@@ -795,23 +795,23 @@ function atualizarGraficosDiarias() {
       data: valores,
       itemStyle: {
         borderRadius: [6, 6, 0, 0],
-        color: { 
-          type: 'linear', 
-          x: 0, y: 0, x2: 0, y2: 1, 
+        color: {
+          type: 'linear',
+          x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [
-            { offset: 0, color: '#00d4ff' },   // cor exata do --accent
-            { offset: 1, color: '#a855f7' }    // cor exata do --accent2
+            { offset: 0, color: '#00d4ff' },
+            { offset: 1, color: '#a855f7' }
           ]
         }
       },
-  label: {
-    show: true,
-    position: 'top',
-    color: '#e2e8f0',  // cor do texto (--text)
-    fontSize: 11,
-    formatter: p => `R$ ${moeda(p.value)}`
-  }
-}]
+      label: {
+        show: true,
+        position: 'top',
+        color: '#e2e8f0',
+        fontSize: 11,
+        formatter: p => `R$ ${moeda(p.value)}`
+      }
+    }]
   };
 
   if (!graficoInstancia) graficoInstancia = echarts.init(document.getElementById('grafico'));
@@ -824,14 +824,15 @@ function atualizarGraficosDiarias() {
     const nomes = Object.keys(porUsuario);
     const vals = nomes.map(n => porUsuario[n]);
     const opt2 = {
+      backgroundColor: 'transparent',
       tooltip: {
         trigger: 'item',
-        backgroundColor: 'var(--card)',
-        borderColor: 'var(--border)',
-        textStyle: { color: 'var(--text)' },
+        backgroundColor: 'rgba(20, 28, 45, 0.85)',
+        borderColor: 'rgba(148, 163, 184, 0.15)',
+        textStyle: { color: '#e2e8f0' },
         formatter: p => `${p.name}<br/>R$ ${moeda(p.value)} (${p.percent}%)`
       },
-      legend: { bottom: 0, textStyle: { color: 'var(--text-soft)' } },
+      legend: { bottom: 0, textStyle: { color: '#94a3b8' } },
       series: [{
         type: 'pie',
         radius: ['40%', '70%'],
