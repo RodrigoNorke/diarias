@@ -603,24 +603,26 @@
             async function carregarTudoDoBanco(){ await Promise.all([carregarDiarias(),carregarDescontos()]); }
 
             async function carregarDiarias(){
-                document.getElementById('carregandoDiarias').style.display='block';
-                try{
-                    let query=supabase.from('diarias').select('*');
-                    if(!ehAdmin) query=query.eq('usuario_id',usuarioAtual.id);
-                    query=query.order('data',{ascending:false});
-                    const {data,error}=await query;
-                    if(error) throw error;
-                    diarias=data||[];
-                    setStatus('🟢 Online','rgba(74,222,128,.15)');
-                    atualizarTudoDiarias();
-                }catch(erro){
-                    setStatus('🔴 Erro','rgba(248,113,113,.15)');
-                    toast(mensagemAmigavel(erro),'erro');
-                    console.error('Erro ao carregar diárias:',erro);
-                }finally{
-                    document.getElementById('carregandoDiarias').style.display='none';
-                }
+            document.getElementById('carregandoDiarias').style.display='block';
+            try{
+                console.log('Buscando diárias...');
+                let query=supabase.from('diarias').select('*');
+                if(!ehAdmin) query=query.eq('usuario_id',usuarioAtual.id);
+                query=query.order('data',{ascending:false});
+                const {data,error}=await query;
+                console.log('Diárias recebidas:', data, 'Erro:', error);
+                if(error) throw error;
+                diarias=data||[];
+                setStatus('🟢 Online','rgba(74,222,128,.15)');
+                atualizarTudoDiarias();
+            }catch(erro){
+                console.error('Erro ao carregar diárias:',erro);
+                setStatus('🔴 Erro','rgba(248,113,113,.15)');
+                toast(mensagemAmigavel(erro),'erro');
+            }finally{
+                document.getElementById('carregandoDiarias').style.display='none';
             }
+        }
 
             async function carregarDescontos(){
                 document.getElementById('carregandoDescontos').style.display='block';
