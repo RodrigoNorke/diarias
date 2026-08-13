@@ -1088,5 +1088,28 @@ app.auth.onAuthStateChange(async (event,session)=>{
   }
 });
 </script>
+  <script>
+// FORÇA CARREGAMENTO COMPLETO APÓS ENTRAR
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(() => {
+    // Garante que o painel de diárias está visível
+    const painel = document.getElementById('painelDiarias');
+    if(painel) painel.classList.add('ativa');
+    
+    // Força atualização dos dados
+    if(typeof carregarTudoDoBanco === 'function') {
+      carregarTudoDoBanco();
+    }
+    
+    // Verifica se os elementos existem e mostra mensagem de vazio
+    setTimeout(() => {
+      const vazio = document.getElementById('vazioDiarias');
+      if(vazio && diarias.length === 0) {
+        vazio.style.display = 'block';
+      }
+    }, 500);
+  }, 300);
+});
+</script>
 </body>
 </html>
