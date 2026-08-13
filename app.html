@@ -1241,26 +1241,109 @@ document.addEventListener('keydown', e => {
 });
 
 window.onload = async () => {
-  carregarTema();
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  console.log("🚀 App iniciando...");
+  
+  try { carregarTema(); } catch(e) { console.log("Tema:", e); }
+  
+  try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log("✅ Supabase conectado");
+  } catch(e) {
+    console.error("❌ Erro Supabase:", e);
+    return;
+  }
 
   supabase.auth.onAuthStateChange(async (evento, sessao) => {
+    console.log("🔐 Estado mudou:", evento, sessao?.user?.email);
     if (sessao?.user) {
       usuarioAtual = sessao.user;
       ehAdmin = usuarioAtual.email === ADM_EMAIL;
       document.getElementById('nomeUsuario').textContent = usuarioAtual.user_metadata?.nome || usuarioAtual.email.split('@')[0];
       document.getElementById('telaLogin').style.display = 'none';
       document.getElementById('telaApp').style.display = 'block';
-      verificarConexao();
-      await carregarDados();
+      
+      // FORÇA CARREGAMENTO APÓS LOGIN
+      await carregarDadosFORCADO();
     } else {
       usuarioAtual = null;
       ehAdmin = false;
       document.getElementById('telaLogin').style.display = 'flex';
       document.getElementById('telaApp').style.display = 'none';
-      verificarConexao();
     }
   });
+
+  // Verificar sessão
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) {
+    usuarioAtual = session.user;
+    ehAdmin = usuarioAtual.email === ADM_EMAIL;
+    document.getElementById('nomeUsuario').textContent = usuarioAtual.user_metadata?.nome || usuarioAtual.email.split('@')[0];
+    document.getElementById('telaLogin').style.display = 'none';
+    document.getElementById('telaApp').style.display = 'block';
+    
+    // FORÇA CARREGAMENTO
+    await carregarDadosFORCADO();
+  }
+};
+
+// FUNÇÃO FORÇADA SEM DEPENDÊNCIAS
+async function carregarDadosFORCADO() {
+  console.log("📥 Carregando dados FORÇADAMENTE...");
+  
+  try {
+    let query = supabase.from('diarias').select('*').order('data', { ascending: false });
+    if (!ehAdmin) query = query.eq('usuario_id', usuarioAtual.id);
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error("❌ Erro do banco:", error);
+      return;
+    }
+
+    diarias = data || [];
+    console.log("✅ DIÁRIAS RECEBIDAS:", diarias);
+
+    // DESENHA TABELA DIRETO
+    const corpo = document.getElementById('tabelaDiarias');
+    if (!corpo) { console.log("❌ Tabela não encontrada no HTML!"); return; }
+    
+    corpo.innerHTML = '';
+
+    if (diarias.length === 0) {
+      corpo.innerHTML = `<tr><td colspan="5" style="padding:30px; text-align:center; color:#94a3b8;">Nenhuma diária cadastrada ainda.</td></tr>`;
+      return;
+    }
+
+    let total = 0;
+    diarias.forEach(d => {
+      total += Number(d.valor);
+      const linha = document.createElement('tr');
+      linha.style.borderBottom = '1px solid rgba(148,163,184,0.15)';
+      linha.innerHTML = `
+        <td style="padding:14px 10px">${d.data}</td>
+        <td style="padding:14px 10px">${d.descricao || '—'}</td>
+        <td style="padding:14px 10px">${d.nome_usuario || '—'}</td>
+        <td style="padding:14px 10px; text-align:right; color:#00d4ff; font-weight:600">R$ ${Number(d.valor).toFixed(2).replace('.', ',')}</td>
+        <td style="padding:14px 10px; text-align:right">
+          <button onclick="editarDiaria('${d.id}')" style="border:none; background:transparent; font-size:18px; cursor:pointer;">✏️</button>
+          <button onclick="excluirDiaria('${d.id}')" style="border:none; background:transparent; font-size:18px; cursor:pointer;">🗑️</button>
+        </td>
+      `;
+      corpo.appendChild(linha);
+    });
+
+    // Atualiza métricas
+    const totalEl = document.getElementById('totalDiarias');
+    const qtdEl = document.getElementById('qtdDiarias');
+    if (totalEl) totalEl.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+    if (qtdEl) qtdEl.textContent = `${diarias.length} registro${diarias.length !== 1 ? 's' : ''}`;
+
+    console.log("✅ Tabela desenhada com sucesso!");
+
+  } catch (e) {
+    console.error("❌ ERRO GERAL:", e);
+  }
+}
 
   // Verificar sessão existente
   const { data: { session } } = await supabase.auth.getSession();
