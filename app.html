@@ -574,9 +574,11 @@
                     return;
                 }
                 try{
-                    const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
                     if(error){ $('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`; return; }
-                    $('mensagemLogin').innerHTML='<span style="color:var(--sucesso)">✅ Entrando...</span>';
+                    if(data?.user){
+                        entrarApp(data.user);
+                    }
                 }catch(e){
                     $('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(e)}</span>`;
                 }
@@ -632,7 +634,6 @@
 
             async function carregarTudoDoBanco(){
                 if(!supabase || !usuarioAtual) {
-                    // Modo convidado
                     carregarLocal();
                     atualizarTudoDiarias();
                     atualizarTudoDescontos();
@@ -665,7 +666,6 @@
                     console.error('Erro ao carregar dados:', erro);
                     setStatus('🔴 Erro','rgba(239,68,68,.15)');
                     toast('Erro ao carregar dados: '+mensagemAmigavel(erro),'erro');
-                    // Fallback local
                     carregarLocal();
                     atualizarTudoDiarias();
                     atualizarTudoDescontos();
@@ -991,7 +991,6 @@
                 const payload = { valor, data, descricao };
                 try{
                     if(!supabase || !usuarioAtual){
-                        // Convidado: salvar local
                         if(id){
                             diarias = diarias.map(d => d.id===id ? {...d, ...payload} : d);
                         } else {
@@ -1132,6 +1131,14 @@
                             entrarApp(session.user);
                             return;
                         }
+                        // Listener de autenticação
+                        supabase.auth.onAuthStateChange((event, session) => {
+                            if (event === 'SIGNED_IN' && session?.user) {
+                                entrarApp(session.user);
+                            } else if (event === 'SIGNED_OUT') {
+                                sairConta();
+                            }
+                        });
                     }
                 } catch(e) {
                     console.warn('Supabase indisponível.');
