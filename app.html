@@ -1,569 +1,442 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CashLog</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root{
-            --bg: #0a0e17;
-            --bg-soft: #111827;
-            --card: rgba(20, 28, 45, 0.7);
-            --card-hover: rgba(30, 41, 66, 0.8);
-            --text: #e2e8f0;
-            --text-soft: #94a3b8;
-            --accent: #00d4ff;
-            --accent-soft: rgba(0, 212, 255, 0.12);
-            --accent2: #a855f7;
-            --accent2-soft: rgba(168, 85, 247, 0.12);
-            --accent3: #ff4d6d;
-            --accent3-soft: rgba(255, 77, 109, 0.12);
-            --border: rgba(148, 163, 184, 0.15);
-            --erro: #ff4d6d;
-            --sucesso: #4ade80;
-            --aviso: #facc15;
-            --glow: 0 0 20px rgba(0, 212, 255, 0.3);
-            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
-        }
-        .tema-claro{
-            --bg: #f0f4fa;
-            --bg-soft: #e2e8f0;
-            --card: rgba(255, 255, 255, 0.85);
-            --card-hover: #ffffff;
-            --text: #0f172a;
-            --text-soft: #475569;
-            --accent: #0ea5e9;
-            --accent-soft: rgba(14, 165, 233, 0.08);
-            --accent2: #8b5cf6;
-            --accent2-soft: rgba(139, 92, 246, 0.08);
-            --accent3: #e11d48;
-            --accent3-soft: rgba(225, 29, 72, 0.08);
-            --border: rgba(100, 116, 139, 0.2);
-            --erro: #e11d48;
-            --sucesso: #22c55e;
-            --aviso: #eab308;
-            --glow: 0 0 20px rgba(14, 165, 233, 0.2);
-            --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.08);
-        }
-        *{box-sizing:border-box;}
-        body{
-            margin:0;padding:0;
-            font-family:'Inter',sans-serif;
-            background: linear-gradient(135deg, var(--bg) 0%, var(--bg-soft) 100%);
-            min-height:100vh;
-            color:var(--text);
-            transition: background .3s ease, color .3s ease;
-            position: relative;
-            overflow-x: hidden;
-        }
-        body::before{
-            content:'';
-            position: fixed;
-            top:0; left:0; right:0; bottom:0;
-            background:
-                radial-gradient(circle at 20% 50%, var(--accent-soft) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, var(--accent2-soft) 0%, transparent 50%),
-                radial-gradient(circle at 50% 80%, var(--accent3-soft) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
-            animation: bgGlow 15s ease-in-out infinite alternate;
-        }
-        @keyframes bgGlow{0%{opacity:0.4;}100%{opacity:0.8;}}
-        .reveal{opacity:0;transform:translateY(16px);animation:fadeUp .7s ease forwards;}
-        @keyframes fadeUp{to{opacity:1;transform:translateY(0);}}
-        .abas{display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;position: relative;z-index: 1;}
-        .aba{padding:12px 20px;cursor:pointer;border-radius:12px 12px 0 0;color:var(--text-soft);font-weight:500;transition:all .2s ease;border-bottom:3px solid transparent;position: relative;overflow: hidden;}
-        .aba::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transform:scaleX(0);transition:transform .3s ease;}
-        .aba.ativa::after{transform:scaleX(1);}
-        .aba.ativa{color:var(--accent);background:var(--accent-soft);}
-        .aba:hover{color:var(--text);background:var(--bg-soft);}
-        .aba-desconto.ativa{color:var(--accent3);background:var(--accent3-soft);}
-        .aba-desconto.ativa::after{background:linear-gradient(90deg,var(--accent3),var(--accent2));}
-        .metric-card,.table-card,.login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:var(--shadow-card);transition:all .3s ease;position:relative;overflow:hidden;}
-        .metric-card::before,.table-card::before,.login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.6;}
-        .metric-card:hover{background:var(--card-hover);transform:translateY(-4px);box-shadow:var(--glow),0 18px 45px rgba(0,0,0,.25);border-color:var(--accent);}
-        .tbl-row{transition:background .15s ease;}
-        .tbl-row:hover{background:var(--accent-soft);}
-        .tbl-row-desconto:hover{background:var(--accent3-soft);}
-        .mes-separador{background:var(--accent-soft);color:var(--accent);font-weight:600;}
-        .mes-separador-desconto{background:var(--accent3-soft);color:var(--accent3);font-weight:600;}
-        input,select{outline:none;transition:all .2s ease;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:10px 12px;backdrop-filter:blur(5px);}
-        input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),var(--glow);}
-        .btn-primary{background:linear-gradient(135deg,#00d4ff,#0090ff);color:#fff;font-weight:600;transition:all .25s ease;border-radius:14px;box-shadow:0 4px 15px rgba(0,212,255,.3);border:none;cursor:pointer;padding:10px 16px;text-shadow:0 1px 2px rgba(0,0,0,.2);}
-        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,212,255,.5);}
-        .btn-primary-vermelho{background:linear-gradient(135deg,#ff4d6d,#c9184a);box-shadow:0 4px 15px rgba(255,77,109,.3);}
-        .btn-primary-vermelho:hover{box-shadow:0 8px 25px rgba(255,77,109,.5);}
-        .btn-secondary{background:rgba(255,255,255,0.05);color:var(--text);border:1px solid var(--border);border-radius:12px;transition:all .25s ease;cursor:pointer;padding:10px 16px;backdrop-filter:blur(5px);}
-        .btn-secondary:hover{border-color:var(--accent);background:rgba(0,212,255,0.1);box-shadow:var(--glow);}
-        .btn-pequeno{padding:6px 10px;font-size:13px;}
-        .btn-icone{background:transparent;border:none;cursor:pointer;padding:8px 10px;border-radius:8px;transition:all .2s ease;font-size:18px;}
-        .btn-icone:hover{background:var(--accent-soft);}
-        .excluir-btn:hover{color:var(--erro);background:rgba(255,77,109,.12);}
-        .modal-backdrop{background:rgba(6,8,15,.85);backdrop-filter:blur(10px);position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:50;}
-        .modal-backdrop .table-card{max-width:440px;width:100%;max-height:90vh;overflow-y:auto;}
-        .toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);padding:14px 20px;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.3),var(--glow);z-index:9999;animation:toastIn .3s ease;max-width:400px;}
-        .toast.sucesso{border-left:4px solid var(--sucesso);}
-        .toast.erro{border-left:4px solid var(--erro);}
-        .toast.aviso{border-left:4px solid var(--aviso);}
-        @keyframes toastIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-        .spinner{width:20px;height:20px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;}
-        @keyframes spin{to{transform:rotate(360deg);}}
-        .user-tag{background:var(--accent-soft);color:var(--accent);font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500;}
-        .status-tag{font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500;}
-        .login-card{max-width:400px;width:100%;padding:32px;border-radius:24px;box-shadow:0 25px 80px rgba(0,0,0,.35),var(--glow);}
-        .header-icon{background:linear-gradient(135deg,#00d4ff,#a855f7);border-radius:16px;box-shadow:0 8px 24px rgba(0,212,255,.25);display:flex;align-items:center;justify-content:center;}
-        .carregando{text-align:center;padding:40px;color:var(--text-soft);}
-        .paginacao{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:20px;}
-        .paginacao button{min-width:36px;height:36px;padding:0;}
-        .paginacao button.ativo{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:var(--glow);}
-        .offline{position:fixed;top:0;left:0;right:0;background:var(--erro);color:white;text-align:center;padding:6px;font-size:13px;z-index:100;}
-        .painel-conteudo{display:none;}
-        .painel-conteudo.ativo{display:block;animation:fadeUp .3s ease;}
-        @media(max-width:768px){
-            .tela-app{padding:12px!important;}
-            .metric-card{padding:16px!important;}
-            table{font-size:13px!important;}
-            .btn-primary,.btn-secondary{padding:10px 12px!important;font-size:14px;}
-            .btn-icone{padding:10px 12px;min-width:44px;min-height:44px;}
-            .toast{left:12px;right:12px;max-width:unset;}
-            .abas{overflow-x:auto;}
-            .aba{padding:10px 14px;font-size:14px;white-space:nowrap;}
-        }
-        ::-webkit-scrollbar{width:8px;height:8px;}
-        ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
-        ::-webkit-scrollbar-thumb:hover{background:var(--text-soft);}
-        h1,h2,h3{font-family:'Orbitron',sans-serif;letter-spacing:1px;text-transform:uppercase;}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CashLog — Onde cada centavo conta</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg2: #1e293b;
+      --card: #1e293b;
+      --text: #e2e8f0;
+      --text-soft: #94a3b8;
+      --border: rgba(148,163,184,0.15);
+      --accent: #00d4ff;
+      --accent2: #a855f7;
+      --accent3: #22c55e;
+      --accent3-soft: rgba(34,197,94,0.08);
+      --erro: #ef4444;
+      --aviso: #f59e0b;
+      --sombra: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    [data-tema="claro"] {
+      --bg: #f8fafc;
+      --bg2: #e2e8f0;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-soft: #64748b;
+      --border: rgba(148,163,184,0.35);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; font-family:Segoe UI, Roboto, sans-serif; }
+    body { background:var(--bg); color:var(--text); min-height:100vh; transition:background .3s,color .3s; }
+    .tela-login { display:flex; align-items:center; justify-content:center; min-height:100vh; background:linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); }
+    .login-card { background:var(--card); padding:40px 30px; border-radius:20px; box-shadow:var(--sombra); width:100%; max-width:400px; border:1px solid var(--border); text-align:center; }
+    .login-card h1 { font-size:28px; margin-bottom:6px; background:linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip:text; color:transparent; }
+    .login-card p { color:var(--text-soft); margin-bottom:30px; }
+    .logo-icon { font-size:40px; margin-bottom:10px; }
+    .grupo-input { margin-bottom:18px; text-align:left; }
+    label { display:block; margin-bottom:6px; color:var(--text-soft); font-size:14px; }
+    input { width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--text); font-size:15px; outline:none; transition:border .2s; }
+    input:focus { border-color:var(--accent); }
+    .btn { width:100%; padding:12px; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; transition:transform .2s, box-shadow .2s; }
+    .btn:active { transform:scale(.98); }
+    .btn-principal { background:linear-gradient(90deg, var(--accent), var(--accent2)); color:#fff; box-shadow:0 4px 12px rgba(0,212,255,.2); }
+    .btn-principal:hover { box-shadow:0 6px 18px rgba(0,212,255,.3); }
+    .btn-secundario { background:transparent; color:var(--accent); border:1px solid var(--accent); margin-top:10px; }
+    .link { color:var(--accent); font-size:14px; cursor:pointer; margin-top:16px; display:inline-block; }
+    .link:hover { text-decoration:underline; }
+    .mensagem { margin-top:16px; font-size:14px; min-height:20px; }
+    .tela-app { display:none; padding:20px; max-width:1200px; margin:0 auto; }
+    .cabecalho { display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+    .cabecalho h1 { font-size:22px; display:flex; align-items:center; gap:10px; }
+    .cabecalho h1 span { background:linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip:text; color:transparent; }
+    .usuario { display:flex; align-items:center; gap:12px; }
+    .usuario-nome { font-weight:500; font-size:14px; }
+    .status { display:flex; align-items:center; gap:4px; font-size:13px; color:var(--accent3); }
+    .status .bolinha { width:10px; height:10px; border-radius:50%; background:var(--accent3); }
+    .btn-icone { background:transparent; border:none; font-size:20px; cursor:pointer; padding:4px 8px; border-radius:6px; }
+    .btn-icone:hover { background:var(--bg2); }
+    .abas { display:flex; gap:10px; margin-bottom:24px; border-bottom:1px solid var(--border); }
+    .aba { padding:12px 24px; cursor:pointer; border-bottom:3px solid transparent; font-weight:500; color:var(--text-soft); }
+    .aba.ativa { border-bottom-color:var(--accent); color:var(--accent); }
+    .conteudo-aba { display:none; }
+    .conteudo-aba.ativa { display:block; animation:aparece .3s ease; }
+    @keyframes aparece { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    .barra-acoes { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; align-items:center; justify-content:space-between; }
+    .btn-novo { padding:10px 16px; background:linear-gradient(90deg, var(--accent), var(--accent2)); color:#fff; border:none; border-radius:10px; font-weight:600; cursor:pointer; }
+    .filtros { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .filtros input, .filtros select { padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:14px; }
+    .metricas { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:14px; margin-bottom:24px; }
+    .metrica { background:var(--card); padding:16px; border-radius:12px; border:1px solid var(--border); }
+    .metrica-label { font-size:13px; color:var(--text-soft); margin-bottom:6px; }
+    .metrica-valor { font-size:18px; font-weight:700; }
+    .tabela-container { overflow-x:auto; border:1px solid var(--border); border-radius:12px; background:var(--card); }
+    table { width:100%; border-collapse:collapse; }
+    th { background:var(--bg2); padding:12px 10px; text-align:left; font-size:14px; color:var(--text-soft); border-bottom:1px solid var(--border); }
+    td { padding:12px 10px; border-bottom:1px solid var(--border); font-size:14px; }
+    .tbl-row:hover { background:var(--bg2); }
+    .vazio { text-align:center; padding:40px; color:var(--text-soft); }
+    .grafico-container { background:var(--card); border-radius:12px; border:1px solid var(--border); padding:16px; margin-bottom:20px; height:320px; }
+    .grafico-usuario { height:280px; margin-top:16px; }
+    .modal-fundo { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:100; padding:20px; }
+    .modal { background:var(--card); padding:24px; border-radius:16px; border:1px solid var(--border); width:100%; max-width:420px; box-shadow:var(--sombra); }
+    .modal-cab { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .modal-cab h3 { font-size:18px; }
+    .btn-fechar { background:none; border:none; font-size:22px; color:var(--text-soft); cursor:pointer; }
+    .form-modal { display:flex; flex-direction:column; gap:14px; }
+    .linha-botoes { display:flex; gap:10px; margin-top:8px; }
+    .btn-cancelar { flex:1; padding:10px; border:1px solid var(--border); background:transparent; color:var(--text); border-radius:10px; cursor:pointer; font-weight:500; }
+    .btn-salvar { flex:1; padding:10px; border:none; background:linear-gradient(90deg, var(--accent), var(--accent2)); color:#fff; border-radius:10px; cursor:pointer; font-weight:600; }
+    .toast { position:fixed; bottom:20px; right:20px; padding:12px 20px; border-radius:10px; color:#fff; font-weight:500; z-index:200; animation:desliza .3s ease; }
+    @keyframes desliza { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+    .toast.sucesso { background:#22c55e; }
+    .toast.erro { background:#ef4444; }
+    .toast.aviso { background:#f59e0b; }
+    .paginacao { display:flex; gap:6px; margin-top:14px; justify-content:center; }
+    .btn-pequeno { padding:6px 10px; font-size:13px; border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; }
+    .btn-pequeno.ativo { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .mes-separador { background:linear-gradient(90deg, rgba(0,212,255,0.1), rgba(168,85,247,0.05)); }
+    .tbl-row-desconto:hover { background:rgba(34,197,94,0.06); }
+    .mes-separador-desconto { background:var(--accent3-soft); }
+    .carregando { text-align:center; padding:20px; color:var(--text-soft); }
+    .conexao { font-size:12px; margin-left:8px; }
+    .offline { color:var(--erro); }
+    .exportar { margin-left:auto; }
+    @media(max-width:768px) { .barra-acoes { flex-direction:column; align-items:stretch; } .filtros { justify-content:space-between; } }
+  </style>
 </head>
-<body id="corpo">
-    <div id="avisoOffline" class="offline" style="display:none;">⚠️ Sem conexão com a internet — os dados podem estar desatualizados</div>
+<body>
 
-    <div id="telaLogin" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;z-index:1;">
-        <div class="login-card reveal">
-            <div style="text-align:center;margin-bottom:32px;">
-                <div class="header-icon" style="width:68px;height:68px;margin:0 auto 16px;">
-                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                </div>
-                <h2 style="font-size:30px;color:var(--text);margin:0 0 8px;font-weight:700;">CashLog</h2>
-                <p style="color:var(--text-soft);font-size:15px;margin:0;">Onde cada centavo conta.</p>
-            </div>
-            <div id="formEntrar">
-                <input id="emailLogin" type="email" placeholder="Seu e-mail" class="w-full mb-3">
-                <input id="senhaLogin" type="password" placeholder="Sua senha" class="w-full mb-4">
-                <button onclick="App.fazerLogin()" class="btn-primary w-full mb-3">Entrar</button>
-                <p style="text-align:center;color:var(--text-soft);font-size:14px;margin:0;">Não tem conta? <a href="#" onclick="App.mostrarCadastro();return false;" style="color:var(--accent);font-weight:500;">Criar conta</a></p>
-            </div>
-            <div id="formCadastro" style="display:none;">
-                <input id="nomeCad" type="text" placeholder="Seu nome completo" class="w-full mb-3">
-                <input id="emailCad" type="email" placeholder="Seu e-mail" class="w-full mb-3">
-                <input id="senhaCad" type="password" placeholder="Criar senha (mínimo 6 caracteres)" class="w-full mb-3">
-                <button onclick="App.fazerCadastro()" class="btn-primary w-full mb-3">Criar conta</button>
-                <p style="text-align:center;color:var(--text-soft);font-size:14px;margin:0;">Já tem conta? <a href="#" onclick="App.mostrarLogin();return false;" style="color:var(--accent);font-weight:500;">Entrar</a></p>
-            </div>
-            <div id="mensagemLogin" style="margin-top:16px;text-align:center;font-size:14px;"></div>
-        </div>
+<!-- TELA LOGIN -->
+<div id="telaLogin" class="tela-login">
+  <div class="login-card">
+    <div class="logo-icon">💰</div>
+    <h1>CashLog</h1>
+    <p>Onde cada centavo conta</p>
+    <div id="formLogin">
+      <div class="grupo-input">
+        <label>Seu e-mail</label>
+        <input type="email" id="emailLogin" placeholder="exemplo@email.com">
+      </div>
+      <div class="grupo-input">
+        <label>Sua senha</label>
+        <input type="password" id="senhaLogin" placeholder="Mínimo 6 caracteres">
+      </div>
+      <button class="btn btn-principal" onclick="fazerLogin()">Entrar</button>
+      <div class="link" onclick="mostrarCadastro()">Não tem conta? Criar conta</div>
+    </div>
+    <div id="formCadastro" style="display:none;">
+      <div class="grupo-input">
+        <label>Seu nome</label>
+        <input type="text" id="nomeCadastro" placeholder="Seu nome completo">
+      </div>
+      <div class="grupo-input">
+        <label>Seu e-mail</label>
+        <input type="email" id="emailCadastro" placeholder="exemplo@email.com">
+      </div>
+      <div class="grupo-input">
+        <label>Sua senha</label>
+        <input type="password" id="senhaCadastro" placeholder="Mínimo 6 caracteres">
+      </div>
+      <button class="btn btn-principal" onclick="fazerCadastro()">Criar conta</button>
+      <div class="link" onclick="mostrarLogin()">Já tem conta? Entrar</div>
+    </div>
+    <div id="mensagemLogin" class="mensagem"></div>
+  </div>
+</div>
+
+<!-- TELA PRINCIPAL -->
+<div id="telaApp" class="tela-app">
+  <div class="cabecalho">
+    <h1>💰 <span>CashLog</span></h1>
+    <div class="usuario">
+      <button class="btn-icone" onclick="alternarTema()" title="Alternar tema">🌙</button>
+      <span class="usuario-nome" id="nomeUsuario">Rodrigo</span>
+      <span class="status"><span class="bolinha"></span> Online</span>
+      <button class="btn-secundario" style="padding:6px 12px; font-size:13px; width:auto;" onclick="sairConta()">Sair</button>
+    </div>
+  </div>
+
+  <div class="abas">
+    <div class="aba ativa" onclick="selecionarAba('diarias')">💰 Diárias</div>
+    <div class="aba" onclick="selecionarAba('descontos')">📉 Descontos</div>
+  </div>
+
+  <!-- ABA DIÁRIAS -->
+  <div id="abaDiarias" class="conteudo-aba ativa">
+    <div class="barra-acoes">
+      <button class="btn-novo" onclick="abrirModalDiaria()">+ Nova Diária</button>
+      <div class="filtros">
+        <input type="text" id="buscaDiarias" placeholder="Buscar..." oninput="debounceAtualizarDiarias()">
+        <select id="filtroMesDiarias" onchange="filtrarDiarias()"></select>
+        <select id="filtroAnoDiarias" onchange="filtrarDiarias()"></select>
+        <input type="date" id="dataInicioDiarias" onchange="filtrarDiarias()">
+        <input type="date" id="dataFimDiarias" onchange="filtrarDiarias()">
+        <button class="btn-pequeno" onclick="limparFiltrosDiarias()">Limpar</button>
+        <button class="btn-pequeno exportar" onclick="exportarDiarias()">📥 CSV</button>
+      </div>
     </div>
 
-    <div id="telaApp" class="tela-app" style="display:none;max-width:1200px;margin:0 auto;padding:24px;position:relative;z-index:1;">
-        <div class="reveal" style="margin-bottom:24px;">
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                <div class="header-icon" style="width:44px;height:44px;flex-shrink:0;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                </div>
-                <div style="flex:1;min-width:240px;">
-                    <h1 style="font-size:24px;color:var(--text);margin:0 0 4px;font-weight:700;">CashLog</h1>
-                    <p style="color:var(--text-soft);font-size:14px;margin:0;">Onde cada centavo conta.</p>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <button onclick="App.alternarTema()" class="btn-secondary btn-pequeno" title="Alternar tema">🌙</button>
-                    <span id="nomeUsuario" class="user-tag"></span>
-                    <span id="statusConexao" class="status-tag" style="background:var(--border);color:var(--text-soft);font-size:12px;">
-                        <span class="spinner" style="width:10px;height:10px;border-width:2px;margin-right:6px;"></span> Conectando...
-                    </span>
-                    <button onclick="App.sairConta()" class="btn-secondary btn-pequeno">Sair</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="abas reveal">
-            <div class="aba ativa" id="abaDiarias" onclick="App.selecionarAba('diarias')">💰 Diárias</div>
-            <div class="aba aba-desconto" id="abaDescontos" onclick="App.selecionarAba('descontos')">📉 Descontos</div>
-        </div>
-
-        <div id="painelDiarias" class="painel-conteudo ativa">
-            <div class="reveal table-card p-4 mb-6">
-                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                    <input id="buscaDiarias" type="text" placeholder="🔍 Buscar..." oninput="App.debounceAtualizarDiarias()" style="flex:1;min-width:180px;">
-                    <div style="display:flex;gap:6px;align-items:center;">
-                        <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">De:</label>
-                        <input id="dataInicioDiarias" type="date" onchange="App.filtrarDiarias()" style="width:140px;">
-                        <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">Até:</label>
-                        <input id="dataFimDiarias" type="date" onchange="App.filtrarDiarias()" style="width:140px;">
-                    </div>
-                    <select id="filtroMesDiarias" onchange="App.filtrarDiarias()" class="min-w-[140px]">
-                        <option value="todos">Todos os meses</option>
-                    </select>
-                    <select id="filtroAnoDiarias" onchange="App.filtrarDiarias()" class="min-w-[120px]">
-                        <option value="todos">Todos os anos</option>
-                    </select>
-                    <button onclick="App.limparFiltrosDiarias()" class="btn-secondary btn-pequeno">Limpar</button>
-                    <button onclick="App.abrirModalDiaria()" class="btn-primary btn-pequeno" title="Nova Diária (Ctrl+N)">+ Nova Diária</button>
-                </div>
-            </div>
-
-            <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);">💰</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Total de Diárias</span>
-                    </div>
-                    <div id="totalDiarias" style="font-size:26px;font-weight:600;color:var(--accent);">R$ 0,00</div>
-                    <div id="qtdDiarias" style="color:var(--text-soft);font-size:12px;margin-top:4px;">0 registros</div>
-                </div>
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent2-soft);display:flex;align-items:center;justify-content:center;color:var(--accent2);">📊</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Média/dia</span>
-                    </div>
-                    <div id="mediaDiarias" style="font-size:26px;font-weight:600;">R$ 0,00</div>
-                </div>
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);">📈</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Maior valor</span>
-                    </div>
-                    <div id="maiorDiarias" style="font-size:26px;font-weight:600;">R$ 0,00</div>
-                    <div id="maiorDataDiarias" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-                </div>
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent2-soft);display:flex;align-items:center;justify-content:center;color:var(--accent2);">📅</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Este mês</span>
-                    </div>
-                    <div id="mesAtualDiarias" style="font-size:26px;font-weight:600;color:var(--accent2);">R$ 0,00</div>
-                    <div id="mesInfoDiarias" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-                </div>
-            </div>
-
-            <div class="reveal table-card p-4 mb-6">
-                <h3 style="margin:0 0 12px;font-size:16px;color:var(--accent);">Evolução Mensal</h3>
-                <div id="grafico" style="height:300px;"></div>
-            </div>
-
-            <div id="graficoUsuarioSecao" class="reveal table-card p-4 mb-6" style="display:none;">
-                <h3 style="margin:0 0 12px;font-size:16px;color:var(--accent2);">Gasto por Usuário</h3>
-                <div id="graficoUsuario" style="height:280px;"></div>
-            </div>
-
-            <div class="reveal table-card p-4">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-                    <h3 style="margin:0;font-size:16px;">Histórico de Diárias</h3>
-                    <button onclick="App.exportarDiarias()" class="btn-secondary btn-pequeno">📥 Exportar CSV</button>
-                </div>
-                <div id="carregandoDiarias" class="carregando" style="display:none;"><span class="spinner"></span> Carregando...</div>
-                <div style="overflow-x:auto;">
-                    <table style="width:100%;border-collapse:collapse;">
-                        <thead>
-                            <tr style="color:var(--text-soft);border-bottom:1px solid var(--border);font-size:13px;">
-                                <th style="text-align:left;padding:10px 8px;">Data</th>
-                                <th style="text-align:left;padding:10px 8px;">Descrição</th>
-                                <th style="text-align:left;padding:10px 8px;">Usuário</th>
-                                <th style="text-align:right;padding:10px 8px;">Valor</th>
-                                <th style="text-align:right;padding:10px 8px;width:100px;">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabelaDiarias"></tbody>
-                    </table>
-                </div>
-                <div id="vazioDiarias" style="text-align:center;padding:40px 20px;color:var(--text-soft);display:none;">
-                    <p style="margin:0;">Nenhuma diária encontrada.</p>
-                    <button onclick="App.abrirModalDiaria()" class="btn-primary btn-pequeno" style="margin-top:10px;">+ Cadastrar primeira diária</button>
-                </div>
-                <div id="paginacaoDiarias" class="paginacao"></div>
-            </div>
-        </div>
-
-        <div id="painelDescontos" class="painel-conteudo">
-            <div class="reveal table-card p-4 mb-6">
-                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                    <input id="buscaDescontos" type="text" placeholder="🔍 Buscar..." oninput="App.debounceAtualizarDescontos()" style="flex:1;min-width:180px;">
-                    <div style="display:flex;gap:6px;align-items:center;">
-                        <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">De:</label>
-                        <input id="dataInicioDescontos" type="date" onchange="App.filtrarDescontos()" style="width:140px;">
-                        <label style="color:var(--text-soft);font-size:13px;white-space:nowrap;">Até:</label>
-                        <input id="dataFimDescontos" type="date" onchange="App.filtrarDescontos()" style="width:140px;">
-                    </div>
-                    <select id="filtroMesDescontos" onchange="App.filtrarDescontos()" class="min-w-[140px]">
-                        <option value="todos">Todos os meses</option>
-                    </select>
-                    <select id="filtroAnoDescontos" onchange="App.filtrarDescontos()" class="min-w-[120px]">
-                        <option value="todos">Todos os anos</option>
-                    </select>
-                    <button onclick="App.limparFiltrosDescontos()" class="btn-secondary btn-pequeno">Limpar</button>
-                    <button onclick="App.abrirModalDesconto()" class="btn-primary btn-pequeno btn-primary-vermelho" title="Novo Desconto">+ Novo Desconto</button>
-                </div>
-            </div>
-
-            <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">📉</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Total de Descontos</span>
-                    </div>
-                    <div id="totalDescontos" style="font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
-                    <div id="qtdDescontos" style="color:var(--text-soft);font-size:12px;margin-top:4px;">0 registros</div>
-                </div>
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">📊</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Média/mês</span>
-                    </div>
-                    <div id="mediaDescontos" style="font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
-                </div>
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">⚠️</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Maior desconto</span>
-                    </div>
-                    <div id="maiorDescontos" style="font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
-                    <div id="maiorDataDescontos" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-                </div>
-                <div class="metric-card p-4">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent3-soft);display:flex;align-items:center;justify-content:center;color:var(--accent3);">📅</div>
-                        <span style="color:var(--text-soft);font-size:13px;">Este mês</span>
-                    </div>
-                    <div id="mesAtualDescontos" style="font-size:26px;font-weight:600;color:var(--accent3);">R$ 0,00</div>
-                    <div id="mesInfoDescontos" style="color:var(--text-soft);font-size:12px;margin-top:4px;">—</div>
-                </div>
-            </div>
-
-            <div class="reveal table-card p-4">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-                    <h3 style="margin:0;font-size:16px;">Histórico de Descontos</h3>
-                    <button onclick="App.exportarDescontos()" class="btn-secondary btn-pequeno">📥 Exportar CSV</button>
-                </div>
-                <div id="carregandoDescontos" class="carregando" style="display:none;"><span class="spinner"></span> Carregando...</div>
-                <div style="overflow-x:auto;">
-                    <table style="width:100%;border-collapse:collapse;">
-                        <thead>
-                            <tr style="color:var(--text-soft);border-bottom:1px solid var(--border);font-size:13px;">
-                                <th style="text-align:left;padding:10px 8px;">Data</th>
-                                <th style="text-align:left;padding:10px 8px;">O que foi descontado</th>
-                                <th style="text-align:left;padding:10px 8px;">Usuário</th>
-                                <th style="text-align:right;padding:10px 8px;">Valor</th>
-                                <th style="text-align:right;padding:10px 8px;width:100px;">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabelaDescontos"></tbody>
-                    </table>
-                </div>
-                <div id="vazioDescontos" style="text-align:center;padding:40px 20px;color:var(--text-soft);display:none;">
-                    <p style="margin:0;">Nenhum desconto cadastrado.</p>
-                    <button onclick="App.abrirModalDesconto()" class="btn-primary btn-pequeno btn-primary-vermelho" style="margin-top:10px;">+ Cadastrar primeiro desconto</button>
-                </div>
-                <div id="paginacaoDescontos" class="paginacao"></div>
-            </div>
-        </div>
+    <div class="metricas">
+      <div class="metrica"><div class="metrica-label">Total</div><div class="metrica-valor" id="totalDiarias">R$ 0,00</div></div>
+      <div class="metrica"><div class="metrica-label">Registros</div><div class="metrica-valor" id="qtdDiarias">0</div></div>
+      <div class="metrica"><div class="metrica-label">Média/dia</div><div class="metrica-valor" id="mediaDiarias">R$ 0,00</div></div>
+      <div class="metrica"><div class="metrica-label">Maior valor</div><div class="metrica-valor" id="maiorDiarias">R$ 0,00</div><div style="font-size:11px;color:var(--text-soft)" id="maiorDataDiarias"></div></div>
+      <div class="metrica"><div class="metrica-label">Este mês (<span id="mesInfoDiarias"></span>)</div><div class="metrica-valor" id="mesAtualDiarias">R$ 0,00</div></div>
     </div>
 
-    <div id="modalDiaria" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true">
-        <div class="table-card p-5" style="width:100%;max-width:440px;max-height:90vh;overflow-y:auto;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-                <h3 id="tituloModalDiaria" style="margin:0;font-size:18px;">Nova Diária</h3>
-                <button onclick="App.fecharModalDiaria()" class="btn-icone" aria-label="Fechar">✕</button>
-            </div>
-            <form onsubmit="App.salvarDiaria(event)" style="display:flex;flex-direction:column;gap:16px;">
-                <input type="hidden" id="editIdDiaria">
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Valor (R$)</label>
-                    <input id="valorDiaria" type="text" required placeholder="0,00" oninput="App.formatarValor(this)" style="width:100%;font-size:16px;">
-                </div>
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Data</label>
-                    <input id="dataDiaria" type="date" required style="width:100%;font-size:16px;">
-                </div>
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Descrição</label>
-                    <input id="descricaoDiaria" type="text" placeholder="Ex: Alimentação, transporte..." style="width:100%;font-size:16px;">
-                </div>
-                <div style="display:flex;gap:10px;margin-top:8px;">
-                    <button type="button" onclick="App.fecharModalDiaria()" class="btn-secondary" style="flex:1;">Cancelar</button>
-                    <button id="btnSalvarDiaria" type="submit" class="btn-primary" style="flex:1;">Salvar</button>
-                </div>
-            </form>
-        </div>
+    <div class="grafico-container" id="grafico"></div>
+    <div class="grafico-container grafico-usuario" id="graficoUsuarioSecao" style="display:none;">
+      <div style="font-weight:600; margin-bottom:10px;">Por Usuário</div>
+      <div id="graficoUsuario" style="width:100%;height:220px;"></div>
     </div>
 
-    <div id="modalDesconto" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true">
-        <div class="table-card p-5" style="width:100%;max-width:440px;max-height:90vh;overflow-y:auto;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-                <h3 id="tituloModalDesconto" style="margin:0;font-size:18px;">Novo Desconto</h3>
-                <button onclick="App.fecharModalDesconto()" class="btn-icone" aria-label="Fechar">✕</button>
-            </div>
-            <form onsubmit="App.salvarDesconto(event)" style="display:flex;flex-direction:column;gap:16px;">
-                <input type="hidden" id="editIdDesconto">
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">O que foi descontado? *</label>
-                    <input id="descricaoDesconto" type="text" required placeholder="Ex: Multa, taxa, imposto, devolução..." style="width:100%;font-size:16px;">
-                </div>
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Valor do Desconto (R$)</label>
-                    <input id="valorDesconto" type="text" required placeholder="0,00" oninput="App.formatarValor(this)" style="width:100%;font-size:16px;">
-                </div>
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:14px;color:var(--text-soft);">Data</label>
-                    <input id="dataDesconto" type="date" required style="width:100%;font-size:16px;">
-                </div>
-                <div style="display:flex;gap:10px;margin-top:8px;">
-                    <button type="button" onclick="App.fecharModalDesconto()" class="btn-secondary" style="flex:1;">Cancelar</button>
-                    <button id="btnSalvarDesconto" type="submit" class="btn-primary btn-primary-vermelho" style="flex:1;">Salvar</button>
-                </div>
-            </form>
-        </div>
+    <div id="carregandoDiarias" class="carregando" style="display:none;">Carregando diárias...</div>
+    <div class="tabela-container">
+      <table>
+        <thead><tr><th>Data</th><th>Descrição</th><th>Usuário</th><th style="text-align:right">Valor</th><th style="width:90px"></th></tr></thead>
+        <tbody id="tabelaDiarias"></tbody>
+      </table>
+      <div id="vazioDiarias" class="vazio" style="display:block;">Nenhuma diária cadastrada ainda.</div>
+    </div>
+    <div id="paginacaoDiarias" class="paginacao"></div>
+  </div>
+
+  <!-- ABA DESCONTOS -->
+  <div id="abaDescontos" class="conteudo-aba">
+    <div class="barra-acoes">
+      <button class="btn-novo" style="background:linear-gradient(90deg, #22c55e, #10b981);" onclick="abrirModalDesconto()">+ Novo Desconto</button>
+      <div class="filtros">
+        <input type="text" id="buscaDescontos" placeholder="Buscar..." oninput="debounceAtualizarDescontos()">
+        <select id="filtroMesDescontos" onchange="filtrarDescontos()"></select>
+        <select id="filtroAnoDescontos" onchange="filtrarDescontos()"></select>
+        <input type="date" id="dataInicioDescontos" onchange="filtrarDescontos()">
+        <input type="date" id="dataFimDescontos" onchange="filtrarDescontos()">
+        <button class="btn-pequeno" onclick="limparFiltrosDescontos()">Limpar</button>
+        <button class="btn-pequeno exportar" onclick="exportarDescontos()">📥 CSV</button>
+      </div>
     </div>
 
-    <script>
-        (function() {
-            const SUPABASE_URL = "https://xptujmysydmczmhpoebn.supabase.co";
-            const SUPABASE_KEY = "sb_publishable_jPJMaONcjw2IqqKBiRkt9A_P33ZYNY_";
-            const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
-            const ITENS_POR_PAGINA = 15;
+    <div class="metricas">
+      <div class="metrica" style="border-left:3px solid var(--accent3);"><div class="metrica-label">Total Descontos</div><div class="metrica-valor" id="totalDescontos">R$ 0,00</div></div>
+      <div class="metrica" style="border-left:3px solid var(--accent3);"><div class="metrica-label">Registros</div><div class="metrica-valor" id="qtdDescontos">0</div></div>
+      <div class="metrica" style="border-left:3px solid var(--accent3);"><div class="metrica-label">Média/mês</div><div class="metrica-valor" id="mediaDescontos">R$ 0,00</div></div>
+      <div class="metrica" style="border-left:3px solid var(--accent3);"><div class="metrica-label">Maior desconto</div><div class="metrica-valor" id="maiorDescontos">R$ 0,00</div><div style="font-size:11px;color:var(--text-soft)" id="maiorDataDescontos"></div></div>
+      <div class="metrica" style="border-left:3px solid var(--accent3);"><div class="metrica-label">Este mês (<span id="mesInfoDescontos"></span>)</div><div class="metrica-valor" id="mesAtualDescontos">R$ 0,00</div></div>
+    </div>
 
-            let supabase;
-            let usuarioAtual = null;
-            let ehAdmin = false;
-            let temaEscuro = true;
-            let abaAtiva = 'diarias';
-            let diarias = [];
-            let descontos = [];
-            let graficoInstancia = null;
-            let graficoUsuarioInstancia = null;
-            let paginaDiarias = 1;
-            let paginaDescontos = 1;
-            let ultimoDesfazer = null;
-            let desfazerTimer = null;
-            let debounceTimerDiarias = null;
-            let debounceTimerDescontos = null;
+    <div id="carregandoDescontos" class="carregando" style="display:none;">Carregando descontos...</div>
+    <div class="tabela-container">
+      <table>
+        <thead><tr><th>Data</th><th>O que foi descontado</th><th>Usuário</th><th style="text-align:right">Valor</th><th style="width:90px"></th></tr></thead>
+        <tbody id="tabelaDescontos"></tbody>
+      </table>
+      <div id="vazioDescontos" class="vazio" style="display:block;">Nenhum desconto cadastrado ainda.</div>
+    </div>
+    <div id="paginacaoDescontos" class="paginacao"></div>
+  </div>
+</div>
 
-            function moeda(v){ return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-            function moedaParaNumero(v){ return Number(String(v||'').replace(/\D/g,''))/100; }
-            function formatarValor(i){
-                const digits = i.value.replace(/\D/g,'');
-                if(!digits){ i.value=''; return; }
-                const num = parseInt(digits,10);
-                i.value = (num/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-            }
-            function dataBr(d){ return new Date(d+'T00:00:00').toLocaleDateString('pt-BR'); }
-            function mesAno(d){ return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'}); }
-            function chaveMes(d){ const dt=new Date(d+'T00:00:00'); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; }
-            function nomeMes(m){ const nomes=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']; return nomes[Number(m)-1]||m; }
-            function hoje(){ return new Date().toISOString().split('T')[0]; }
-            function toast(msg,tipo='sucesso'){
-                const t=document.createElement('div');
-                t.className=`toast ${tipo}`;
-                t.innerHTML=msg;
-                document.body.appendChild(t);
-                setTimeout(()=>t.remove(),3500);
-            }
-            function mensagemAmigavel(erro){
-                const map={
-                    'Email not confirmed':'E-mail não confirmado — verifique sua caixa de entrada',
-                    'Invalid login credentials':'E-mail ou senha incorretos',
-                    'Password should be at least 6 characters':'Senha deve ter pelo menos 6 caracteres',
-                    'User already registered':'Este e-mail já está cadastrado',
-                    'data_nao_futura':'A data não pode ser futura',
-                    'valor_positivo':'O valor deve ser maior que zero',
-                    'desconto_valor_positivo':'O valor deve ser maior que zero',
-                    'desconto_data_nao_futura':'A data não pode ser futura'
-                };
-                const msg = erro?.message || erro?.details || 'Ocorreu um erro. Tente novamente.';
-                for(const [chave,texto] of Object.entries(map)){
-                    if(msg.includes(chave)) return texto;
-                }
-                return msg;
-            }
-            function setStatus(texto,cor){
-                const el=document.getElementById('statusConexao');
-                if(!el) return;
-                el.innerHTML=texto;
-                if(cor) el.style.background=cor;
-            }
-            function verificarConexao(){
-                const off=document.getElementById('avisoOffline');
-                if(navigator.onLine){
-                    off.style.display='none';
-                    setStatus('🟢 Online','rgba(74,222,128,.15)');
-                }else{
-                    off.style.display='block';
-                    setStatus('⚠️ Offline','rgba(250,204,21,.15)');
-                }
-            }
-            window.addEventListener('online',verificarConexao);
-            window.addEventListener('offline',verificarConexao);
+<!-- MODAL DIÁRIA -->
+<div id="modalDiaria" class="modal-fundo">
+  <div class="modal">
+    <div class="modal-cab">
+      <h3 id="tituloModalDiaria">Nova Diária</h3>
+      <button class="btn-fechar" onclick="fecharModalDiaria()">&times;</button>
+    </div>
+    <form class="form-modal" onsubmit="salvarDiaria(event)">
+      <input type="hidden" id="editIdDiaria">
+      <div>
+        <label>Data</label>
+        <input type="date" id="dataDiaria" required>
+      </div>
+      <div>
+        <label>Valor (R$)</label>
+        <input type="text" id="valorDiaria" placeholder="0,00" oninput="formatarValor(this)" required>
+      </div>
+      <div>
+        <label>Descrição</label>
+        <input type="text" id="descricaoDiaria" placeholder="Ex: Viagem, Refeição...">
+      </div>
+      <div class="linha-botoes">
+        <button type="button" class="btn-cancelar" onclick="fecharModalDiaria()">Cancelar</button>
+        <button type="submit" class="btn-salvar">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-            function carregarTema(){
-                const t=localStorage.getItem('tema');
-                if(t==='claro'){
-                    temaEscuro=false;
-                    document.getElementById('corpo').classList.add('tema-claro');
-                }
-            }
-            function alternarTema(){
-                temaEscuro=!temaEscuro;
-                document.getElementById('corpo').classList.toggle('tema-claro',!temaEscuro);
-                localStorage.setItem('tema',temaEscuro?'escuro':'claro');
-                setTimeout(()=>{ if(graficoInstancia)graficoInstancia.resize(); if(graficoUsuarioInstancia)graficoUsuarioInstancia.resize(); },100);
-            }
+<!-- MODAL DESCONTO -->
+<div id="modalDesconto" class="modal-fundo">
+  <div class="modal">
+    <div class="modal-cab">
+      <h3 id="tituloModalDesconto">Novo Desconto</h3>
+      <button class="btn-fechar" onclick="fecharModalDesconto()">&times;</button>
+    </div>
+    <form class="form-modal" onsubmit="salvarDesconto(event)">
+      <input type="hidden" id="editIdDesconto">
+      <div>
+        <label>Data</label>
+        <input type="date" id="dataDesconto" required>
+      </div>
+      <div>
+        <label>Valor (R$)</label>
+        <input type="text" id="valorDesconto" placeholder="0,00" oninput="formatarValor(this)" required>
+      </div>
+      <div>
+        <label>O que foi descontado</label>
+        <input type="text" id="descricaoDesconto" placeholder="Ex: Multa, Imposto...">
+      </div>
+      <div class="linha-botoes">
+        <button type="button" class="btn-cancelar" onclick="fecharModalDesconto()">Cancelar</button>
+        <button type="submit" class="btn-salvar" style="background:linear-gradient(90deg, #22c55e, #10b981);">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-            function selecionarAba(nome){
-                abaAtiva=nome;
-                document.querySelectorAll('.aba').forEach(a=>a.classList.remove('ativa'));
-                document.querySelectorAll('.painel-conteudo').forEach(p=>p.classList.remove('ativa'));
-                document.getElementById(`aba${nome.charAt(0).toUpperCase()+nome.slice(1)}`).classList.add('ativa');
-                document.getElementById(`painel${nome.charAt(0).toUpperCase()+nome.slice(1)}`).classList.add('ativa');
-            }
+<script>
+// ================== SUAS CHAVES JÁ PREENCHIDAS ==================
+const SUPABASE_URL = "https://xptujmysydmczmhpoebn.supabase.co";
+const SUPABASE_KEY = "sb_publishable_jPJMaONcjw2IqqKBiRkt9A_P33ZYNY_";
+const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
+const ITENS_POR_PAGINA = 15;
 
-            function mostrarCadastro(){ document.getElementById('formEntrar').style.display='none'; document.getElementById('formCadastro').style.display='block'; document.getElementById('mensagemLogin').innerHTML=''; }
-            function mostrarLogin(){ document.getElementById('formEntrar').style.display='block'; document.getElementById('formCadastro').style.display='none'; document.getElementById('mensagemLogin').innerHTML=''; }
+// ================== VARIÁVEIS GLOBAIS ==================
+let supabase;
+let usuarioAtual = null;
+let ehAdmin = false;
+let diarias = [];
+let descontos = [];
+let abaAtiva = 'diarias';
+let paginaDiarias = 1;
+let paginaDescontos = 1;
+let graficoInstancia = null;
+let graficoUsuarioInstancia = null;
+let debounceTimerDiarias, debounceTimerDescontos;
 
-            async function fazerCadastro(){
-                const nome=document.getElementById('nomeCad').value.trim();
-                const email=document.getElementById('emailCad').value.trim();
-                const senha=document.getElementById('senhaCad').value;
-                if(!nome||!email||senha.length<6){
-                    document.getElementById('mensagemLogin').innerHTML='<span style="color:var(--erro)">Preencha todos os campos. Senha com mínimo 6 caracteres.</span>';
-                    return;
-                }
-                const {error}=await supabase.auth.signUp({email,password:senha,options:{data:{nome}}});
-                if(error){ document.getElementById('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`; return; }
-                document.getElementById('mensagemLogin').innerHTML='<span style="color:var(--sucesso)">✅ Conta criada! Verifique seu e-mail para ativar.</span>';
-                toast('Conta criada! Confirme seu e-mail antes de entrar.','aviso');
-                mostrarLogin();
-            }
-
-            async function fazerLogin(){
-                const email=document.getElementById('emailLogin').value.trim();
-                const senha=document.getElementById('senhaLogin').value;
-                if(!email||!senha){
-                    document.getElementById('mensagemLogin').innerHTML='<span style="color:var(--erro)">Preencha e-mail e senha.</span>';
-                    return;
-                }
-                try{
-                    const {error}=await supabase.auth.signInWithPassword({email,password:senha});
-                    if(error) {
-  document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`;
-  return;
+// ================== FUNÇÕES UTILITÁRIAS ==================
+function hoje() {
+  return new Date().toISOString().split('T')[0];
 }
-// Login bem-sucedido — será acionado pelo listener de mudança de estado
-} catch (e) {
-  document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${mensagemAmigavel(e)}</span>`;
+function dataBr(data) {
+  if (!data) return '';
+  const [ano, mes, dia] = data.split('-');
+  return `${dia}/${mes}/${ano}`;
 }
+function nomeMes(mes) {
+  const nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const m = String(mes).padStart(2,'0');
+  const idx = parseInt(m) - 1;
+  return nomes[idx] || m;
+}
+function chaveMes(data) {
+  return data ? data.slice(0,7) : '';
+}
+function moeda(v) {
+  return Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+}
+function moedaParaNumero(str) {
+  if (!str) return 0;
+  return Number(String(str).replace(/\./g,'').replace(',','.'));
+}
+function formatarValor(input) {
+  let v = input.value.replace(/\D/g,'');
+  if (v.length === 0) { input.value = ''; return; }
+  if (v.length === 1) v = '00' + v;
+  if (v.length === 2) v = '0' + v;
+  const inteiro = v.slice(0, -2);
+  const centavos = v.slice(-2);
+  input.value = Number(inteiro).toLocaleString('pt-BR') + ',' + centavos;
+}
+function mensagemAmigavel(erro) {
+  if (!erro) return 'Erro desconhecido';
+  const msg = erro.message || String(erro);
+  if (msg.includes('Invalid login credentials')) return 'E-mail ou senha incorretos';
+  if (msg.includes('Email not confirmed')) return 'Confirme seu e-mail antes de entrar';
+  if (msg.includes('Password should be at least 6 characters')) return 'A senha deve ter pelo menos 6 caracteres';
+  if (msg.includes('User already registered')) return 'Este e-mail já está cadastrado';
+  if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) return 'Sem conexão com o servidor';
+  return msg;
+}
+function toast(texto, tipo = 'sucesso') {
+  const el = document.createElement('div');
+  el.className = `toast ${tipo}`;
+  el.textContent = texto;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+function verificarConexao() {
+  const online = navigator.onLine;
+  const statusEl = document.querySelector('.status');
+  if (statusEl) {
+    const bolinha = statusEl.querySelector('.bolinha');
+    if (bolinha) bolinha.style.background = online ? 'var(--accent3)' : 'var(--erro)';
+  }
+}
+function alternarTema() {
+  const html = document.documentElement;
+  const tema = html.getAttribute('data-tema') === 'claro' ? 'escuro' : 'claro';
+  html.setAttribute('data-tema', tema);
+  localStorage.setItem('tema', tema);
+  graficoInstancia?.setOption({ backgroundColor: 'transparent' });
+}
+function carregarTema() {
+  const salvo = localStorage.getItem('tema');
+  if (salvo) document.documentElement.setAttribute('data-tema', salvo);
 }
 
+// ================== TELA LOGIN ==================
+function mostrarCadastro() {
+  document.getElementById('formLogin').style.display = 'none';
+  document.getElementById('formCadastro').style.display = 'block';
+  document.getElementById('mensagemLogin').innerHTML = '';
+}
+function mostrarLogin() {
+  document.getElementById('formLogin').style.display = 'block';
+  document.getElementById('formCadastro').style.display = 'none';
+  document.getElementById('mensagemLogin').innerHTML = '';
+}
+async function fazerCadastro() {
+  const nome = document.getElementById('nomeCadastro').value.trim();
+  const email = document.getElementById('emailCadastro').value.trim();
+  const senha = document.getElementById('senhaCadastro').value;
+  if (!nome || !email || senha.length < 6) {
+    document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--aviso)">Preencha todos os campos (senha mínima 6 dígitos)</span>`;
+    return;
+  }
+  try {
+    const { error } = await supabase.auth.signUp({
+      email, password: senha,
+      options: { data: { nome } }
+    });
+    if (error) throw error;
+    document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--accent3)">Conta criada! Verifique seu e-mail para confirmar.</span>`;
+    mostrarLogin();
+  } catch (e) {
+    document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${mensagemAmigavel(e)}</span>`;
+  }
+}
+async function fazerLogin() {
+  const email = document.getElementById('emailLogin').value.trim();
+  const senha = document.getElementById('senhaLogin').value;
+  if (!email || !senha) {
+    document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--aviso)">Digite e-mail e senha</span>`;
+    return;
+  }
+  try {
+    const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+    if (error) {
+      document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`;
+      return;
+    }
+  } catch (e) {
+    document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${mensagemAmigavel(e)}</span>`;
+  }
+}
 async function sairConta() {
   await supabase.auth.signOut();
   usuarioAtual = null;
@@ -575,312 +448,77 @@ async function sairConta() {
   verificarConexao();
 }
 
-async function carregarDados() {
-  if (!usuarioAtual) return;
-  verificarConexao();
+// ================== NAVEGAÇÃO ==================
+function selecionarAba(nome) {
+  abaAtiva = nome;
+  document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
+  event.target.classList.add('ativa');
+  document.querySelectorAll('.conteudo-aba').forEach(c => c.classList.remove('ativa'));
+  document.getElementById(`aba${nome.charAt(0).toUpperCase() + nome.slice(1)}`).classList.add('ativa');
+  if (nome === 'diarias') {
+    graficoInstancia?.resize();
+    graficoUsuarioInstancia?.resize();
+  }
+}
 
+// ================== FUNÇÃO DE CARREGAMENTO FORÇADA ==================
+async function carregarDadosFORCADO() {
+  console.log("📥 Carregando dados FORÇADAMENTE...");
+  
   try {
-    // Carregar Diárias
     let query = supabase.from('diarias').select('*').order('data', { ascending: false });
     if (!ehAdmin) query = query.eq('usuario_id', usuarioAtual.id);
-    const { data: d, error: e } = await query;
-    if (e) { console.error("Erro diárias:", e); diarias = []; }
-    else { diarias = d || []; console.log("✅ Diárias:", diarias); }
-  } catch (erro) {
-    console.error("Erro ao carregar diárias:", erro);
-    diarias = [];
-  }
-
-  try {
-    // Carregar Descontos
-    let queryDesc = supabase.from('descontos').select('*').order('data', { ascending: false });
-    if (!ehAdmin) queryDesc = queryDesc.eq('usuario_id', usuarioAtual.id);
-    const { data: desc, error: eDesc } = await queryDesc;
-    if (eDesc) { console.error("Erro descontos:", eDesc); descontos = []; }
-    else { descontos = desc || []; console.log("✅ Descontos:", descontos); }
-  } catch (erro) {
-    console.error("Erro ao carregar descontos:", erro);
-    descontos = [];
-  }
-
-  // ========== DESENHAR TABELA MANUALMENTE ==========
-  desenharTabelaDiarias();
-}
-
-// DESENHA A TABELA SEM DEPENDER DE OUTRAS FUNÇÕES
-function desenharTabelaDiarias() {
-  const corpo = document.getElementById('tabelaDiarias');
-  const vazio = document.getElementById('vazioDiarias');
-  const totalEl = document.getElementById('totalDiarias');
-  const qtdEl = document.getElementById('qtdDiarias');
-
-  if (!corpo) return;
-  corpo.innerHTML = '';
-
-  if (diarias.length === 0) {
-    if (vazio) vazio.style.display = 'block';
-    if (totalEl) totalEl.textContent = 'R$ 0,00';
-    if (qtdEl) qtdEl.textContent = '0 registros';
-    return;
-  }
-
-  if (vazio) vazio.style.display = 'none';
-
-  let total = 0;
-  diarias.forEach(d => {
-    total += Number(d.valor);
-    const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid rgba(148,163,184,0.1)';
-    tr.innerHTML = `
-      <td style="padding:12px 10px">${d.data || ''}</td>
-      <td style="padding:12px 10px">${d.descricao || '—'}</td>
-      <td style="padding:12px 10px">${d.nome_usuario || '—'}</td>
-      <td style="padding:12px 10px; text-align:right; font-weight:600; color:#00d4ff">R$ ${Number(d.valor).toFixed(2).replace('.', ',')}</td>
-      <td style="padding:12px 10px; text-align:right">
-        <button onclick="editarDiaria('${d.id}')" style="margin:0 4px; padding:4px 8px; cursor:pointer; border:none; background:transparent; font-size:16px;">✏️</button>
-        <button onclick="excluirDiaria('${d.id}')" style="margin:0 4px; padding:4px 8px; cursor:pointer; border:none; background:transparent; font-size:16px;">🗑️</button>
-      </td>
-    `;
-    corpo.appendChild(tr);
-  });
-
-  if (totalEl) totalEl.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
-  if (qtdEl) qtdEl.textContent = `${diarias.length} registro${diarias.length !== 1 ? 's' : ''}`;
-}
-            
-// ========== DIÁRIAS ==========
-function preencherFiltrosDiarias() {
-  const meses = new Set(), anos = new Set();
-  diarias.forEach(d => {
-    const [ano, mes] = d.data.split('-');
-    meses.add(mes);
-    anos.add(ano);
-  });
-  const selMes = document.getElementById('filtroMesDiarias');
-  const selAno = document.getElementById('filtroAnoDiarias');
-  selMes.innerHTML = '<option value="todos">Todos os meses</option>';
-  selAno.innerHTML = '<option value="todos">Todos os anos</option>';
-  [...meses].sort().reverse().forEach(m => {
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = nomeMes(m);
-    selMes.appendChild(opt);
-  });
-  [...anos].sort().reverse().forEach(a => {
-    const opt = document.createElement('option');
-    opt.value = a;
-    opt.textContent = a;
-    selAno.appendChild(opt);
-  });
-}
-
-function filtrarDiarias() {
-  const busca = document.getElementById('buscaDiarias')?.value?.toLowerCase().trim() || '';
-  const mesSel = document.getElementById('filtroMesDiarias')?.value || 'todos';
-  const anoSel = document.getElementById('filtroAnoDiarias')?.value || 'todos';
-  const dataInicio = document.getElementById('dataInicioDiarias')?.value || '';
-  const dataFim = document.getElementById('dataFimDiarias')?.value || '';
-
-  let filtrado = diarias.slice();
-  
-  if (!ehAdmin) {
-    filtrado = filtrado.filter(d => d.usuario_id === usuarioAtual.id);
-  }
-  
-  if (busca) {
-    filtrado = filtrado.filter(d =>
-      (d.descricao || '').toLowerCase().includes(busca) ||
-      String(d.valor || '').includes(busca) ||
-      (d.data || '').includes(busca)
-    );
-  }
-  
-  if (mesSel !== 'todos') {
-    filtrado = filtrado.filter(d => String(d.data).split('-')[1] === mesSel);
-  }
-  if (anoSel !== 'todos') {
-    filtrado = filtrado.filter(d => String(d.data).split('-')[0] === anoSel);
-  }
-  if (dataInicio) {
-    filtrado = filtrado.filter(d => d.data >= dataInicio);
-  }
-  if (dataFim) {
-    filtrado = filtrado.filter(d => d.data <= dataFim);
-  }
-
-  paginaDiarias = 1;
-  renderizarTabelaDiarias(filtrado);
-  atualizarMetricasDiarias(filtrado);
-}
-
-function renderizarTabelaDiarias(lista) {
-  const corpo = document.getElementById('tabelaDiarias');
-  const vazio = document.getElementById('vazioDiarias');
-  const pagEl = document.getElementById('paginacaoDiarias');
-  
-  if (!corpo) return;
-  
-  corpo.innerHTML = '';
-  
-  if (!lista || lista.length === 0) {
-    if (vazio) vazio.style.display = 'block';
-    if (pagEl) pagEl.innerHTML = '';
-    return;
-  }
-  
-  if (vazio) vazio.style.display = 'none';
-  
-  const ITENS_POR_PAGINA = 10;
-  const totalPag = Math.ceil(lista.length / ITENS_POR_PAGINA);
-  const inicio = (paginaDiarias - 1) * ITENS_POR_PAGINA;
-  const paginada = lista.slice(inicio, inicio + ITENS_POR_PAGINA);
-
-  paginada.forEach(d => {
-    const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid rgba(148,163,184,0.1)';
-    tr.innerHTML = `
-      <td style="padding:12px 10px">${d.data || ''}</td>
-      <td style="padding:12px 10px">${d.descricao || '—'}</td>
-      <td style="padding:12px 10px">${d.nome_usuario || '—'}</td>
-      <td style="padding:12px 10px; text-align:right; font-weight:600; color:#00d4ff">R$ ${Number(d.valor || 0).toFixed(2).replace('.', ',')}</td>
-      <td style="padding:12px 10px; text-align:right">
-        <button onclick="editarDiaria('${d.id}')" style="margin:0 4px; padding:4px 8px; cursor:pointer">✏️</button>
-        <button onclick="excluirDiaria('${d.id}')" style="margin:0 4px; padding:4px 8px; cursor:pointer">🗑️</button>
-      </td>
-    `;
-    corpo.appendChild(tr);
-  });
-
-  if (pagEl) {
-    pagEl.innerHTML = `<div style="padding:10px 0">${lista.length} registro(s) encontrado(s)</div>`;
-  }
-}
-
-function atualizarMetricasDiarias(lista) {
-  if (!lista || lista.length === 0) {
-    const els = ['totalDiarias','qtdDiarias','mediaDiarias','maiorDiarias','mesAtualDiarias'];
-    els.forEach(id => { const el = document.getElementById(id); if(el) el.textContent = 'R$ 0,00'; });
-    const qtd = document.getElementById('qtdDiarias'); if(qtd) qtd.textContent = '0 registros';
-    return;
-  }
-
-  const total = lista.reduce((s, d) => s + Number(d.valor || 0), 0);
-  const qtd = lista.length;
-  const media = total / qtd;
-  const maior = lista.reduce((a, b) => Number(a.valor||0) > Number(b.valor||0) ? a : b);
-
-  const elTotal = document.getElementById('totalDiarias');
-  const elQtd = document.getElementById('qtdDiarias');
-  const elMedia = document.getElementById('mediaDiarias');
-  const elMaior = document.getElementById('maiorDiarias');
-
-  if(elTotal) elTotal.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
-  if(elQtd) elQtd.textContent = `${qtd} registro${qtd!==1?'s':''}`;
-  if(elMedia) elMedia.textContent = `R$ ${media.toFixed(2).replace('.', ',')}`;
-  if(elMaior) elMaior.textContent = `R$ ${Number(maior.valor||0).toFixed(2).replace('.', ',')}`;
-}
-function atualizarGraficosDiarias() {
-  const porMes = {};
-  const porUsuario = {};
-  diarias.forEach(d => {
-    if (!ehAdmin && d.usuario_id !== usuarioAtual.id) return;
-    const chave = chaveMes(d.data);
-    porMes[chave] = (porMes[chave] || 0) + Number(d.valor);
-    if (d.nome_usuario) {
-      porUsuario[d.nome_usuario] = (porUsuario[d.nome_usuario] || 0) + Number(d.valor);
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error("❌ Erro do banco:", error);
+      return;
     }
-  });
 
-  const labels = Object.keys(porMes).sort();
-  const valores = labels.map(k => porMes[k]);
-  const labelsNomes = labels.map(k => { const [a, m] = k.split('-'); return `${nomeMes(m).slice(0, 3)}/${a.slice(-2)}`; });
+    diarias = data || [];
+    console.log("✅ DIÁRIAS RECEBIDAS:", diarias);
 
-  const opt = {
-    backgroundColor: 'transparent',
-    textStyle: { color: '#94a3b8' },
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(20, 28, 45, 0.85)',
-      borderColor: 'rgba(148, 163, 184, 0.15)',
-      textStyle: { color: '#e2e8f0' },
-      formatter: p => {
-        const d = p[0];
-        return `${d.name}<br/>R$ ${moeda(d.value)}`;
-      }
-    },
-    grid: { left: 60, right: 20, top: 15, bottom: 40 },
-    xAxis: {
-      type: 'category',
-      data: labelsNomes,
-      axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.15)' } },
-      axisLabel: { color: '#94a3b8' }
-    },
-    yAxis: {
-      type: 'value',
-      axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.15)' } },
-      splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.15)', opacity: 0.4 } },
-      axisLabel: { color: '#94a3b8', formatter: v => `R$ ${moeda(v)}` }
-    },
-    series: [{
-      name: 'Diárias',
-      type: 'bar',
-      data: valores,
-      itemStyle: {
-        borderRadius: [6, 6, 0, 0],
-        color: {
-          type: 'linear',
-          x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [
-            { offset: 0, color: '#00d4ff' },
-            { offset: 1, color: '#a855f7' }
-          ]
-        }
-      },
-      label: {
-        show: true,
-        position: 'top',
-        color: '#e2e8f0',
-        fontSize: 11,
-        formatter: p => `R$ ${moeda(p.value)}`
-      }
-    }]
-  };
+    const corpo = document.getElementById('tabelaDiarias');
+    if (!corpo) { console.log("❌ Elemento tabelaDiarias não encontrado!"); return; }
+    
+    corpo.innerHTML = '';
 
-  if (!graficoInstancia) graficoInstancia = echarts.init(document.getElementById('grafico'));
-  graficoInstancia.setOption(opt, true);
+    if (diarias.length === 0) {
+      corpo.innerHTML = `<tr><td colspan="5" style="padding:30px; text-align:center; color:#94a3b8;">Nenhuma diária cadastrada ainda.</td></tr>`;
+      return;
+    }
 
-  // Gráfico por usuário (apenas admin)
-  const secUsuario = document.getElementById('graficoUsuarioSecao');
-  if (ehAdmin && Object.keys(porUsuario).length > 0) {
-    secUsuario.style.display = 'block';
-    const nomes = Object.keys(porUsuario);
-    const vals = nomes.map(n => porUsuario[n]);
-    const opt2 = {
-      backgroundColor: 'transparent',
-      tooltip: {
-        trigger: 'item',
-        backgroundColor: 'rgba(20, 28, 45, 0.85)',
-        borderColor: 'rgba(148, 163, 184, 0.15)',
-        textStyle: { color: '#e2e8f0' },
-        formatter: p => `${p.name}<br/>R$ ${moeda(p.value)} (${p.percent}%)`
-      },
-      legend: { bottom: 0, textStyle: { color: '#94a3b8' } },
-      series: [{
-        type: 'pie',
-        radius: ['40%', '70%'],
-        center: ['50%', '45%'],
-        data: nomes.map((n, i) => ({ name: n, value: vals[i] }))
-      }]
-    };
-    if (!graficoUsuarioInstancia) graficoUsuarioInstancia = echarts.init(document.getElementById('graficoUsuario'));
-    graficoUsuarioInstancia.setOption(opt2, true);
-  } else {
-    secUsuario.style.display = 'none';
+    let total = 0;
+    diarias.forEach(d => {
+      total += Number(d.valor);
+      const linha = document.createElement('tr');
+      linha.style.borderBottom = '1px solid rgba(148,163,184,0.15)';
+      linha.innerHTML = `
+        <td style="padding:14px 10px">${d.data}</td>
+        <td style="padding:14px 10px">${d.descricao || '—'}</td>
+        <td style="padding:14px 10px">${d.nome_usuario || '—'}</td>
+        <td style="padding:14px 10px; text-align:right; color:#00d4ff; font-weight:600">R$ ${Number(d.valor).toFixed(2).replace('.', ',')}</td>
+        <td style="padding:14px 10px; text-align:right">
+          <button onclick="editarDiaria('${d.id}')" style="border:none; background:transparent; font-size:18px; cursor:pointer;">✏️</button>
+          <button onclick="excluirDiaria('${d.id}')" style="border:none; background:transparent; font-size:18px; cursor:pointer;">🗑️</button>
+        </td>
+      `;
+      corpo.appendChild(linha);
+    });
+
+    const totalEl = document.getElementById('totalDiarias');
+    const qtdEl = document.getElementById('qtdDiarias');
+    if (totalEl) totalEl.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+    if (qtdEl) qtdEl.textContent = `${diarias.length} registro${diarias.length !== 1 ? 's' : ''}`;
+
+    console.log("✅ Tabela desenhada com sucesso!");
+
+  } catch (e) {
+    console.error("❌ ERRO GERAL:", e);
   }
-
-  setTimeout(() => { graficoInstancia?.resize(); graficoUsuarioInstancia?.resize(); }, 150);
 }
 
+// ================== DIÁRIAS - MODAL E CRUD ==================
 function abrirModalDiaria(id = null) {
   const modal = document.getElementById('modalDiaria');
   modal.style.display = 'flex';
@@ -897,14 +535,11 @@ function abrirModalDiaria(id = null) {
       document.getElementById('descricaoDiaria').value = d.descricao || '';
     }
   }
-  document.getElementById('valorDiaria').focus();
 }
-
 function fecharModalDiaria() {
   document.getElementById('modalDiaria').style.display = 'none';
   document.getElementById('editIdDiaria').value = '';
 }
-
 async function salvarDiaria(e) {
   e.preventDefault();
   const id = document.getElementById('editIdDiaria').value;
@@ -932,40 +567,37 @@ async function salvarDiaria(e) {
       toast('Diária cadastrada ✅');
     }
     fecharModalDiaria();
-    await carregarDados();
+    await carregarDadosFORCADO();
   } catch (erro) {
     toast(`Erro: ${mensagemAmigavel(erro)}`, 'erro');
   }
 }
-
 async function editarDiaria(id) { abrirModalDiaria(id); }
-
 async function excluirDiaria(id) {
   if (!confirm('Tem certeza? Essa ação não pode ser desfeita.')) return;
   try {
     const { error } = await supabase.from('diarias').delete().eq('id', id);
     if (error) throw error;
     toast('Diária excluída ✅');
-    await carregarDados();
+    await carregarDadosFORCADO();
   } catch (erro) {
     toast(`Erro: ${mensagemAmigavel(erro)}`, 'erro');
   }
 }
-
 function limparFiltrosDiarias() {
   document.getElementById('buscaDiarias').value = '';
   document.getElementById('filtroMesDiarias').value = 'todos';
   document.getElementById('filtroAnoDiarias').value = 'todos';
   document.getElementById('dataInicioDiarias').value = '';
   document.getElementById('dataFimDiarias').value = '';
-  filtrarDiarias();
 }
-
 function debounceAtualizarDiarias() {
   clearTimeout(debounceTimerDiarias);
-  debounceTimerDiarias = setTimeout(filtrarDiarias, 300);
+  debounceTimerDiarias = setTimeout(carregarDadosFORCADO, 300);
 }
-
+function filtrarDiarias() {
+  carregarDadosFORCADO();
+}
 function exportarDiarias() {
   const cab = ['Data','Descrição','Usuário','Valor'];
   const linhas = [cab.join(';')];
@@ -982,140 +614,7 @@ function exportarDiarias() {
   toast('CSV exportado ✅');
 }
 
-// ========== DESCONTOS ==========
-function preencherFiltrosDescontos() {
-  const meses = new Set(), anos = new Set();
-  descontos.forEach(d => {
-    const [ano, mes] = d.data.split('-');
-    meses.add(mes);
-    anos.add(ano);
-  });
-  const selMes = document.getElementById('filtroMesDescontos');
-  const selAno = document.getElementById('filtroAnoDescontos');
-  selMes.innerHTML = '<option value="todos">Todos os meses</option>';
-  selAno.innerHTML = '<option value="todos">Todos os anos</option>';
-  [...meses].sort().reverse().forEach(m => {
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = nomeMes(m);
-    selMes.appendChild(opt);
-  });
-  [...anos].sort().reverse().forEach(a => {
-    const opt = document.createElement('option');
-    opt.value = a;
-    opt.textContent = a;
-    selAno.appendChild(opt);
-  });
-}
-
-function filtrarDescontos() {
-  const busca = document.getElementById('buscaDescontos').value.toLowerCase().trim();
-  const mesSel = document.getElementById('filtroMesDescontos').value;
-  const anoSel = document.getElementById('filtroAnoDescontos').value;
-  const dataInicio = document.getElementById('dataInicioDescontos').value;
-  const dataFim = document.getElementById('dataFimDescontos').value;
-
-  let filtrado = descontos.slice();
-  if (!ehAdmin) filtrado = filtrado.filter(d => d.usuario_id === usuarioAtual.id);
-  if (busca) filtrado = filtrado.filter(d =>
-    (d.descricao || '').toLowerCase().includes(busca) ||
-    moeda(d.valor).includes(busca) ||
-    dataBr(d.data).includes(busca)
-  );
-  if (mesSel !== 'todos') filtrado = filtrado.filter(d => d.data.split('-')[1] === mesSel);
-  if (anoSel !== 'todos') filtrado = filtrado.filter(d => d.data.split('-')[0] === anoSel);
-  if (dataInicio) filtrado = filtrado.filter(d => d.data >= dataInicio);
-  if (dataFim) filtrado = filtrado.filter(d => d.data <= dataFim);
-
-  paginaDescontos = 1;
-  renderizarTabelaDescontos(filtrado);
-  atualizarMetricasDescontos(filtrado);
-}
-
-function renderizarTabelaDescontos(lista) {
-  const corpo = document.getElementById('tabelaDescontos');
-  const vazio = document.getElementById('vazioDescontos');
-  const pagEl = document.getElementById('paginacaoDescontos');
-  corpo.innerHTML = '';
-  if (!lista.length) {
-    vazio.style.display = 'block';
-    pagEl.innerHTML = '';
-    return;
-  }
-  vazio.style.display = 'none';
-  const totalPag = Math.ceil(lista.length / ITENS_POR_PAGINA);
-  const inicio = (paginaDescontos - 1) * ITENS_POR_PAGINA;
-  const paginada = lista.slice(inicio, inicio + ITENS_POR_PAGINA);
-
-  let ultimoMes = '';
-  paginada.forEach(d => {
-    const mesAtual = chaveMes(d.data);
-    if (mesAtual !== ultimoMes) {
-      ultimoMes = mesAtual;
-      const [ano, mes] = mesAtual.split('-');
-      const tr = document.createElement('tr');
-      tr.className = 'mes-separador-desconto';
-      tr.innerHTML = `<td colspan="5" style="padding:8px 10px;font-weight:600;color:var(--accent3);background:var(--accent3-soft);">📅 ${nomeMes(mes)} de ${ano}</td>`;
-      corpo.appendChild(tr);
-    }
-    const tr = document.createElement('tr');
-    tr.className = 'tbl-row tbl-row-desconto';
-    tr.innerHTML = `
-      <td style="padding:10px 8px;">${dataBr(d.data)}</td>
-      <td style="padding:10px 8px;">${d.descricao || '—'}</td>
-      <td style="padding:10px 8px;">${d.nome_usuario || '—'}</td>
-      <td style="padding:10px 8px;text-align:right;font-weight:500;color:var(--accent3);">R$ ${moeda(d.valor)}</td>
-      <td style="padding:10px 8px;text-align:right;">
-        <button class="btn-icone" onclick="App.editarDesconto('${d.id}')" title="Editar">✏️</button>
-        <button class="btn-icone excluir-btn" onclick="App.excluirDesconto('${d.id}')" title="Excluir">🗑️</button>
-      </td>
-    `;
-    corpo.appendChild(tr);
-  });
-
-  pagEl.innerHTML = '';
-  if (totalPag > 1) {
-    if (paginaDescontos > 1) {
-      const btn = document.createElement('button');
-      btn.className = 'btn-secondary btn-pequeno';
-      btn.textContent = '◀';
-      btn.onclick = () => { paginaDescontos--; renderizarTabelaDescontos(lista); };
-      pagEl.appendChild(btn);
-    }
-    for (let i = 1; i <= totalPag; i++) {
-      const btn = document.createElement('button');
-      btn.className = `btn-secondary btn-pequeno ${i === paginaDescontos ? 'ativo' : ''}`;
-      btn.textContent = i;
-      btn.onclick = () => { paginaDescontos = i; renderizarTabelaDescontos(lista); };
-      pagEl.appendChild(btn);
-    }
-    if (paginaDescontos < totalPag) {
-      const btn = document.createElement('button');
-      btn.className = 'btn-secondary btn-pequeno';
-      btn.textContent = '▶';
-      btn.onclick = () => { paginaDescontos++; renderizarTabelaDescontos(lista); };
-      pagEl.appendChild(btn);
-    }
-  }
-}
-
-function atualizarMetricasDescontos(lista) {
-  const total = lista.reduce((s, d) => s + Number(d.valor), 0);
-  const mesesUnicos = new Set(lista.map(d => chaveMes(d.data))).size || 1;
-  const maior = lista.length ? lista.reduce((a, b) => Number(a.valor) > Number(b.valor) ? a : b) : null;
-  const agora = new Date();
-  const mesCorrente = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
-  const esteMes = lista.filter(d => chaveMes(d.data) === mesCorrente).reduce((s, d) => s + Number(d.valor), 0);
-
-  document.getElementById('totalDescontos').textContent = `R$ ${moeda(total)}`;
-  document.getElementById('qtdDescontos').textContent = `${lista.length} registro${lista.length !== 1 ? 's' : ''}`;
-  document.getElementById('mediaDescontos').textContent = `R$ ${moeda(total / mesesUnicos)}`;
-  document.getElementById('maiorDescontos').textContent = maior ? `R$ ${moeda(maior.valor)}` : 'R$ 0,00';
-  document.getElementById('maiorDataDescontos').textContent = maior ? dataBr(maior.data) : '—';
-  document.getElementById('mesAtualDescontos').textContent = `R$ ${moeda(esteMes)}`;
-  document.getElementById('mesInfoDescontos').textContent = nomeMes(agora.getMonth() + 1);
-}
-
+// ================== DESCONTOS - MODAL E CRUD ==================
 function abrirModalDesconto(id = null) {
   const modal = document.getElementById('modalDesconto');
   modal.style.display = 'flex';
@@ -1132,14 +631,11 @@ function abrirModalDesconto(id = null) {
       document.getElementById('descricaoDesconto').value = d.descricao || '';
     }
   }
-  document.getElementById('descricaoDesconto').focus();
 }
-
 function fecharModalDesconto() {
   document.getElementById('modalDesconto').style.display = 'none';
   document.getElementById('editIdDesconto').value = '';
 }
-
 async function salvarDesconto(e) {
   e.preventDefault();
   const id = document.getElementById('editIdDesconto').value;
@@ -1168,40 +664,24 @@ async function salvarDesconto(e) {
       toast('Desconto cadastrado ✅');
     }
     fecharModalDesconto();
-    await carregarDados();
   } catch (erro) {
     toast(`Erro: ${mensagemAmigavel(erro)}`, 'erro');
   }
 }
-
 async function editarDesconto(id) { abrirModalDesconto(id); }
-
 async function excluirDesconto(id) {
   if (!confirm('Tem certeza? Essa ação não pode ser desfeita.')) return;
   try {
     const { error } = await supabase.from('descontos').delete().eq('id', id);
     if (error) throw error;
     toast('Desconto excluído ✅');
-    await carregarDados();
   } catch (erro) {
     toast(`Erro: ${mensagemAmigavel(erro)}`, 'erro');
   }
 }
-
-function limparFiltrosDescontos() {
-  document.getElementById('buscaDescontos').value = '';
-  document.getElementById('filtroMesDescontos').value = 'todos';
-  document.getElementById('filtroAnoDescontos').value = 'todos';
-  document.getElementById('dataInicioDescontos').value = '';
-  document.getElementById('dataFimDescontos').value = '';
-  filtrarDescontos();
-}
-
-function debounceAtualizarDescontos() {
-  clearTimeout(debounceTimerDescontos);
-  debounceTimerDescontos = setTimeout(filtrarDescontos, 300);
-}
-
+function limparFiltrosDescontos() {}
+function debounceAtualizarDescontos() {}
+function filtrarDescontos() {}
 function exportarDescontos() {
   const cab = ['Data','O que foi descontado','Usuário','Valor'];
   const linhas = [cab.join(';')];
@@ -1218,7 +698,7 @@ function exportarDescontos() {
   toast('CSV exportado ✅');
 }
 
-// ========== INICIALIZAÇÃO ==========
+// ================== REGISTRO DAS FUNÇÕES ==================
 window.App = {
   fazerLogin, fazerCadastro, sairConta, alternarTema, selecionarAba, mostrarCadastro, mostrarLogin,
   abrirModalDiaria, fecharModalDiaria, salvarDiaria, editarDiaria, excluirDiaria,
@@ -1228,6 +708,7 @@ window.App = {
   exportarDiarias, exportarDescontos, formatarValor
 };
 
+// ================== INICIALIZAÇÃO ==================
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
     e.preventDefault();
@@ -1262,7 +743,6 @@ window.onload = async () => {
       document.getElementById('telaLogin').style.display = 'none';
       document.getElementById('telaApp').style.display = 'block';
       
-      // Carrega os dados
       await carregarDadosFORCADO();
     } else {
       usuarioAtual = null;
@@ -1272,7 +752,6 @@ window.onload = async () => {
     }
   });
 
-  // Verificar sessão salva
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.user) {
     usuarioAtual = session.user;
@@ -1281,90 +760,9 @@ window.onload = async () => {
     document.getElementById('telaLogin').style.display = 'none';
     document.getElementById('telaApp').style.display = 'block';
     
-    // Carrega os dados
     await carregarDadosFORCADO();
   }
 };
-
-// FUNÇÃO FORÇADA SEM DEPENDÊNCIAS
-async function carregarDadosFORCADO() {
-  console.log("📥 Carregando dados FORÇADAMENTE...");
-  
-  try {
-    let query = supabase.from('diarias').select('*').order('data', { ascending: false });
-    if (!ehAdmin) query = query.eq('usuario_id', usuarioAtual.id);
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error("❌ Erro do banco:", error);
-      return;
-    }
-
-    diarias = data || [];
-    console.log("✅ DIÁRIAS RECEBIDAS:", diarias);
-
-    // DESENHA TABELA DIRETO
-    const corpo = document.getElementById('tabelaDiarias');
-    if (!corpo) { console.log("❌ Elemento tabelaDiarias não encontrado!"); return; }
-    
-    corpo.innerHTML = '';
-
-    if (diarias.length === 0) {
-      corpo.innerHTML = `<tr><td colspan="5" style="padding:30px; text-align:center; color:#94a3b8;">Nenhuma diária cadastrada ainda.</td></tr>`;
-      return;
-    }
-
-    let total = 0;
-    diarias.forEach(d => {
-      total += Number(d.valor);
-      const linha = document.createElement('tr');
-      linha.style.borderBottom = '1px solid rgba(148,163,184,0.15)';
-      linha.innerHTML = `
-        <td style="padding:14px 10px">${d.data}</td>
-        <td style="padding:14px 10px">${d.descricao || '—'}</td>
-        <td style="padding:14px 10px">${d.nome_usuario || '—'}</td>
-        <td style="padding:14px 10px; text-align:right; color:#00d4ff; font-weight:600">R$ ${Number(d.valor).toFixed(2).replace('.', ',')}</td>
-        <td style="padding:14px 10px; text-align:right">
-          <button onclick="editarDiaria('${d.id}')" style="border:none; background:transparent; font-size:18px; cursor:pointer;">✏️</button>
-          <button onclick="excluirDiaria('${d.id}')" style="border:none; background:transparent; font-size:18px; cursor:pointer;">🗑️</button>
-        </td>
-      `;
-      corpo.appendChild(linha);
-    });
-
-    // Atualiza métricas
-    const totalEl = document.getElementById('totalDiarias');
-    const qtdEl = document.getElementById('qtdDiarias');
-    if (totalEl) totalEl.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
-    if (qtdEl) qtdEl.textContent = `${diarias.length} registro${diarias.length !== 1 ? 's' : ''}`;
-
-    console.log("✅ Tabela desenhada com sucesso!");
-
-  } catch (e) {
-    console.error("❌ ERRO GERAL:", e);
-  }
-}
-
-  // Verificar sessão existente
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.user) {
-    usuarioAtual = session.user;
-    ehAdmin = usuarioAtual.email === ADM_EMAIL;
-    document.getElementById('nomeUsuario').textContent = usuarioAtual.user_metadata?.nome || usuarioAtual.email.split('@')[0];
-    document.getElementById('telaLogin').style.display = 'none';
-    document.getElementById('telaApp').style.display = 'block';
-    verificarConexao();
-    await carregarDados();
-  } else {
-    verificarConexao();
-  }
-
-  window.addEventListener('resize', () => {
-    graficoInstancia?.resize();
-    graficoUsuarioInstancia?.resize();
-  });
-};
-})();
 </script>
 </body>
 </html>
