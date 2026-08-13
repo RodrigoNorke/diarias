@@ -523,11 +523,17 @@ async function fazerCadastro(){
 }
 
 async function fazerLogin(){
-  const email=document.getElementById('emailLogin').value.trim();
-  const senha=document.getElementById('senhaLogin').value;
-  if(!email||!senha){document.getElementById('mensagemLogin').innerHTML='<span style="color:var(--erro)">Preencha e-mail e senha.</span>';return;}
-  const {error}=await app.auth.signInWithPassword({email,password:senha});
-  if(error){document.getElementById('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`;return;}
+  const email = document.getElementById('emailLogin').value.trim();
+  const senha = document.getElementById('senhaLogin').value;
+  if(!email || !senha){
+    document.getElementById('mensagemLogin').innerHTML = '<span style="color:var(--erro)">Preencha e-mail e senha.</span>';
+    return;
+  }
+  const { error } = await app.auth.signInWithPassword({ email, password: senha });
+  if(error){
+    document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`;
+    return;
+  }
 }
 
 async function sairConta(){
@@ -578,7 +584,7 @@ async function carregarDiarias(){
 }
 
 async function carregarDescontos(){
-  document.getElementById('carregandoDescontos').style.display='block';
+  document.getElementById.getElementById('carregandoDescontos').style.display='block';
   try{
     let q=app.from('descontos').select('*');
     if(!ehAdmin) q=q.eq('usuario_id',usuarioAtual.id);
@@ -818,15 +824,15 @@ function atualizarPaginacao(paginaAtual,total,idContainer){
   const totalPag=Math.ceil(total/ITENS_POR_PAGINA);
   if(totalPag<=1){pag.innerHTML='';return;}
   let botoes=[];
-  botoes.push(`<button class="btn-secondary btn-pequeno" onclick="${paginaAtual===1?'':'paginaAtual--;atualizarTabela()'}" ${paginaAtual===1?'disabled':''}>‹</button>`);
+  botoes.push(`<button class="btn-secondary btn-pequeno" onclick="${paginaAtual===1?'':'paginaDiarias--;atualizarTabelaDiarias()'}" ${paginaAtual===1?'disabled':''}>‹</button>`);
   for(let i=1;i<=totalPag;i++){
-    if(i===1||i===totalPag||(i>=paginaAtual-1&&i<=paginaAtual+1))){
-      botoes.push(`<button class="btn-secondary btn-pequeno ${i===paginaAtual?'ativo':''}" onclick="paginaAtual=${i};atualizarTabela()">${i}</button>`);
+    if(i===1||i===totalPag||(i>=paginaAtual-1&&i<=paginaAtual+1)){
+      botoes.push(`<button class="btn-secondary btn-pequeno ${i===paginaAtual?'ativo':''}" onclick="paginaDiarias=${i};atualizarTabelaDiarias()">${i}</button>`);
     }else if(i===paginaAtual-2||i===paginaAtual+2){
       botoes.push(`<span style="padding:0 4px;">...</span>`);
     }
   }
-  botoes.push(`<button class="btn-secondary btn-pequeno" onclick="${paginaAtual===totalPag?'':'paginaAtual++;atualizarTabela()'}" ${paginaAtual===totalPag?'disabled':''}>›</button>`);
+  botoes.push(`<button class="btn-secondary btn-pequeno" onclick="${paginaAtual===totalPag?'':'paginaDiarias++;atualizarTabelaDiarias()'}" ${paginaAtual===totalPag?'disabled':''}>›</button>`);
   pag.innerHTML=botoes.join('');
 }
 
@@ -1080,6 +1086,15 @@ window.onload=async function(){
 // Fechar modais ao clicar fora
 document.getElementById('modalDiaria').addEventListener('click',e=>{if(e.target.id==='modalDiaria')fecharModalDiaria();});
 document.getElementById('modalDesconto').addEventListener('click',e=>{if(e.target.id==='modalDesconto')fecharModalDesconto();});
+
+// === DETECÇÃO DE LOGIN PELO SUPABASE ===
+app.auth.onAuthStateChange(async (event,session)=>{
+  if(event==='SIGNED_IN' && session?.user && !usuarioAtual){
+    usuarioAtual=session.user;
+    ehAdmin=(usuarioAtual.email||'').toLowerCase()===ADM_EMAIL.toLowerCase();
+    entrarApp(usuarioAtual);
+  }
+});
 </script>
 </body>
 </html>
