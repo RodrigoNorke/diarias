@@ -17,8 +17,11 @@ const app = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { autoRefreshToken: true, persistSession: true }
 });
 
-// === COLOQUE SEU E-MAIL DE ADMINISTRADOR AQUI ===
+// === SEU E-MAIL DE ADMINISTRADOR ===
 const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
+
+// === TEMA ===
+let temaEscuro = true;
 
 (function(){
   var s = document.createElement('style');
@@ -35,35 +38,59 @@ const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
   --accent2:#58a590;
   --accent2-soft:rgba(88,165,144,.12);
   --border:rgba(168,176,200,.10);
+  --erro:#f87171;
+}
+.tema-claro{
+  --bg:#f8f9fc;
+  --bg-soft:#eff1f7;
+  --card:#ffffff;
+  --card-hover:#f4f6fc;
+  --text:#1e293b;
+  --text-soft:#64748b;
+  --accent:#b47f2e;
+  --accent-soft:rgba(180,127,46,.08);
+  --accent2:#3d8b76;
+  --accent2-soft:rgba(61,139,118,.08);
+  --border:rgba(148,163,184,.15);
 }
 *{box-sizing:border-box;}
-body{background:linear-gradient(135deg,#0f1118 0%,#171a25 100%);min-height:100vh;}
+body{background:linear-gradient(135deg,var(--bg) 0%,var(--bg-soft) 100%);min-height:100vh;transition:background .3s ease,color .3s ease;}
 .reveal{opacity:0;transform:translateY(16px);animation:fadeUp .7s ease forwards;}
 .reveal:nth-child(2){animation-delay:.08s;}
 .reveal:nth-child(3){animation-delay:.16s;}
 .reveal:nth-child(4){animation-delay:.24s;}
 @keyframes fadeUp{to{opacity:1;transform:translateY(0);}}
 .metric-card{background:var(--card);border:1px solid var(--border);border-radius:20px;transition:all .3s ease;}
-.metric-card:hover{background:var(--card-hover);transform:translateY(-4px);box-shadow:0 18px 45px rgba(0,0,0,.35),0 0 0 1px var(--accent-soft);border-color:rgba(212,160,72,.25);}
+.metric-card:hover{background:var(--card-hover);transform:translateY(-4px);box-shadow:0 18px 45px rgba(0,0,0,.25),0 0 0 1px var(--accent-soft);border-color:rgba(212,160,72,.25);}
 .tbl-row{transition:background .15s ease;}
 .tbl-row:hover{background:var(--accent-soft);}
-input,select{outline:none;transition:all .2s ease;}
+input,select{outline:none;transition:all .2s ease;background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:12px;}
 input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--accent-soft);}
-.btn-primary{background:linear-gradient(135deg,#d4a048,#c48f38);color:#1a1405;font-weight:600;transition:all .25s ease;border-radius:14px;box-shadow:0 4px 12px rgba(212,160,72,.15);}
+.btn-primary{background:linear-gradient(135deg,#d4a048,#c48f38);color:#1a1405;font-weight:600;transition:all .25s ease;border-radius:14px;box-shadow:0 4px 12px rgba(212,160,72,.15);border:none;cursor:pointer;}
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(212,160,72,.25);}
-.btn-secondary{background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:12px;transition:all .25s ease;}
+.btn-secondary{background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:12px;transition:all .25s ease;cursor:pointer;}
 .btn-secondary:hover{border-color:var(--text-soft);background:var(--card);}
-.modal-backdrop{background:rgba(6,8,15,.82);backdrop-filter:blur(10px);}
-.toast{position:fixed;bottom:28px;right:28px;background:var(--card);border:1px solid var(--accent-soft);color:var(--text);padding:14px 22px;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.4);z-index:9999;animation:toastIn .3s ease;}
+.modal-backdrop{background:rgba(6,8,15,.85);backdrop-filter:blur(10px);}
+.toast{position:fixed;bottom:28px;right:28px;background:var(--card);border:1px solid var(--accent-soft);color:var(--text);padding:14px 22px;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);z-index:9999;animation:toastIn .3s ease;}
 @keyframes toastIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 .spinner{width:20px;height:20px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .user-tag{background:var(--accent-soft);color:var(--accent);font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500;letter-spacing:.2px;}
 .status-tag{font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500;}
-.login-card{background:var(--card);border:1px solid var(--border);box-shadow:0 25px 80px rgba(0,0,0,.45),0 0 0 1px var(--border);border-radius:24px;}
-input,select{background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:12px;}
+.login-card{background:var(--card);border:1px solid var(--border);box-shadow:0 25px 80px rgba(0,0,0,.35),0 0 0 1px var(--border);border-radius:24px;}
 .table-card{background:var(--card);border:1px solid var(--border);border-radius:20px;}
 .header-icon{background:linear-gradient(135deg,#d4a048,#b87f2f);box-shadow:0 8px 24px rgba(212,160,72,.25);border-radius:16px;}
+.btn-icone{background:transparent;border:none;cursor:pointer;padding:6px;border-radius:8px;transition:all .2s;}
+.btn-icone:hover{background:var(--accent-soft);}
+.editar-btn:hover{color:var(--accent)!important;}
+.excluir-btn:hover{color:#f87171!important;background:rgba(220,38,38,.12)!important;}
+@media(max-width:768px){
+  .tela-app{padding:16px 12px!important;}
+  .metric-card{padding:18px!important;}
+  .table-card{padding:16px!important;}
+  table{font-size:13px!important;}
+  .btn-primary,.btn-secondary{padding:10px 12px!important;font-size:14px!important;}
+}
 ::-webkit-scrollbar{width:8px;height:8px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
@@ -73,7 +100,7 @@ input,select{background:var(--bg-soft);border:1px solid var(--border);color:var(
 })();
 </script>
 </head>
-<body style="margin:0;padding:0;font-family:'Inter',sans-serif;color:var(--text);">
+<body id="corpo" style="margin:0;padding:0;font-family:'Inter',sans-serif;color:var(--text);transition:all .3s ease;">
 
 <!-- TELA DE LOGIN -->
 <div id="telaLogin" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;">
@@ -103,7 +130,7 @@ input,select{background:var(--bg-soft);border:1px solid var(--border);color:var(
 </div>
 
 <!-- TELA PRINCIPAL -->
-<div id="telaApp" style="display:none;padding:32px 24px;max-width:1200px;margin:0 auto;">
+<div id="telaApp" class="tela-app" style="display:none;padding:32px 24px;max-width:1200px;margin:0 auto;">
   <div class="reveal mb-12">
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;">
       <div class="header-icon" style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -114,17 +141,33 @@ input,select{background:var(--bg-soft);border:1px solid var(--border);color:var(
         <p style="color:var(--text-soft);font-size:15px;">Gestão de diárias · Acesso seguro de qualquer dispositivo.</p>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button onclick="alternarTema()" class="btn-secondary px-3 py-2 text-sm" title="Alternar Tema">🌙</button>
         <span id="nomeUsuario" class="user-tag"></span>
         <span id="statusConexao" class="status-tag" style="background:var(--border);color:var(--text-soft);">
           <span class="spinner" style="width:10px;height:10px;border-width:2px;margin-right:6px;vertical-align:middle"></span>
           Conectando...
         </span>
-        <button onclick="sairConta()" class="btn-secondary px-4 py-2 text-sm">Sair</button>
+        <button onclick="sairConta()" class="btn-secondary px-3 py-2 text-sm">Sair</button>
         <button onclick="abrirModal()" class="btn-primary px-5 py-2.5 text-sm flex items-center gap-2">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Nova Diária
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- FILTROS E BUSCA -->
+  <div class="reveal table-card p-5 mb-6">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+      <div style="flex:1;min-width:200px;">
+        <input id="busca" type="text" placeholder="🔍 Buscar por data, descrição ou valor..." oninput="atualizarTabela()" class="w-full px-4 py-2.5 text-sm">
+      </div>
+      <select id="filtroMes" onchange="atualizarTudo()" class="px-3 py-2.5 text-sm min-w-[140px]">
+        <option value="todos">Todos os meses</option>
+      </select>
+      <select id="filtroAno" onchange="atualizarTudo()" class="px-3 py-2.5 text-sm min-w-[120px]">
+        <option value="todos">Todos os anos</option>
+      </select>
     </div>
   </div>
 
@@ -171,16 +214,16 @@ input,select{background:var(--bg-soft);border:1px solid var(--border);color:var(
     </div>
   </div>
 
-  <!-- GRÁFICO -->
+  <!-- GRÁFICO PRINCIPAL -->
   <div class="reveal table-card p-7 mb-8">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-      <h2 style="flex:1;min-width:200px;font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--text);font-weight:600;">Evolução Mensal</h2>
-      <div style="display:flex;gap:8px;">
-        <select id="filtroAno" onchange="atualizarTudo()" class="btn-secondary px-3 py-2 text-sm"></select>
-        <button onclick="limparFiltro()" class="btn-secondary px-3 py-2 text-sm">Todos</button>
-      </div>
-    </div>
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--text);font-weight:600;margin-bottom:20px;">Evolução Mensal</h2>
     <div id="grafico" style="height:320px;width:100%;"></div>
+  </div>
+
+  <!-- GRÁFICO POR USUÁRIO (só ADM) -->
+  <div id="graficoUsuarioSecao" class="reveal table-card p-7 mb-8" style="display:none;">
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--text);font-weight:600;margin-bottom:20px;">Total por Usuário</h2>
+    <div id="graficoUsuario" style="height:300px;width:100%;"></div>
   </div>
 
   <!-- TABELA -->
@@ -200,7 +243,7 @@ input,select{background:var(--bg-soft);border:1px solid var(--border);color:var(
             <th class="text-left pb-3 font-medium">Descrição</th>
             <th class="text-left pb-3 font-medium">Usuário</th>
             <th class="text-right pb-3 font-medium">Valor</th>
-            <th class="text-right pb-3 w-12"></th>
+            <th class="text-right pb-3 w-28">Ações</th>
           </tr>
         </thead>
         <tbody id="tabelaDiarias"></tbody>
@@ -216,19 +259,20 @@ input,select{background:var(--bg-soft);border:1px solid var(--border);color:var(
   </div>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL NOVA / EDITAR DIÁRIA -->
 <div id="modal" class="modal-backdrop fixed inset-0 z-50 items-center justify-center p-4" style="display:none;">
   <div class="table-card p-8 w-full max-w-md">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-      <h3 style="font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--text);font-weight:600;">Nova Diária</h3>
-      <button onclick="fecharModal()" style="color:var(--text-soft);padding:6px;border-radius:8px;transition:all .2s;" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">
+      <h3 id="tituloModal" style="font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--text);font-weight:600;">Nova Diária</h3>
+      <button onclick="fecharModal()" class="btn-icone" style="color:var(--text-soft);">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <form onsubmit="salvarDiaria(event)" style="display:flex;flex-direction:column;gap:18px;">
+      <input type="hidden" id="editId">
       <div>
         <label class="block mb-2 text-sm font-medium" style="color:var(--text-soft);">Valor (R$)</label>
-        <input id="valor" type="number" step="0.01" min="0" required placeholder="0,00" class="w-full px-4 py-3 text-base">
+        <input id="valor" type="text" required placeholder="R$ 0,00" oninput="formatarValor(this)" class="w-full px-4 py-3 text-base">
       </div>
       <div>
         <label class="block mb-2 text-sm font-medium" style="color:var(--text-soft);">Data</label>
@@ -249,17 +293,52 @@ input,select{background:var(--bg-soft);border:1px solid var(--border);color:var(
 <script>
 let diarias = [];
 let graficoInstancia = null;
+let graficoUsuarioInstancia = null;
 let usuarioAtual = null;
 let ehAdmin = false;
 
+// === FUNÇÕES UTILITÁRIAS ===
 function moeda(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function moedaParaNumero(v){return Number(String(v).replace(/\D/g,''))/100}
+function formatarValor(input){
+  let valor = input.value.replace(/\D/g,'');
+  if(valor){
+    valor = (Number(valor)/100).toLocaleString('pt-BR',{minimumFractionDigits:2});
+    input.value = 'R$ ' + valor;
+  } else {
+    input.value = '';
+  }
+}
 function dataBr(d){return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}
 function mesAno(d){return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}
 function chaveMes(d){const dt=new Date(d+'T00:00:00');return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')}
+function nomeMes(chave){const m=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];const n=Number(chave);return m[n-1]||chave;}
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
 function setStatus(texto,cor){const el=document.getElementById('statusConexao');el.innerHTML=texto;el.style.background=cor;el.style.color='#1a1405';el.style.fontWeight='500';}
 
-// LOGIN
+// === TEMA CLARO / ESCURO ===
+function alternarTema(){
+  temaEscuro = !temaEscuro;
+  if(temaEscuro){
+    document.getElementById('corpo').classList.remove('tema-claro');
+    document.querySelector('[title="Alternar Tema"]').textContent = '🌙';
+  } else {
+    document.getElementById('corpo').classList.add('tema-claro');
+    document.querySelector('[title="Alternar Tema"]').textContent = '☀️';
+  }
+  localStorage.setItem('tema', temaEscuro ? 'escuro' : 'claro');
+  setTimeout(()=>{graficoInstancia&&graficoInstancia.resize();graficoUsuarioInstancia&&graficoUsuarioInstancia.resize();},100);
+}
+function carregarTema(){
+  const salvo = localStorage.getItem('tema');
+  if(salvo==='claro'){
+    temaEscuro=false;
+    document.getElementById('corpo').classList.add('tema-claro');
+    document.querySelector('[title="Alternar Tema"]').textContent = '☀️';
+  }
+}
+
+// === LOGIN ===
 function mostrarCadastro(){document.getElementById('formEntrar').style.display='none';document.getElementById('formCadastro').style.display='block';document.getElementById('mensagemLogin').innerHTML='';}
 function mostrarLogin(){document.getElementById('formEntrar').style.display='block';document.getElementById('formCadastro').style.display='none';document.getElementById('mensagemLogin').innerHTML='';}
 
@@ -289,13 +368,15 @@ async function sairConta(){await app.auth.signOut();usuarioAtual=null;ehAdmin=fa
 function entrarApp(){
   document.getElementById('telaLogin').style.display='none';
   document.getElementById('telaApp').style.display='block';
+  carregarTema();
   const nome = usuarioAtual.user_metadata?.nome || usuarioAtual.email?.split('@')[0] || 'Usuário';
   document.getElementById('nomeUsuario').textContent = ehAdmin ? `👑 ${nome} (ADM)` : nome;
+  document.getElementById('graficoUsuarioSecao').style.display = ehAdmin ? 'block' : 'none';
   carregarDoBanco();
   ligarSincronia();
 }
 
-// BANCO
+// === BANCO DE DADOS ===
 async function carregarDoBanco() {
   try {
     let query = app.from('diarias').select('*');
@@ -316,8 +397,24 @@ function ligarSincronia() {
   app.channel('diarias-sync').on('postgres_changes',{event:'*',schema:'public',table:'diarias'},()=>carregarDoBanco()).subscribe(s=>{if(s==='SUBSCRIBED')setStatus('🟢 Online','rgba(88,165,144,.18)')});
 }
 
-// MODAL
-function abrirModal(){document.getElementById('modal').style.display='flex';document.getElementById('data').value=new Date().toISOString().split('T')[0];document.getElementById('valor').value='';document.getElementById('descricao').value='';setTimeout(()=>document.getElementById('valor').focus(),50);}
+// === MODAL ===
+function abrirModal(dados=null){
+  document.getElementById('modal').style.display='flex';
+  if(dados){
+    document.getElementById('tituloModal').textContent='Editar Diária';
+    document.getElementById('editId').value=dados.id;
+    document.getElementById('valor').value='R$ '+Number(dados.valor).toLocaleString('pt-BR',{minimumFractionDigits:2});
+    document.getElementById('data').value=dados.data;
+    document.getElementById('descricao').value=dados.descricao||'';
+  } else {
+    document.getElementById('tituloModal').textContent='Nova Diária';
+    document.getElementById('editId').value='';
+    document.getElementById('data').value=new Date().toISOString().split('T')[0];
+    document.getElementById('valor').value='';
+    document.getElementById('descricao').value='';
+  }
+  setTimeout(()=>document.getElementById('valor').focus(),50);
+}
 function fecharModal(){document.getElementById('modal').style.display='none';}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')fecharModal()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')fecharModal()});
@@ -327,47 +424,73 @@ async function salvarDiaria(e){
   const btn=document.getElementById('btnSalvar');
   btn.disabled=true;btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:8px;vertical-align:middle"></span>Salvando...';
   try{
-    const valor=parseFloat(document.getElementById('valor').value);
+    const valor=moedaParaNumero(document.getElementById('valor').value);
     const data=document.getElementById('data').value;
     const descricao=document.getElementById('descricao').value.trim()||null;
-    const {error}=await app.from('diarias').insert({valor,data,descricao,usuario_id:usuarioAtual.id,nome_usuario:usuarioAtual.user_metadata?.nome||usuarioAtual.email?.split('@')[0]||'Usuário'});
-    if(error)throw error;
-    toast('✅ Diária registrada!');fecharModal();
+    const id=document.getElementById('editId').value;
+    if(id){
+      // EDITAR
+      const diariaAntiga = diarias.find(d=>d.id===id);
+      if(!ehAdmin && diariaAntiga.usuario_id !== usuarioAtual.id){toast('❌ Sem permissão');return;}
+      const {error}=await app.from('diarias').update({valor,data,descricao}).eq('id',id);
+      if(error)throw error;
+      toast('✅ Diária atualizada!');
+    } else {
+      // CRIAR NOVA
+      const {error}=await app.from('diarias').insert({
+        valor,data,descricao,
+        usuario_id:usuarioAtual.id,
+        nome_usuario:usuarioAtual.user_metadata?.nome||usuarioAtual.email?.split('@')[0]||'Usuário'
+      });
+      if(error)throw error;
+      toast('✅ Diária registrada!');
+    }
+    fecharModal();
   }catch(err){toast('❌ Erro: '+err.message);}
   finally{btn.disabled=false;btn.textContent='Salvar';}
 }
 
 async function excluir(id, usuarioId){
   if (!ehAdmin && usuarioId !== usuarioAtual.id) {toast('❌ Você só pode excluir suas próprias diárias.');return;}
-  if(!confirm('Excluir esta diária?'))return;
-  try{const {error}=await app.from('diarias').delete().eq('id',id);if(error)throw error;toast('✅ Excluída');}
+  if(!confirm('⚠️ Tem certeza que deseja excluir esta diária?\n\nEsta ação não pode ser desfeita!'))return;
+  try{const {error}=await app.from('diarias').delete().eq('id',id);if(error)throw error;toast('✅ Diária excluída com sucesso');}
   catch(err){toast('❌ Erro: '+err.message);}
 }
 
-// FILTROS E MÉTRICAS
-function diariasFiltradas(){const ano=document.getElementById('filtroAno').value;return (!ano||ano==='todos')?diarias:diarias.filter(d=>d.data.startsWith(ano));}
-function limparFiltro(){document.getElementById('filtroAno').value='todos';atualizarTudo();}
-function preencherAnos(){const sel=document.getElementById('filtroAno');const anos=[...new Set(diarias.map(d=>d.data.slice(0,4)))].sort((a,b)=>b-a);sel.innerHTML='<option value="todos">Todos os anos</option>'+anos.map(a=>`<option value="${a}">${a}</option>`).join('');}
-
-function atualizarMetricas(){
-  const lista=diariasFiltradas();
-  const total=lista.reduce((s,d)=>s+Number(d.valor),0);
-  const qtd=lista.length;
-  const media=qtd>0?total/qtd:0;
-  const maior=qtd>0?lista.reduce((m,d)=>Number(d.valor)>Number(m.valor)?d:m):null;
-  const hoje=new Date();
-  const chaveHoje=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0');
-  const mesLista=diarias.filter(d=>chaveMes(d.data)===chaveHoje);
-  const totalMes=mesLista.reduce((s,d)=>s+Number(d.valor),0);
-  document.getElementById('total').textContent=moeda(total);
-  document.getElementById('subtotalInfo').textContent=`${qtd} diária${qtd===1?'':'s'}`;
-  document.getElementById('media').textContent=moeda(media);
-  document.getElementById('maior').textContent=maior?moeda(maior.valor):moeda(0);
-  document.getElementById('maiorData').textContent=maior?dataBr(maior.data):'—';
-  document.getElementById('mesAtual').textContent=moeda(totalMes);
-  document.getElementById('mesInfo').textContent=`${mesLista.length} em ${mesAno(hoje.toISOString().split('T')[0])}`;
+// === FILTROS E BUSCA ===
+function diariasFiltradas(){
+  const busca = (document.getElementById('busca')?.value||'').toLowerCase().trim();
+  const anoSel = document.getElementById('filtroAno').value;
+  const mesSel = document.getElementById('filtroMes').value;
+  return diarias.filter(d=>{
+    const chave = chaveMes(d.data);
+    const [ano,mes] = chave.split('-');
+    const anoOk = anoSel==='todos' || ano===anoSel;
+    const mesOk = mesSel==='todos' || chave===mesSel;
+    const textoOk = !busca || d.data.includes(busca) || (d.descricao||'').toLowerCase().includes(busca) || moeda(d.valor).includes(busca);
+    return anoOk && mesOk && textoOk;
+  });
+}
+function preencherFiltros(){
+  const selAno = document.getElementById('filtroAno');
+  const selMes = document.getElementById('filtroMes');
+  const anos = [...new Set(diarias.map(d=>d.data.slice(0,4)))].sort((a,b)=>b-a);
+  selAno.innerHTML='<option value="todos">Todos os anos</option>'+anos.map(a=>`<option value="${a}">${a}</option>`).join('');
+  const meses = [...new Set(diarias.map(d=>chaveMes(d.data)))].sort((a,b)=>b.localeCompare(a));
+  selMes.innerHTML='<option value="todos">Todos os meses</option>'+meses.map(m=>{
+    const [a,nm]=m.split('-');
+    return `<option value="${m}">${nomeMes(nm)} de ${a}</option>`;
+  }).join('');
 }
 
+// === ATUALIZAÇÕES ===
+function atualizarTudo(){
+  preencherFiltros();
+  atualizarMetricas();
+  atualizarTabela();
+  atualizarGraficoPrincipal();
+  atualizarGraficoPorUsuario();
+}
 function atualizarTabela(){
   const lista=diariasFiltradas();
   const tb=document.getElementById('tabelaDiarias');
@@ -381,53 +504,118 @@ function atualizarTabela(){
       <td class="py-3.5">${d.nome_usuario||'—'}</td>
       <td class="py-3.5 text-right font-medium" style="color:var(--accent);font-family:'Cormorant Garamond',serif;font-size:17px;">${moeda(d.valor)}</td>
       <td class="py-3.5 text-right">
-        <button onclick='excluir("${d.id}","${d.usuario_id||''}")' style="color:var(--text-soft);padding:6px;border-radius:8px;transition:all .2s;" onmouseover="this.style.background='rgba(220,38,38,.12)';this.style.color='#f87171'" onmouseout="this.style.background='transparent';this.style.color='var(--text-soft)'">
+        <button onclick='abrirModal(${JSON.stringify(d).replace(/'/g,"\\'")})' class="btn-icone editar-btn" style="color:var(--text-soft);margin-right:4px;" title="Editar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+        </button>
+        <button onclick='excluir("${d.id}","${d.usuario_id||''}")' class="btn-icone excluir-btn" style="color:var(--text-soft);" title="Excluir">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
         </button>
       </td>
     </tr>
   `).join('');
 }
+function atualizarMetricas(){
+  const lista=diariasFiltradas();
+  const total=lista.reduce((s,d)=>s+Number(d.valor),0);
+  const qtd=lista.length;
+  const media=qtd>0?total/qtd:0;
+  const maior=qtd>0?lista.reduce((m,d)=>Number(d.valor)>Number(m.valor)?d:m):null;
+  const hoje=new Date();
+  const chaveHoje=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0');
+  const mesLista=lista.filter(d=>chaveMes(d.data)===chaveHoje);
+  const totalMes=mesLista.reduce((s,d)=>s+Number(d.valor),0);
+  document.getElementById('total').textContent=moeda(total);
+  document.getElementById('subtotalInfo').textContent=`${qtd} diária${qtd===1?'':'s'}`;
+  document.getElementById('media').textContent=moeda(media);
+  document.getElementById('maior').textContent=maior?moeda(maior.valor):moeda(0);
+  document.getElementById('maiorData').textContent=maior?dataBr(maior.data):'—';
+  document.getElementById('mesAtual').textContent=moeda(totalMes);
+  document.getElementById('mesInfo').textContent=`${mesLista.length} em ${mesAno(hoje.toISOString().split('T')[0])}`;
+}
 
-function atualizarGrafico(){
+// === GRÁFICOS ===
+function atualizarGraficoPrincipal(){
   const lista=diariasFiltradas();
   const el=document.getElementById('grafico');
   if(!el)return;
-  if(typeof echarts==='undefined'){setTimeout(atualizarGrafico,250);return;}
+  if(typeof echarts==='undefined'){setTimeout(atualizarGraficoPrincipal,250);return;}
   if(!graficoInstancia)graficoInstancia=echarts.init(el);
   const meses={};
   lista.forEach(d=>{const k=chaveMes(d.data);meses[k]=(meses[k]||0)+Number(d.valor);});
   const chaves=Object.keys(meses).sort();
-  const rotulos=chaves.map(k=>{const[a,m]=k.split('-');return new Date(a,Number(m)-1,1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})});
+  const rotulos=chaves.map(k=>{const[a,m]=k.split('-');return `${nomeMes(m)}/${a.slice(-2)}`;});
   const valores=chaves.map(k=>Number(meses[k].toFixed(2)));
   const grad={type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(212,160,72,.85)'},{offset:1,color:'rgba(212,160,72,.15)'}]};
   graficoInstancia.setOption({
     backgroundColor:'transparent',
-    tooltip:{trigger:'axis',backgroundColor:'#1c1f2e',borderColor:'rgba(168,176,200,.15)',textStyle:{color:'#e6e9f2'},formatter:p=>`<b>${p[0].axisValue}</b><br><span style="color:#d4a048;font-weight:600">${moeda(p[0].value)}</span>`},
+    tooltip:{trigger:'axis',backgroundColor:'var(--card)',borderColor:'var(--border)',textStyle:{color:'var(--text)'},formatter:p=>`<b>${p[0].axisValue}</b><br><span style="color:var(--accent);font-weight:600">${moeda(p[0].value)}</span>`},
     grid:{left:'3%',right:'4%',bottom:'3%',top:'10%',containLabel:true},
-    xAxis:{type:'category',data:rotulos.length?rotulos:['Sem dados'],axisLabel:{color:'#a8b0c8',fontSize:11},axisTick:{show:false},axisLine:{lineStyle:{color:'rgba(168,176,200,.12)'}}},
-    yAxis:{type:'value',scale:true,axisLabel:{color:'#a8b0c8',fontSize:11,formatter:v=>'R$ '+v},splitLine:{lineStyle:{color:'rgba(168,176,200,.10)',type:'dashed'}}},
-    series:[{type:'bar',data:valores.length?valores:[0],barWidth:'52%',itemStyle:{borderRadius:[10,10,0,0],color:grad},label:{show:valores.length>0&&valores.length<=12,position:'top',color:'#e6e9f2',fontSize:12,formatter:p=>moeda(p.value)}}]
+    xAxis:{type:'category',data:rotulos.length?rotulos:['Sem dados'],axisLabel:{color:'var(--text-soft)',fontSize:11},axisTick:{show:false},axisLine:{lineStyle:{color:'var(--border)'}}},
+    yAxis:{type:'value',scale:true,axisLabel:{color:'var(--text-soft)',fontSize:11,formatter:v=>'R$ '+v},splitLine:{lineStyle:{color:'var(--border)',type:'dashed'}}},
+    series:[{type:'bar',data:valores.length?valores:[0],barWidth:'52%',itemStyle:{borderRadius:[10,10,0,0],color:grad},label:{show:valores.length>0&&valores.length<=12,position:'top',color:'var(--text)',fontSize:12,formatter:p=>moeda(p.value)}}]
   },true);
   window.addEventListener('resize',()=>graficoInstancia&&graficoInstancia.resize());
 }
 
-function exportarDados(){
-  if(diarias.length===0){alert('Nenhum dado para exportar.');return;}
-  const csv='Data,Descrição,Usuário,Valor\n'+diarias.sort((a,b)=>a.data.localeCompare(b.data)).map(d=>`${d.data},"${(d.descricao||'').replace(/"/g,'""')}","${(d.nome_usuario||'').replace(/"/g,'""')}",${Number(d.valor).toFixed(2).replace('.',',')}`).join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
-  a.download=`diarias_${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
+function atualizarGraficoPorUsuario(){
+  if(!ehAdmin)return;
+  const el=document.getElementById('graficoUsuario');
+  if(!el)return;
+  if(typeof echarts==='undefined'){setTimeout(atualizarGraficoPorUsuario,250);return;}
+  if(!graficoUsuarioInstancia)graficoUsuarioInstancia=echarts.init(el);
+  const porUser={};
+  diarias.forEach(d=>{
+    const nome = d.nome_usuario || 'Desconhecido';
+    porUser[nome] = (porUser[nome]||0) + Number(d.valor);
+  });
+  const nomes = Object.keys(porUser);
+  const valores = nomes.map(n=>Number(porUser[n].toFixed(2)));
+  graficoUsuarioInstancia.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'item',backgroundColor:'var(--card)',borderColor:'var(--border)',textStyle:{color:'var(--text)'},formatter:p=>`<b>${p.name}</b><br><span style="color:var(--accent);font-weight:600">${moeda(p.value)}</span>`},
+    legend:{bottom:10,textStyle:{color:'var(--text-soft)'}},
+    series:[{
+      type:'pie',
+      radius:['40%','70%'],
+      center:['50%','45%'],
+      label:{show:true,color:'var(--text)',fontSize:11},
+      labelLine:{lineStyle:{color:'var(--border)'}},
+      data:nomes.map((n,i)=>({value:valores[i],name:n})),
+      color:['#d4a048','#58a590','#6393d9','#d9638c','#9363d9','#63d9c9','#d9c563','#8cd963']
+    }]
+  },true);
+  window.addEventListener('resize',()=>graficoUsuarioInstancia&&graficoUsuarioInstancia.resize());
 }
 
-function atualizarTudo(){preencherAnos();atualizarMetricas();atualizarTabela();atualizarGrafico();}
+// === EXPORTAR CSV ===
+function exportarDados(){
+  const lista=diariasFiltradas();
+  if(lista.length===0){alert('Nenhum dado para exportar.');return;}
+  const csv='Data,Descrição,Usuário,Valor\n'+
+    lista.sort((a,b)=>a.data.localeCompare(b.data))
+         .map(d=>`${d.data},"${(d.descricao||'').replace(/"/g,'""')}","${(d.nome_usuario||'').replace(/"/g,'""')}",${Number(d.valor).toFixed(2).replace('.',',')}`)
+         .join('\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='Diarias_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ Arquivo CSV exportado com sucesso!');
+}
 
-// INICIALIZAÇÃO
-app.auth.onAuthStateChange((event,session)=>{
-  if(session?.user){usuarioAtual=session.user;ehAdmin=(usuarioAtual.email||'').toLowerCase()===ADM_EMAIL.toLowerCase();entrarApp();}
-  else{document.getElementById('telaLogin').style.display='flex';document.getElementById('telaApp').style.display='none';}
-});
+// === INICIALIZAÇÃO ===
+window.onload = async function(){
+  const {data:{session}} = await app.auth.getSession();
+  if(session?.user){
+    usuarioAtual = session.user;
+    ehAdmin = (usuarioAtual.email || '').toLowerCase() === ADM_EMAIL.toLowerCase();
+    entrarApp();
+  } else {
+    document.getElementById('telaLogin').style.display='flex';
+  }
+};
 </script>
 </body>
 </html>
