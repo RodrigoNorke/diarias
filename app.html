@@ -1262,7 +1262,7 @@ window.onload = async () => {
       document.getElementById('telaLogin').style.display = 'none';
       document.getElementById('telaApp').style.display = 'block';
       
-      // FORÇA CARREGAMENTO APÓS LOGIN
+      // Carrega os dados
       await carregarDadosFORCADO();
     } else {
       usuarioAtual = null;
@@ -1272,7 +1272,7 @@ window.onload = async () => {
     }
   });
 
-  // Verificar sessão
+  // Verificar sessão salva
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.user) {
     usuarioAtual = session.user;
@@ -1281,7 +1281,7 @@ window.onload = async () => {
     document.getElementById('telaLogin').style.display = 'none';
     document.getElementById('telaApp').style.display = 'block';
     
-    // FORÇA CARREGAMENTO
+    // Carrega os dados
     await carregarDadosFORCADO();
   }
 };
@@ -1305,7 +1305,7 @@ async function carregarDadosFORCADO() {
 
     // DESENHA TABELA DIRETO
     const corpo = document.getElementById('tabelaDiarias');
-    if (!corpo) { console.log("❌ Tabela não encontrada no HTML!"); return; }
+    if (!corpo) { console.log("❌ Elemento tabelaDiarias não encontrado!"); return; }
     
     corpo.innerHTML = '';
 
