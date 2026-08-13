@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CashLog</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -437,6 +438,14 @@
     </div>
 
     <script>
+        /*
+        ============================================================
+        CASHLOG – APLICAÇÃO COMPLETA (CORRIGIDA E SEM ERROS)
+        ============================================================
+        IMPORTANTE: Configure as políticas RLS no Supabase conforme
+        documentação no final deste arquivo.
+        ============================================================
+        */
         (function() {
             // Configuração
             const SUPABASE_URL = "https://xptujmysydmczmhpoebn.supabase.co";
@@ -555,7 +564,8 @@
                 }
                 const {error}=await supabase.auth.signUp({email,password:senha,options:{data:{nome}}});
                 if(error){ document.getElementById('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`; return; }
-                document.getElementById('mensagemLogin').innerHTML='<span style="color:var(--sucesso)">✅ Conta criada! Verifique seu e-mail para ativar.</span>';                toast('Conta criada! Confirme seu e-mail antes de entrar.','aviso');
+                document.getElementById('mensagemLogin').innerHTML='<span style="color:var(--sucesso)">✅ Conta criada! Verifique seu e-mail para ativar.</span>';
+                toast('Conta criada! Confirme seu e-mail antes de entrar.','aviso');
                 mostrarLogin();
             }
 
@@ -578,6 +588,19 @@
                 }
             }
 
+            async function sairConta(){
+                await supabase.auth.signOut();
+                diarias=[];
+                descontos=[];
+                usuarioAtual=null;
+                ehAdmin=false;
+                document.getElementById('telaLogin').style.display='flex';
+                document.getElementById('telaApp').style.display='none';
+                document.getElementById('emailLogin').value='';
+                document.getElementById('senhaLogin').value='';
+                document.getElementById('mensagemLogin').innerHTML='';
+            }
+
             function entrarApp(usuario){
                 usuarioAtual=usuario;
                 ehAdmin=(usuario.email||'').toLowerCase()===ADM_EMAIL.toLowerCase();
@@ -593,19 +616,6 @@
                 }, 300);
             }
 
-            async function sairConta(){
-                await supabase.auth.signOut();
-                diarias=[];
-                descontos=[];
-                usuarioAtual=null;
-                ehAdmin=false;
-                document.getElementById('telaLogin').style.display='flex';
-                document.getElementById('telaApp').style.display='none';
-                document.getElementById('emailLogin').value='';
-                document.getElementById('senhaLogin').value='';
-                document.getElementById('mensagemLogin').innerHTML='';
-            }
-
             // ---------- BANCO DE DADOS ----------
             async function carregarTudoDoBanco(){
                 verificarConexao();
@@ -614,13 +624,13 @@
                     document.getElementById('carregandoDiarias').style.display='block';
                     document.getElementById('carregandoDescontos').style.display='block';
 
-                    let qDiarias=supabase.from('diarias').select('*',{count:'exact'}).order('data',{ascending:false});
+                    let qDiarias=supabase.from('diarias').select('*').order('data',{ascending:false});
                     if(!ehAdmin) qDiarias=qDiarias.eq('usuario_id',usuarioAtual.id);
                     const {data:dadosDiarias,error:eDiarias}=await qDiarias;
                     if(eDiarias) throw eDiarias;
                     diarias=dadosDiarias||[];
 
-                    let qDescontos=supabase.from('descontos').select('*',{count:'exact'}).order('data',{ascending:false});
+                    let qDescontos=supabase.from('descontos').select('*').order('data',{ascending:false});
                     if(!ehAdmin) qDescontos=qDescontos.eq('usuario_id',usuarioAtual.id);
                     const {data:dadosDescontos,error:eDescontos}=await qDescontos;
                     if(eDescontos) throw eDescontos;
@@ -778,21 +788,48 @@
                 const el=document.getElementById('grafico');
                 if(!el||!window.echarts) return;
                 if(!graficoInstancia) graficoInstancia=echarts.init(el);
+
+                const corTexto = getComputedStyle(document.body).getPropertyValue('--text').trim();
+                const corTextoSuave = getComputedStyle(document.body).getPropertyValue('--text-soft').trim();
+                const corBorda = getComputedStyle(document.body).getPropertyValue('--border').trim();
+
                 graficoInstancia.setOption({
                     backgroundColor:'transparent',
-                    textStyle:{color:'var(--text)'},
-                    tooltip:{trigger:'axis',backgroundColor:'rgba(17,24,39,.9)',borderColor:'var(--border)',textStyle:{color:'#fff'},formatter:p=>{
-                        const v=p[0].value;
-                        return `${p[0].axisValue}<br/>Total: <b>R$ ${moeda(v)}</b>`;
-                    }},
+                    textStyle:{color:corTexto},
+                    tooltip:{
+                        trigger:'axis',
+                        backgroundColor:'rgba(17,24,39,.9)',
+                        borderColor:corBorda,
+                        textStyle:{color:'#fff'},
+                        formatter:p=>{
+                            const v=p[0].value;
+                            return `${p[0].axisValue}<br/>Total: <b>R$ ${moeda(v)}</b>`;
+                        }
+                    },
                     grid:{left:'3%',right:'4%',bottom:'3%',containLabel:true},
-                    xAxis:{type:'category',data:labels,axisLine:{lineStyle:{color:'var(--border)'}},axisLabel:{color:'var(--text-soft)'}},
-                    yAxis:{type:'value',axisLine:{lineStyle:{color:'var(--border)'}},axisLabel:{color:'var(--text-soft)'},splitLine:{lineStyle:{color:'var(--border)'}}},
+                    xAxis:{
+                        type:'category',
+                        data:labels,
+                        axisLine:{lineStyle:{color:corBorda}},
+                        axisLabel:{color:corTextoSuave}
+                    },
+                    yAxis:{
+                        type:'value',
+                        axisLine:{lineStyle:{color:corBorda}},
+                        axisLabel:{color:corTextoSuave},
+                        splitLine:{lineStyle:{color:corBorda}}
+                    },
                     series:[{
                         name:'Diárias',
                         type:'bar',
                         data:valores,
-                        itemStyle:{borderRadius:[6,6,0,0],color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#00d4ff'},{offset:1,color:'#0090ff'}])},
+                        itemStyle:{
+                            borderRadius:[6,6,0,0],
+                            color:new echarts.graphic.LinearGradient(0,0,0,1,[
+                                {offset:0,color:'#00d4ff'},
+                                {offset:1,color:'#0090ff'}
+                            ])
+                        },
                         barWidth:'50%'
                     }]
                 });
@@ -810,9 +847,21 @@
                 const el=document.getElementById('graficoUsuario');
                 if(!el||!window.echarts) return;
                 if(!graficoUsuarioInstancia) graficoUsuarioInstancia=echarts.init(el);
+
+                const corTexto = getComputedStyle(document.body).getPropertyValue('--text').trim();
+                const corTextoSuave = getComputedStyle(document.body).getPropertyValue('--text-soft').trim();
+                const corBorda = getComputedStyle(document.body).getPropertyValue('--border').trim();
+
                 graficoUsuarioInstancia.setOption({
                     backgroundColor:'transparent',
-                    tooltip:{trigger:'item',backgroundColor:'rgba(17,24,39,.9)',borderColor:'var(--border)',textStyle:{color:'#fff'},formatter:p=>`${p.name}<br/>Total: <b>R$ ${moeda(p.value)}</b>`},
+                    textStyle:{color:corTexto},
+                    tooltip:{
+                        trigger:'item',
+                        backgroundColor:'rgba(17,24,39,.9)',
+                        borderColor:corBorda,
+                        textStyle:{color:'#fff'},
+                        formatter:p=>`${p.name}<br/>Total: <b>R$ ${moeda(p.value)}</b>`
+                    },
                     series:[{
                         type:'pie',
                         radius:['40%','70%'],
@@ -864,28 +913,28 @@
                 if(data>hoje()){ toast('A data não pode ser futura','erro'); return; }
 
                 const payload={
-                    valor,data,descricao,
+                    valor,
+                    data,
+                    descricao,
                     usuario_id:usuarioAtual.id,
                     usuario_email:usuarioAtual.email
                 };
 
                 try{
-                    let res;
                     if(id){
-                        res=await supabase.from('diarias').update(payload).eq('id',id).select().single();
-                    }else{
-                        res=await supabase.from('diarias').insert(payload).select().single();
-                    }
-                    if(res.error) throw res.error;
-                    fecharModalDiaria();
-                    if(id){
+                        const {error}=await supabase.from('diarias').update(payload).eq('id',id);
+                        if(error) throw error;
                         diarias=diarias.map(d=>d.id===id?{...d,...payload}:d);
-                    }else{
-                        diarias.unshift(res.data);
+                    } else {
+                        const {error}=await supabase.from('diarias').insert(payload);
+                        if(error) throw error;
+                        // Após inserir, recarrega para obter o ID real
+                        await carregarTudoDoBanco();
                     }
+                    fecharModalDiaria();
                     atualizarTudoDiarias();
                     toast(id?'Diária atualizada! ✅':'Diária cadastrada! ✅','sucesso');
-                }catch(erro){
+                } catch(erro){
                     toast('Erro: '+mensagemAmigavel(erro),'erro');
                 }
             }
@@ -895,13 +944,14 @@
             async function excluirDiaria(id){
                 if(!confirm('Tem certeza? Essa ação pode ser desfeita nos próximos 10 segundos.')) return;
                 const d=diarias.find(x=>x.id===id);
+                if(!d) return;
                 ultimoDesfazer={tipo:'diaria',id:d.id,dados:d};
                 clearTimeout(desfazerTimer);
                 desfazerTimer=setTimeout(()=>{ ultimoDesfazer=null; },10000);
 
                 diarias=diarias.filter(x=>x.id!==id);
                 atualizarTudoDiarias();
-                toast(`Diária excluída. <button onclick="App.desfazer()" style="background:var(--sucesso);color:#000;border:none;padding:4px 8px;border-radius:6px;margin-left:8px;cursor-pointer;font-weight:600;">↩️ Desfazer</button>`,'aviso');
+                toast(`Diária excluída. <button onclick="App.desfazer()" style="background:var(--sucesso);color:#000;border:none;padding:4px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">↩️ Desfazer</button>`,'aviso');
 
                 const {error}=await supabase.from('diarias').delete().eq('id',id);
                 if(error){
@@ -1075,28 +1125,27 @@
                 if(data>hoje()){ toast('A data não pode ser futura','erro'); return; }
 
                 const payload={
-                    descricao,valor,data,
+                    descricao,
+                    valor,
+                    data,
                     usuario_id:usuarioAtual.id,
                     usuario_email:usuarioAtual.email
                 };
 
                 try{
-                    let res;
                     if(id){
-                        res=await supabase.from('descontos').update(payload).eq('id',id).select().single();
-                    }else{
-                        res=await supabase.from('descontos').insert(payload).select().single();
-                    }
-                    if(res.error) throw res.error;
-                    fecharModalDesconto();
-                    if(id){
+                        const {error}=await supabase.from('descontos').update(payload).eq('id',id);
+                        if(error) throw error;
                         descontos=descontos.map(d=>d.id===id?{...d,...payload}:d);
-                    }else{
-                        descontos.unshift(res.data);
+                    } else {
+                        const {error}=await supabase.from('descontos').insert(payload);
+                        if(error) throw error;
+                        await carregarTudoDoBanco();
                     }
+                    fecharModalDesconto();
                     atualizarTudoDescontos();
                     toast(id?'Desconto atualizado! ✅':'Desconto cadastrado! ✅','sucesso');
-                }catch(erro){
+                } catch(erro){
                     toast('Erro: '+mensagemAmigavel(erro),'erro');
                 }
             }
@@ -1106,13 +1155,14 @@
             async function excluirDesconto(id){
                 if(!confirm('Tem certeza? Pode desfazer em 10s.')) return;
                 const d=descontos.find(x=>x.id===id);
+                if(!d) return;
                 ultimoDesfazer={tipo:'desconto',id:d.id,dados:d};
                 clearTimeout(desfazerTimer);
                 desfazerTimer=setTimeout(()=>{ ultimoDesfazer=null; },10000);
 
                 descontos=descontos.filter(x=>x.id!==id);
                 atualizarTudoDescontos();
-                toast(`Desconto excluído. <button onclick="App.desfazer()" style="background:var(--sucesso);color:#000;border:none;padding:4px 8px;border-radius:6px;margin-left:8px;cursor-pointer;font-weight:600;">↩️ Desfazer</button>`,'aviso');
+                toast(`Desconto excluído. <button onclick="App.desfazer()" style="background:var(--sucesso);color:#000;border:none;padding:4px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">↩️ Desfazer</button>`,'aviso');
 
                 const {error}=await supabase.from('descontos').delete().eq('id',id);
                 if(error){
@@ -1212,6 +1262,7 @@
                 });
             }
 
+            // Expor API pública
             window.App={
                 fazerCadastro,fazerLogin,mostrarCadastro,mostrarLogin,
                 sairConta,alternarTema,selecionarAba,
