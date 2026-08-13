@@ -644,23 +644,38 @@ function preencherFiltrosDiarias() {
 }
 
 function filtrarDiarias() {
-  const busca = document.getElementById('buscaDiarias').value.toLowerCase().trim();
-  const mesSel = document.getElementById('filtroMesDiarias').value;
-  const anoSel = document.getElementById('filtroAnoDiarias').value;
-  const dataInicio = document.getElementById('dataInicioDiarias').value;
-  const dataFim = document.getElementById('dataFimDiarias').value;
+  const busca = document.getElementById('buscaDiarias')?.value?.toLowerCase().trim() || '';
+  const mesSel = document.getElementById('filtroMesDiarias')?.value || 'todos';
+  const anoSel = document.getElementById('filtroAnoDiarias')?.value || 'todos';
+  const dataInicio = document.getElementById('dataInicioDiarias')?.value || '';
+  const dataFim = document.getElementById('dataFimDiarias')?.value || '';
 
   let filtrado = diarias.slice();
-  if (!ehAdmin) filtrado = filtrado.filter(d => d.usuario_id === usuarioAtual.id);
-  if (busca) filtrado = filtrado.filter(d =>
-    (d.descricao || '').toLowerCase().includes(busca) ||
-    moeda(d.valor).includes(busca) ||
-    dataBr(d.data).includes(busca)
-  );
-  if (mesSel !== 'todos') filtrado = filtrado.filter(d => d.data.split('-')[1] === mesSel);
-  if (anoSel !== 'todos') filtrado = filtrado.filter(d => d.data.split('-')[0] === anoSel);
-  if (dataInicio) filtrado = filtrado.filter(d => d.data >= dataInicio);
-  if (dataFim) filtrado = filtrado.filter(d => d.data <= dataFim);
+  
+  if (!ehAdmin) {
+    filtrado = filtrado.filter(d => d.usuario_id === usuarioAtual.id);
+  }
+  
+  if (busca) {
+    filtrado = filtrado.filter(d =>
+      (d.descricao || '').toLowerCase().includes(busca) ||
+      String(d.valor || '').includes(busca) ||
+      (d.data || '').includes(busca)
+    );
+  }
+  
+  if (mesSel !== 'todos') {
+    filtrado = filtrado.filter(d => String(d.data).split('-')[1] === mesSel);
+  }
+  if (anoSel !== 'todos') {
+    filtrado = filtrado.filter(d => String(d.data).split('-')[0] === anoSel);
+  }
+  if (dataInicio) {
+    filtrado = filtrado.filter(d => d.data >= dataInicio);
+  }
+  if (dataFim) {
+    filtrado = filtrado.filter(d => d.data <= dataFim);
+  }
 
   paginaDiarias = 1;
   renderizarTabelaDiarias(filtrado);
@@ -671,88 +686,68 @@ function renderizarTabelaDiarias(lista) {
   const corpo = document.getElementById('tabelaDiarias');
   const vazio = document.getElementById('vazioDiarias');
   const pagEl = document.getElementById('paginacaoDiarias');
+  
+  if (!corpo) return;
+  
   corpo.innerHTML = '';
-  if (!lista.length) {
-    vazio.style.display = 'block';
-    pagEl.innerHTML = '';
+  
+  if (!lista || lista.length === 0) {
+    if (vazio) vazio.style.display = 'block';
+    if (pagEl) pagEl.innerHTML = '';
     return;
   }
-  vazio.style.display = 'none';
+  
+  if (vazio) vazio.style.display = 'none';
+  
+  const ITENS_POR_PAGINA = 10;
   const totalPag = Math.ceil(lista.length / ITENS_POR_PAGINA);
   const inicio = (paginaDiarias - 1) * ITENS_POR_PAGINA;
   const paginada = lista.slice(inicio, inicio + ITENS_POR_PAGINA);
 
-  let ultimoMes = '';
   paginada.forEach(d => {
-    const mesAtual = chaveMes(d.data);
-    if (mesAtual !== ultimoMes) {
-      ultimoMes = mesAtual;
-      const [ano, mes] = mesAtual.split('-');
-      const tr = document.createElement('tr');
-      tr.className = 'mes-separador';
-      tr.innerHTML = `<td colspan="5" style="padding:8px 10px;font-weight:600;">📅 ${nomeMes(mes)} de ${ano}</td>`;
-      corpo.appendChild(tr);
-    }
     const tr = document.createElement('tr');
-    tr.className = 'tbl-row';
+    tr.style.borderBottom = '1px solid rgba(148,163,184,0.1)';
     tr.innerHTML = `
-      <td style="padding:10px 8px;">${dataBr(d.data)}</td>
-      <td style="padding:10px 8px;">${d.descricao || '—'}</td>
-      <td style="padding:10px 8px;">${d.nome_usuario || '—'}</td>
-      <td style="padding:10px 8px;text-align:right;font-weight:500;color:var(--accent);">R$ ${moeda(d.valor)}</td>
-      <td style="padding:10px 8px;text-align:right;">
-        <button class="btn-icone" onclick="App.editarDiaria('${d.id}')" title="Editar">✏️</button>
-        <button class="btn-icone excluir-btn" onclick="App.excluirDiaria('${d.id}')" title="Excluir">🗑️</button>
+      <td style="padding:12px 10px">${d.data || ''}</td>
+      <td style="padding:12px 10px">${d.descricao || '—'}</td>
+      <td style="padding:12px 10px">${d.nome_usuario || '—'}</td>
+      <td style="padding:12px 10px; text-align:right; font-weight:600; color:#00d4ff">R$ ${Number(d.valor || 0).toFixed(2).replace('.', ',')}</td>
+      <td style="padding:12px 10px; text-align:right">
+        <button onclick="editarDiaria('${d.id}')" style="margin:0 4px; padding:4px 8px; cursor:pointer">✏️</button>
+        <button onclick="excluirDiaria('${d.id}')" style="margin:0 4px; padding:4px 8px; cursor:pointer">🗑️</button>
       </td>
     `;
     corpo.appendChild(tr);
   });
 
-  // Paginação
-  pagEl.innerHTML = '';
-  if (totalPag > 1) {
-    if (paginaDiarias > 1) {
-      const btn = document.createElement('button');
-      btn.className = 'btn-secondary btn-pequeno';
-      btn.textContent = '◀';
-      btn.onclick = () => { paginaDiarias--; renderizarTabelaDiarias(lista); };
-      pagEl.appendChild(btn);
-    }
-    for (let i = 1; i <= totalPag; i++) {
-      const btn = document.createElement('button');
-      btn.className = `btn-secondary btn-pequeno ${i === paginaDiarias ? 'ativo' : ''}`;
-      btn.textContent = i;
-      btn.onclick = () => { paginaDiarias = i; renderizarTabelaDiarias(lista); };
-      pagEl.appendChild(btn);
-    }
-    if (paginaDiarias < totalPag) {
-      const btn = document.createElement('button');
-      btn.className = 'btn-secondary btn-pequeno';
-      btn.textContent = '▶';
-      btn.onclick = () => { paginaDiarias++; renderizarTabelaDiarias(lista); };
-      pagEl.appendChild(btn);
-    }
+  if (pagEl) {
+    pagEl.innerHTML = `<div style="padding:10px 0">${lista.length} registro(s) encontrado(s)</div>`;
   }
 }
 
 function atualizarMetricasDiarias(lista) {
-  const total = lista.reduce((s, d) => s + Number(d.valor), 0);
-  const datas = lista.map(d => d.data);
-  const diasUnicos = new Set(datas).size || 1;
-  const maior = lista.length ? lista.reduce((a, b) => Number(a.valor) > Number(b.valor) ? a : b) : null;
-  const agora = new Date();
-  const mesCorrente = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
-  const esteMes = lista.filter(d => chaveMes(d.data) === mesCorrente).reduce((s, d) => s + Number(d.valor), 0);
+  if (!lista || lista.length === 0) {
+    const els = ['totalDiarias','qtdDiarias','mediaDiarias','maiorDiarias','mesAtualDiarias'];
+    els.forEach(id => { const el = document.getElementById(id); if(el) el.textContent = 'R$ 0,00'; });
+    const qtd = document.getElementById('qtdDiarias'); if(qtd) qtd.textContent = '0 registros';
+    return;
+  }
 
-  document.getElementById('totalDiarias').textContent = `R$ ${moeda(total)}`;
-  document.getElementById('qtdDiarias').textContent = `${lista.length} registro${lista.length !== 1 ? 's' : ''}`;
-  document.getElementById('mediaDiarias').textContent = `R$ ${moeda(total / diasUnicos)}`;
-  document.getElementById('maiorDiarias').textContent = maior ? `R$ ${moeda(maior.valor)}` : 'R$ 0,00';
-  document.getElementById('maiorDataDiarias').textContent = maior ? dataBr(maior.data) : '—';
-  document.getElementById('mesAtualDiarias').textContent = `R$ ${moeda(esteMes)}`;
-  document.getElementById('mesInfoDiarias').textContent = nomeMes(agora.getMonth() + 1);
+  const total = lista.reduce((s, d) => s + Number(d.valor || 0), 0);
+  const qtd = lista.length;
+  const media = total / qtd;
+  const maior = lista.reduce((a, b) => Number(a.valor||0) > Number(b.valor||0) ? a : b);
+
+  const elTotal = document.getElementById('totalDiarias');
+  const elQtd = document.getElementById('qtdDiarias');
+  const elMedia = document.getElementById('mediaDiarias');
+  const elMaior = document.getElementById('maiorDiarias');
+
+  if(elTotal) elTotal.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+  if(elQtd) elQtd.textContent = `${qtd} registro${qtd!==1?'s':''}`;
+  if(elMedia) elMedia.textContent = `R$ ${media.toFixed(2).replace('.', ',')}`;
+  if(elMaior) elMaior.textContent = `R$ ${Number(maior.valor||0).toFixed(2).replace('.', ',')}`;
 }
-
 function atualizarGraficosDiarias() {
   const porMes = {};
   const porUsuario = {};
