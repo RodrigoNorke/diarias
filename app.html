@@ -9,8 +9,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* ============================================
-           CASHLOG – TEMA FUTURISTA (CSS COMPLETO)
-           ============================================ */
+           CASHLOG – TEMA FUTURISTA
+        ============================================ */
         :root{
             --bg: #0a0e17;
             --bg-soft: #111827;
@@ -202,7 +202,6 @@
 
         <!-- Painel Diárias -->
         <div id="painelDiarias" class="painel-conteudo ativa">
-            <!-- Filtros -->
             <div class="reveal table-card p-4 mb-6">
                 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                     <input id="buscaDiarias" type="text" placeholder="🔍 Buscar..." oninput="App.debounceAtualizarDiarias()" style="flex:1;min-width:180px;">
@@ -223,7 +222,6 @@
                 </div>
             </div>
 
-            <!-- Cartões de métricas -->
             <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
                 <div class="metric-card p-4">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
@@ -258,19 +256,16 @@
                 </div>
             </div>
 
-            <!-- Gráfico mensal -->
             <div class="reveal table-card p-4 mb-6">
                 <h3 style="margin:0 0 12px;font-size:16px;color:var(--accent);">Evolução Mensal</h3>
                 <div id="grafico" style="height:300px;"></div>
             </div>
 
-            <!-- Gráfico usuário (admin) -->
             <div id="graficoUsuarioSecao" class="reveal table-card p-4 mb-6" style="display:none;">
                 <h3 style="margin:0 0 12px;font-size:16px;color:var(--accent2);">Gasto por Usuário</h3>
                 <div id="graficoUsuario" style="height:280px;"></div>
             </div>
 
-            <!-- Histórico -->
             <div class="reveal table-card p-4">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
                     <h3 style="margin:0;font-size:16px;">Histórico de Diárias</h3>
@@ -442,15 +437,14 @@
     </div>
 
     <script>
-        // ============================================================================
-        // CASHLOG – APLICAÇÃO COMPLETA (ESTÁVEL)
-        // ============================================================================
         (function() {
+            // Configuração
             const SUPABASE_URL = "https://xptujmysydmczmhpoebn.supabase.co";
             const SUPABASE_KEY = "sb_publishable_jPJMaONcjw2IqqKBiRkt9A_P33ZYNY_";
             const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
             const ITENS_POR_PAGINA = 15;
 
+            // Estado
             let supabase;
             let usuarioAtual = null;
             let ehAdmin = false;
@@ -576,7 +570,6 @@
                 try{
                     const {error}=await supabase.auth.signInWithPassword({email,password:senha});
                     if(error){ document.getElementById('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`; return; }
-                    // onAuthStateChange entrará
                 }catch(erro){
                     console.error('Erro no login:',erro);
                     document.getElementById('mensagemLogin').innerHTML='<span style="color:var(--erro)">Erro ao conectar com o servidor. Verifique sua conexão.</span>';
@@ -1099,10 +1092,11 @@
             async function iniciar(){
                 try{
                     console.log('Iniciando CashLog...');
-                    // Verifica se o Supabase está disponível
-                    if(!window.supabase){
-                        throw new Error('Biblioteca Supabase não carregada. Verifique sua conexão com a internet.');
-                    }
+                    // Verificação de funções essenciais
+                    if(typeof carregarTema !== 'function') throw new Error('carregarTema não definida');
+                    if(typeof verificarConexao !== 'function') throw new Error('verificarConexao não definida');
+                    if(typeof selecionarAba !== 'function') throw new Error('selecionarAba não definida');
+                    if(!window.supabase) throw new Error('Biblioteca Supabase não carregada. Verifique sua conexão.');
                     supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
                         realtime:{params:{eventsPerSecond:10}},
                         auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
@@ -1155,7 +1149,7 @@
                 filtrarDiarias,filtrarDescontos,paginar
             };
 
-            // Inicia quando o DOM estiver pronto
+            // Iniciar quando DOM estiver pronto
             if(document.readyState==='loading'){
                 document.addEventListener('DOMContentLoaded',iniciar);
             }else{
