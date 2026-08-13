@@ -522,15 +522,21 @@ async function fazerCadastro(){
   mostrarLogin();
 }
 
-async function fazerLogin(){
+async function fazerLogin() {
   const email = document.getElementById('emailLogin').value.trim();
   const senha = document.getElementById('senhaLogin').value;
-  if(!email || !senha){
+  
+  if (!email || !senha) {
     document.getElementById('mensagemLogin').innerHTML = '<span style="color:var(--erro)">Preencha e-mail e senha.</span>';
     return;
   }
-  const { error } = await app.auth.signInWithPassword({ email, password: senha });
-  if(error){
+
+  const { error } = await app.auth.signInWithPassword({
+    email: email,
+    password: senha
+  });
+
+  if (error) {
     document.getElementById('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`;
     return;
   }
