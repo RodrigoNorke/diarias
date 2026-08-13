@@ -579,38 +579,62 @@ async function carregarDados() {
   if (!usuarioAtual) return;
   verificarConexao();
 
-  // Carregar diárias
+  console.log("📥 Carregando diárias...");
   document.getElementById('carregandoDiarias').style.display = 'block';
+  
   try {
     let query = supabase.from('diarias').select('*').order('data', { ascending: false });
     if (!ehAdmin) query = query.eq('usuario_id', usuarioAtual.id);
+    
     const { data: d, error: e } = await query;
-    if (e) throw e;
+    
+    if (e) {
+      console.error("❌ Erro ao carregar diárias:", e);
+      throw e;
+    }
+    
     diarias = d || [];
+    console.log("✅ Diárias carregadas:", diarias);
+    
     preencherFiltrosDiarias();
     filtrarDiarias();
     atualizarGraficosDiarias();
+    
   } catch (erro) {
-    toast(`Erro ao carregar diárias: ${mensagemAmigavel(erro)}`, 'erro');
+    console.error("❌ Falha:", erro);
+    toast(`Erro: ${mensagemAmigavel(erro)}`, 'erro');
   }
+  
   document.getElementById('carregandoDiarias').style.display = 'none';
 
-  // Carregar descontos
+  // --- Descontos ---
+  console.log("📥 Carregando descontos...");
   document.getElementById('carregandoDescontos').style.display = 'block';
+  
   try {
     let queryDesc = supabase.from('descontos').select('*').order('data', { ascending: false });
     if (!ehAdmin) queryDesc = queryDesc.eq('usuario_id', usuarioAtual.id);
+    
     const { data: desc, error: eDesc } = await queryDesc;
-    if (eDesc) throw eDesc;
+    
+    if (eDesc) {
+      console.error("❌ Erro ao carregar descontos:", eDesc);
+      throw eDesc;
+    }
+    
     descontos = desc || [];
+    console.log("✅ Descontos carregados:", descontos);
+    
     preencherFiltrosDescontos();
     filtrarDescontos();
+    
   } catch (erro) {
-    toast(`Erro ao carregar descontos: ${mensagemAmigavel(erro)}`, 'erro');
+    console.error("❌ Falha descontos:", erro);
+    toast(`Erro descontos: ${mensagemAmigavel(erro)}`, 'erro');
   }
+  
   document.getElementById('carregandoDescontos').style.display = 'none';
 }
-
 // ========== DIÁRIAS ==========
 function preencherFiltrosDiarias() {
   const meses = new Set(), anos = new Set();
