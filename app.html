@@ -440,8 +440,8 @@
     <script>
         (function() {
             // Configuração
-            const SUPABASE_URL = "https://xptujmysydmczmhpoebn.supabase.co";
-            const SUPABASE_KEY = "sb_publishable_jPJMaONcjw2IqqKBiRkt9A_P33ZYNY_";
+            const SUPABASE_URL = "https://ompukaiwkovmjzlfadpp.supabase.co";
+            const SUPABASE_KEY = "sb_publishable_l7bWwOwGNWaTQuENabb3Fw_YZMaAv_Y";
             const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
             const ITENS_POR_PAGINA = 15;
 
@@ -920,7 +920,6 @@
                     } else {
                         const {error}=await supabase.from('diarias').insert(payload);
                         if(error) throw error;
-                        // Após inserir, recarrega para obter o ID real
                         await carregarTudoDoBanco();
                     }
                     fecharModalDiaria();
