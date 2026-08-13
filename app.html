@@ -64,6 +64,7 @@ body{background:linear-gradient(135deg,var(--bg) 0%,var(--bg-soft) 100%);min-hei
 .metric-card:hover{background:var(--card-hover);transform:translateY(-4px);box-shadow:0 18px 45px rgba(0,0,0,.25),0 0 0 1px var(--accent-soft);border-color:rgba(212,160,72,.25);}
 .tbl-row{transition:background .15s ease;}
 .tbl-row:hover{background:var(--accent-soft);}
+.mes-separador{background:var(--accent-soft);color:var(--accent);font-weight:600;}
 input,select{outline:none;transition:all .2s ease;background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:12px;}
 input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--accent-soft);}
 .btn-primary{background:linear-gradient(135deg,#d4a048,#c48f38);color:#1a1405;font-weight:600;transition:all .25s ease;border-radius:14px;box-shadow:0 4px 12px rgba(212,160,72,.15);border:none;cursor:pointer;}
@@ -72,6 +73,8 @@ input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3
 .btn-secondary:hover{border-color:var(--text-soft);background:var(--card);}
 .modal-backdrop{background:rgba(6,8,15,.85);backdrop-filter:blur(10px);}
 .toast{position:fixed;bottom:28px;right:28px;background:var(--card);border:1px solid var(--accent-soft);color:var(--text);padding:14px 22px;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);z-index:9999;animation:toastIn .3s ease;}
+.toast.sucesso{border-left:4px solid #4ade80;}
+.toast.erro{border-left:4px solid #f87171;}
 @keyframes toastIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 .spinner{width:20px;height:20px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -84,6 +87,7 @@ input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3
 .btn-icone:hover{background:var(--accent-soft);}
 .editar-btn:hover{color:var(--accent)!important;}
 .excluir-btn:hover{color:#f87171!important;background:rgba(220,38,38,.12)!important;}
+.carregando{text-align:center;padding:40px;color:var(--text-soft);}
 @media(max-width:768px){
   .tela-app{padding:16px 12px!important;}
   .metric-card{padding:18px!important;}
@@ -148,7 +152,7 @@ input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3
           Conectando...
         </span>
         <button onclick="sairConta()" class="btn-secondary px-3 py-2 text-sm">Sair</button>
-        <button onclick="abrirModal()" class="btn-primary px-5 py-2.5 text-sm flex items-center gap-2">
+        <button onclick="abrirModal()" class="btn-primary px-5 py-2.5 text-sm flex items-center gap-2" title="Nova Diária (Ctrl+N)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Nova Diária
         </button>
@@ -156,11 +160,17 @@ input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3
     </div>
   </div>
 
-  <!-- FILTROS E BUSCA -->
+  <!-- FILTROS E BUSCA — ATUALIZADO COM PERÍODO -->
   <div class="reveal table-card p-5 mb-6">
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
       <div style="flex:1;min-width:200px;">
         <input id="busca" type="text" placeholder="🔍 Buscar por data, descrição ou valor..." oninput="atualizarTabela()" class="w-full px-4 py-2.5 text-sm">
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <label class="text-sm" style="color:var(--text-soft);white-space:nowrap;">De:</label>
+        <input id="dataInicio" type="date" onchange="atualizarTudo()" class="px-2 py-2 text-sm">
+        <label class="text-sm" style="color:var(--text-soft);white-space:nowrap;">Até:</label>
+        <input id="dataFim" type="date" onchange="atualizarTudo()" class="px-2 py-2 text-sm">
       </div>
       <select id="filtroMes" onchange="atualizarTudo()" class="px-3 py-2.5 text-sm min-w-[140px]">
         <option value="todos">Todos os meses</option>
@@ -168,6 +178,7 @@ input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3
       <select id="filtroAno" onchange="atualizarTudo()" class="px-3 py-2.5 text-sm min-w-[120px]">
         <option value="todos">Todos os anos</option>
       </select>
+      <button onclick="limparFiltros()" class="btn-secondary px-3 py-2 text-sm">Limpar</button>
     </div>
   </div>
 
@@ -226,7 +237,7 @@ input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3
     <div id="graficoUsuario" style="height:300px;width:100%;"></div>
   </div>
 
-  <!-- TABELA -->
+  <!-- TABELA — AGRUPADA POR MÊS -->
   <div class="reveal table-card p-7">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
       <h2 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--text);font-weight:600;">Histórico de Diárias</h2>
@@ -234,6 +245,9 @@ input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Exportar CSV
       </button>
+    </div>
+    <div id="carregandoTabela" class="carregando" style="display:none;">
+      <span class="spinner"></span> Carregando diárias...
     </div>
     <div style="overflow-x:auto;">
       <table class="w-full text-sm">
@@ -312,8 +326,14 @@ function formatarValor(input){
 function dataBr(d){return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}
 function mesAno(d){return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}
 function chaveMes(d){const dt=new Date(d+'T00:00:00');return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')}
-function nomeMes(chave){const m=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];const n=Number(chave);return m[n-1]||chave;}
-function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
+function nomeMes(chave){const m=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];const n=Number(chave);return m[n-1]||chave;}
+function toast(msg,tipo='sucesso'){
+  const t=document.createElement('div');
+  t.className='toast '+tipo;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3200);
+}
 function setStatus(texto,cor){const el=document.getElementById('statusConexao');el.innerHTML=texto;el.style.background=cor;el.style.color='#1a1405';el.style.fontWeight='500';}
 
 // === TEMA CLARO / ESCURO ===
@@ -337,6 +357,14 @@ function carregarTema(){
     document.querySelector('[title="Alternar Tema"]').textContent = '☀️';
   }
 }
+
+// === ATALHO DE TECLADO: Ctrl+N ===
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey) && e.key==='n'){
+    e.preventDefault();
+    if(document.getElementById('telaApp').style.display!=='none') abrirModal();
+  }
+});
 
 // === LOGIN ===
 function mostrarCadastro(){document.getElementById('formEntrar').style.display='none';document.getElementById('formCadastro').style.display='block';document.getElementById('mensagemLogin').innerHTML='';}
@@ -378,6 +406,7 @@ function entrarApp(){
 
 // === BANCO DE DADOS ===
 async function carregarDoBanco() {
+  document.getElementById('carregandoTabela').style.display='block';
   try {
     let query = app.from('diarias').select('*');
     if (!ehAdmin) query = query.eq('usuario_id', usuarioAtual.id);
@@ -389,7 +418,9 @@ async function carregarDoBanco() {
     atualizarTudo();
   } catch (e) {
     setStatus('❌ Erro', 'rgba(220,38,38,.15)');
-    toast('Erro ao carregar dados.');
+    toast('Erro ao carregar dados.', 'erro');
+  } finally {
+    document.getElementById('carregandoTabela').style.display='none';
   }
 }
 
@@ -429,14 +460,12 @@ async function salvarDiaria(e){
     const descricao=document.getElementById('descricao').value.trim()||null;
     const id=document.getElementById('editId').value;
     if(id){
-      // EDITAR
       const diariaAntiga = diarias.find(d=>d.id===id);
-      if(!ehAdmin && diariaAntiga.usuario_id !== usuarioAtual.id){toast('❌ Sem permissão');return;}
+      if(!ehAdmin && diariaAntiga.usuario_id !== usuarioAtual.id){toast('❌ Sem permissão','erro');return;}
       const {error}=await app.from('diarias').update({valor,data,descricao}).eq('id',id);
       if(error)throw error;
       toast('✅ Diária atualizada!');
     } else {
-      // CRIAR NOVA
       const {error}=await app.from('diarias').insert({
         valor,data,descricao,
         usuario_id:usuarioAtual.id,
@@ -446,29 +475,32 @@ async function salvarDiaria(e){
       toast('✅ Diária registrada!');
     }
     fecharModal();
-  }catch(err){toast('❌ Erro: '+err.message);}
+  }catch(err){toast('❌ Erro: '+err.message,'erro');}
   finally{btn.disabled=false;btn.textContent='Salvar';}
 }
 
 async function excluir(id, usuarioId){
-  if (!ehAdmin && usuarioId !== usuarioAtual.id) {toast('❌ Você só pode excluir suas próprias diárias.');return;}
+  if (!ehAdmin && usuarioId !== usuarioAtual.id) {toast('❌ Você só pode excluir suas próprias diárias.','erro');return;}
   if(!confirm('⚠️ Tem certeza que deseja excluir esta diária?\n\nEsta ação não pode ser desfeita!'))return;
   try{const {error}=await app.from('diarias').delete().eq('id',id);if(error)throw error;toast('✅ Diária excluída com sucesso');}
-  catch(err){toast('❌ Erro: '+err.message);}
+  catch(err){toast('❌ Erro: '+err.message,'erro');}
 }
 
-// === FILTROS E BUSCA ===
+// === FILTROS E BUSCA — COM PERÍODO ===
 function diariasFiltradas(){
   const busca = (document.getElementById('busca')?.value||'').toLowerCase().trim();
   const anoSel = document.getElementById('filtroAno').value;
   const mesSel = document.getElementById('filtroMes').value;
+  const dataInicio = document.getElementById('dataInicio').value;
+  const dataFim = document.getElementById('dataFim').value;
   return diarias.filter(d=>{
     const chave = chaveMes(d.data);
     const [ano,mes] = chave.split('-');
     const anoOk = anoSel==='todos' || ano===anoSel;
     const mesOk = mesSel==='todos' || chave===mesSel;
+    const dataOk = (!dataInicio || d.data >= dataInicio) && (!dataFim || d.data <= dataFim);
     const textoOk = !busca || d.data.includes(busca) || (d.descricao||'').toLowerCase().includes(busca) || moeda(d.valor).includes(busca);
-    return anoOk && mesOk && textoOk;
+    return anoOk && mesOk && dataOk && textoOk;
   });
 }
 function preencherFiltros(){
@@ -481,6 +513,15 @@ function preencherFiltros(){
     const [a,nm]=m.split('-');
     return `<option value="${m}">${nomeMes(nm)} de ${a}</option>`;
   }).join('');
+}
+function limparFiltros(){
+  document.getElementById('busca').value='';
+  document.getElementById('filtroMes').value='todos';
+  document.getElementById('filtroAno').value='todos';
+  document.getElementById('dataInicio').value='';
+  document.getElementById('dataFim').value='';
+  atualizarTudo();
+  toast('✅ Filtros limpos');
 }
 
 // === ATUALIZAÇÕES ===
@@ -497,22 +538,47 @@ function atualizarTabela(){
   const vazio=document.getElementById('vazio');
   if(lista.length===0){tb.innerHTML='';vazio.style.display='block';return;}
   vazio.style.display='none';
-  tb.innerHTML=lista.map(d=>`
-    <tr class="tbl-row" style="border-bottom:1px solid var(--border);">
-      <td class="py-3.5">${dataBr(d.data)}</td>
-      <td class="py-3.5" style="color:var(--text-soft);">${d.descricao||'<span style="opacity:.5">Sem descrição</span>'}</td>
-      <td class="py-3.5">${d.nome_usuario||'—'}</td>
-      <td class="py-3.5 text-right font-medium" style="color:var(--accent);font-family:'Cormorant Garamond',serif;font-size:17px;">${moeda(d.valor)}</td>
-      <td class="py-3.5 text-right">
-        <button onclick='abrirModal(${JSON.stringify(d).replace(/'/g,"\\'")})' class="btn-icone editar-btn" style="color:var(--text-soft);margin-right:4px;" title="Editar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-        </button>
-        <button onclick='excluir("${d.id}","${d.usuario_id||''}")' class="btn-icone excluir-btn" style="color:var(--text-soft);" title="Excluir">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
-        </button>
-      </td>
-    </tr>
-  `).join('');
+
+  // ✅ AGRUPAR POR MÊS
+  const grupos = {};
+  lista.forEach(d=>{
+    const chave = chaveMes(d.data);
+    if(!grupos[chave]) grupos[chave] = [];
+    grupos[chave].push(d);
+  });
+
+  let html = '';
+  Object.keys(grupos).sort((a,b)=>b.localeCompare(a)).forEach(chave=>{
+    const [ano,mes] = chave.split('-');
+    const totalMes = grupos[chave].reduce((s,d)=>s+Number(d.valor),0);
+    html += `
+      <tr class="mes-separador">
+        <td colspan="5" class="py-2 px-3">
+          <strong>${nomeMes(mes)} de ${ano}</strong>
+          <span style="float:right;color:var(--accent);">${moeda(totalMes)}</span>
+        </td>
+      </tr>
+    `;
+    grupos[chave].forEach(d=>{
+      html += `
+        <tr class="tbl-row" style="border-bottom:1px solid var(--border);">
+          <td class="py-3.5">${dataBr(d.data)}</td>
+          <td class="py-3.5" style="color:var(--text-soft);">${d.descricao||'<span style="opacity:.5">Sem descrição</span>'}</td>
+          <td class="py-3.5">${d.nome_usuario||'—'}</td>
+          <td class="py-3.5 text-right font-medium" style="color:var(--accent);font-family:'Cormorant Garamond',serif;font-size:17px;">${moeda(d.valor)}</td>
+          <td class="py-3.5 text-right">
+            <button onclick='abrirModal(${JSON.stringify(d).replace(/'/g,"\\'")})' class="btn-icone editar-btn" style="color:var(--text-soft);margin-right:4px;" title="Editar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            </button>
+            <button onclick='excluir("${d.id}","${d.usuario_id||''}")' class="btn-icone excluir-btn" style="color:var(--text-soft);" title="Excluir">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+  });
+  tb.innerHTML = html;
 }
 function atualizarMetricas(){
   const lista=diariasFiltradas();
@@ -543,7 +609,7 @@ function atualizarGraficoPrincipal(){
   const meses={};
   lista.forEach(d=>{const k=chaveMes(d.data);meses[k]=(meses[k]||0)+Number(d.valor);});
   const chaves=Object.keys(meses).sort();
-  const rotulos=chaves.map(k=>{const[a,m]=k.split('-');return `${nomeMes(m)}/${a.slice(-2)}`;});
+  const rotulos=chaves.map(k=>{const[a,m]=k.split('-');return `${nomeMes(m).slice(0,3)}/${a.slice(-2)}`;});
   const valores=chaves.map(k=>Number(meses[k].toFixed(2)));
   const grad={type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(212,160,72,.85)'},{offset:1,color:'rgba(212,160,72,.15)'}]};
   graficoInstancia.setOption({
