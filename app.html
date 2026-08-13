@@ -94,7 +94,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a
 .paginacao button.ativo{background:var(--accent);color:#1a1405;border-color:var(--accent);}
 .offline{position:fixed;top:0;left:0;right:0;background:var(--erro);color:white;text-align:center;padding:6px;font-size:13px;z-index:100;}
 .painel-conteudo{display:none;}
-.painel-conteudo.ativo{display:block;animation:fadeUp .3s ease;}
+.painel-conteudo.ativa{display:block;animation:fadeUp .3s ease;}
 @media(max-width:768px){
   .tela-app{padding:12px!important;}
   .metric-card{padding:16px!important;}
@@ -254,7 +254,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a
           <tbody id="tabelaDiarias"></tbody>
         </table>
       </div>
-      <div id="vazioDiarias" style="text-align:center;padding:40px 20px;color:var(--text-soft);display:none;">
+      <div id="vazioDiarias" style="text-align:center;padding:40px 20px;color:var(--text-soft);">
         <p style="margin:0;">Nenhuma diária encontrada.</p>
         <button onclick="abrirModalDiaria()" class="btn-primary btn-pequeno" style="margin-top:10px;">+ Cadastrar primeira diária</button>
       </div>
@@ -338,7 +338,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a
           <tbody id="tabelaDescontos"></tbody>
         </table>
       </div>
-      <div id="vazioDescontos" style="text-align:center;padding:40px 20px;color:var(--text-soft);display:none;">
+      <div id="vazioDescontos" style="text-align:center;padding:40px 20px;color:var(--text-soft);">
         <p style="margin:0;">Nenhum desconto cadastrado.</p>
         <button onclick="abrirModalDesconto()" class="btn-primary btn-pequeno btn-primary-vermelho" style="margin-top:10px;">+ Cadastrar primeiro desconto</button>
       </div>
@@ -578,15 +578,15 @@ async function carregarDiarias(){
 async function carregarDescontos(){
   document.getElementById('carregandoDescontos').style.display='block';
   try{
-    let q = app.from('descontos').select('*');
-    if(!ehAdmin) q = q.eq('usuario_id', usuarioAtual.id);
-    q = q.order('data', {ascending: false});
-    const {data, error} = await q;
+    let q=app.from('descontos').select('*');
+    if(!ehAdmin) q=q.eq('usuario_id',usuarioAtual.id);
+    q=q.order('data',{ascending:false});
+    const {data,error}=await q;
     if(error) throw error;
-    descontos = data || [];
+    descontos=data||[];
     atualizarTudoDescontos();
   }catch(e){
-    toast(mensagemAmigavel(e), 'erro');
+    toast(mensagemAmigavel(e),'erro');
   }finally{
     document.getElementById('carregandoDescontos').style.display='none';
   }
@@ -1086,29 +1086,6 @@ app.auth.onAuthStateChange(async (event,session)=>{
     ehAdmin=(usuarioAtual.email||'').toLowerCase()===ADM_EMAIL.toLowerCase();
     entrarApp(usuarioAtual);
   }
-});
-</script>
-  <script>
-// FORÇA CARREGAMENTO COMPLETO APÓS ENTRAR
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(() => {
-    // Garante que o painel de diárias está visível
-    const painel = document.getElementById('painelDiarias');
-    if(painel) painel.classList.add('ativa');
-    
-    // Força atualização dos dados
-    if(typeof carregarTudoDoBanco === 'function') {
-      carregarTudoDoBanco();
-    }
-    
-    // Verifica se os elementos existem e mostra mensagem de vazio
-    setTimeout(() => {
-      const vazio = document.getElementById('vazioDiarias');
-      if(vazio && diarias.length === 0) {
-        vazio.style.display = 'block';
-      }
-    }, 500);
-  }, 300);
 });
 </script>
 </body>
