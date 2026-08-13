@@ -577,64 +577,46 @@ async function sairConta() {
 
 async function carregarDados() {
   if (!usuarioAtual) return;
-  verificarConexao();
-
-  console.log("📥 Carregando diárias...");
-  document.getElementById('carregandoDiarias').style.display = 'block';
+  
+  // Inicializa arrays vazios
+  diarias = [];
+  descontos = [];
   
   try {
-    let query = supabase.from('diarias').select('*').order('data', { ascending: false });
-    if (!ehAdmin) query = query.eq('usuario_id', usuarioAtual.id);
+    // Carregar Diárias
+    let queryDiarias = supabase.from('diarias').select('*').order('data', { ascending: false });
+    if (!ehAdmin) queryDiarias = queryDiarias.eq('usuario_id', usuarioAtual.id);
+    const resDiarias = await queryDiarias;
     
-    const { data: d, error: e } = await query;
-    
-    if (e) {
-      console.error("❌ Erro ao carregar diárias:", e);
-      throw e;
+    if (resDiarias.error) {
+      console.log("Erro diárias:", resDiarias.error);
+    } else {
+      diarias = resDiarias.data || [];
     }
-    
-    diarias = d || [];
-    console.log("✅ Diárias carregadas:", diarias);
-    
-    preencherFiltrosDiarias();
-    filtrarDiarias();
-    atualizarGraficosDiarias();
-    
-  } catch (erro) {
-    console.error("❌ Falha:", erro);
-    toast(`Erro: ${mensagemAmigavel(erro)}`, 'erro');
-  }
-  
-  document.getElementById('carregandoDiarias').style.display = 'none';
 
-  // --- Descontos ---
-  console.log("📥 Carregando descontos...");
-  document.getElementById('carregandoDescontos').style.display = 'block';
-  
-  try {
+    // Carregar Descontos
     let queryDesc = supabase.from('descontos').select('*').order('data', { ascending: false });
     if (!ehAdmin) queryDesc = queryDesc.eq('usuario_id', usuarioAtual.id);
+    const resDesc = await queryDesc;
     
-    const { data: desc, error: eDesc } = await queryDesc;
-    
-    if (eDesc) {
-      console.error("❌ Erro ao carregar descontos:", eDesc);
-      throw eDesc;
+    if (resDesc.error) {
+      console.log("Erro descontos:", resDesc.error);
+    } else {
+      descontos = resDesc.data || [];
     }
-    
-    descontos = desc || [];
-    console.log("✅ Descontos carregados:", descontos);
-    
-    preencherFiltrosDescontos();
-    filtrarDescontos();
-    
-  } catch (erro) {
-    console.error("❌ Falha descontos:", erro);
-    toast(`Erro descontos: ${mensagemAmigavel(erro)}`, 'erro');
+
+  } catch (e) {
+    console.log("Erro geral:", e);
   }
-  
-  document.getElementById('carregandoDescontos').style.display = 'none';
+
+  // Sempre renderiza, mesmo que esteja vazio
+  preencherFiltrosDiarias();
+  filtrarDiarias();
+  atualizarGraficosDiarias();
+  preencherFiltrosDescontos();
+  filtrarDescontos();
 }
+            
 // ========== DIÁRIAS ==========
 function preencherFiltrosDiarias() {
   const meses = new Set(), anos = new Set();
