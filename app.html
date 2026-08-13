@@ -6,6 +6,8 @@
     <title>CashLog</title>
     <link rel="icon" href="data:,">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase opcional: se não carregar, o app usa modo convidado -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root{
             --bg:#0a0e17; --bg-soft:#111827; --card:#1c1f2e; --card-hover:#222638;
@@ -45,17 +47,18 @@
     </style>
 </head>
 <body>
+    <!-- TELA DE LOGIN -->
     <div class="container" id="telaLogin">
         <div class="card" style="max-width:400px;margin:auto;margin-top:80px;">
             <h2 style="text-align:center;margin-bottom:20px;">CashLog</h2>
             <p style="text-align:center;color:var(--text-soft);">Onde cada centavo conta.</p>
-            <form id="formLogin" class="mb-3">
+            <form id="formLogin">
                 <input class="input" type="email" id="emailLogin" placeholder="E-mail" required>
                 <input class="input" type="password" id="senhaLogin" placeholder="Senha" required>
                 <button class="btn btn-primary" style="width:100%;" type="submit">Entrar</button>
             </form>
             <div style="text-align:center;margin:12px 0;">
-                <a href="#" id="linkCadastro">Criar conta</a> | 
+                <a href="#" id="linkCadastro">Criar conta</a> |
                 <a href="#" id="linkConvidado">Entrar como convidado</a>
             </div>
             <form id="formCadastro" class="hidden">
@@ -69,8 +72,8 @@
         </div>
     </div>
 
-    <div class="container" id="telaApp" class="hidden">
-        <!-- Cabeçalho -->
+    <!-- TELA PRINCIPAL -->
+    <div class="container hidden" id="telaApp">
         <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;">
             <div>
                 <h2 style="margin:0;">CashLog</h2>
@@ -153,18 +156,18 @@
 
     <script>
         (function() {
-            // Configuração Supabase (substitua pelos seus dados se quiser usar banco)
+            // Configuração Supabase (opcional)
             const SUPABASE_URL = "https://ompukaiwkovmjzlfadpp.supabase.co";
             const SUPABASE_KEY = "sb_publishable_l7bWwOwGNWaTQuENabb3Fw_YZMaAv_Y";
             const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
 
             let supabase = null;
+            let usandoBanco = false;
             let usuarioAtual = null;
             let ehAdmin = false;
             let abaAtiva = 'diarias';
             let diarias = [];
             let descontos = [];
-            let usandoBanco = false;
 
             const $ = (id) => document.getElementById(id);
 
@@ -180,6 +183,20 @@
             function moedaParaNumero(v) { return Number(String(v||'').replace(/\D/g,'')) / 100; }
             function hoje() { return new Date().toISOString().split('T')[0]; }
             function dataBr(d) { return new Date(d+'T00:00:00').toLocaleDateString('pt-BR'); }
+
+            function salvarLocal() {
+                if (!usandoBanco) {
+                    localStorage.setItem('cashlog_diarias', JSON.stringify(diarias));
+                    localStorage.setItem('cashlog_descontos', JSON.stringify(descontos));
+                }
+            }
+
+            function carregarLocal() {
+                const d = localStorage.getItem('cashlog_diarias');
+                const e = localStorage.getItem('cashlog_descontos');
+                diarias = d ? JSON.parse(d) : [];
+                descontos = e ? JSON.parse(e) : [];
+            }
 
             function selecionarAba(nome) {
                 abaAtiva = nome;
@@ -202,7 +219,6 @@
                         tbodyD.innerHTML += `<tr><td>${dataBr(d.data)}</td><td>${d.descricao || '—'}</td><td>R$ ${moeda(d.valor)}</td><td><button class="btn btn-secondary" onclick="App.excluirDiaria('${d.id}')">Excluir</button></td></tr>`;
                     });
                 }
-
                 // Descontos
                 const tbodyE = $('tabelaDescontos');
                 const vazioE = $('vazioDescontos');
@@ -249,8 +265,8 @@
                     const { error } = await supabase.from('diarias').insert({ ...nova, usuario_id: usuarioAtual.id, usuario_email: usuarioAtual.email });
                     if (error) { toast('Erro ao salvar: ' + error.message); return; }
                 } else {
-                    // Modo convidado: salva localmente
                     diarias.push(nova);
+                    salvarLocal();
                 }
                 toast('Diária cadastrada!');
                 fecharModalDiaria();
@@ -274,6 +290,7 @@
                     if (error) { toast('Erro ao salvar: ' + error.message); return; }
                 } else {
                     descontos.push(novo);
+                    salvarLocal();
                 }
                 toast('Desconto cadastrado!');
                 fecharModalDesconto();
@@ -289,6 +306,7 @@
                     await carregarDados();
                 } else {
                     diarias = diarias.filter(d => d.id !== id);
+                    salvarLocal();
                     atualizarTabelas();
                 }
                 toast('Diária excluída.');
@@ -302,13 +320,14 @@
                     await carregarDados();
                 } else {
                     descontos = descontos.filter(d => d.id !== id);
+                    salvarLocal();
                     atualizarTabelas();
                 }
                 toast('Desconto excluído.');
             }
 
             async function carregarDados() {
-                if (!supabase || !usuarioAtual) return;
+                if (!usandoBanco || !supabase || !usuarioAtual) return;
                 try {
                     const { data, error } = await supabase.from('diarias').select('*').eq('usuario_id', usuarioAtual.id).order('data', { ascending: false });
                     if (error) throw error;
@@ -318,15 +337,27 @@
                     descontos = dataD || [];
                     atualizarTabelas();
                 } catch (e) {
-                    console.error(e);
-                    toast('Erro ao carregar dados do banco. Usando modo local.');
+                    console.warn('Erro ao carregar dados do banco, usando modo local.');
                     usandoBanco = false;
+                    carregarLocal();
+                    atualizarTabelas();
                 }
+            }
+
+            function mostrarLogin() {
+                $('telaLogin').classList.remove('hidden');
+                $('telaApp').classList.add('hidden');
+            }
+
+            function mostrarApp() {
+                $('telaLogin').classList.add('hidden');
+                $('telaApp').classList.remove('hidden');
             }
 
             // Autenticação
             $('formLogin').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                if (!supabase) { toast('Supabase não disponível. Use modo convidado.'); return; }
                 const email = $('emailLogin').value.trim();
                 const senha = $('senhaLogin').value;
                 try {
@@ -340,6 +371,7 @@
 
             $('formCadastro').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                if (!supabase) { toast('Supabase não disponível. Use modo convidado.'); return; }
                 const nome = $('nomeCad').value.trim();
                 const email = $('emailCad').value.trim();
                 const senha = $('senhaCad').value;
@@ -370,10 +402,8 @@
                 e.preventDefault();
                 usuarioAtual = null;
                 usandoBanco = false;
-                diarias = [];
-                descontos = [];
-                $('telaLogin').classList.add('hidden');
-                $('telaApp').classList.remove('hidden');
+                carregarLocal();
+                mostrarApp();
                 $('nomeUsuario').textContent = 'Convidado';
                 atualizarTabelas();
             });
@@ -382,39 +412,34 @@
                 if (supabase && usuarioAtual) await supabase.auth.signOut();
                 usuarioAtual = null;
                 usandoBanco = false;
-                $('telaApp').classList.add('hidden');
-                $('telaLogin').classList.remove('hidden');
-                $('formLogin').classList.remove('hidden');
-                $('formCadastro').classList.add('hidden');
+                mostrarLogin();
             });
 
             // Inicialização
             async function inicializar() {
                 try {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (session?.user) {
-                        usuarioAtual = session.user;
-                        usandoBanco = true;
-                        ehAdmin = (usuarioAtual.email || '').toLowerCase() === ADM_EMAIL.toLowerCase();
-                        $('telaLogin').classList.add('hidden');
-                        $('telaApp').classList.remove('hidden');
-                        $('nomeUsuario').textContent = ehAdmin ? '👑 ' + (usuarioAtual.user_metadata?.nome || usuarioAtual.email) : (usuarioAtual.user_metadata?.nome || usuarioAtual.email);
-                        await carregarDados();
-                    } else {
-                        // Não logado: mostra tela de login
-                        $('telaLogin').classList.remove('hidden');
-                        $('telaApp').classList.add('hidden');
+                    if (window.supabase) {
+                        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (session?.user) {
+                            usuarioAtual = session.user;
+                            usandoBanco = true;
+                            ehAdmin = (usuarioAtual.email || '').toLowerCase() === ADM_EMAIL.toLowerCase();
+                            mostrarApp();
+                            $('nomeUsuario').textContent = ehAdmin ? '👑 ' + (usuarioAtual.user_metadata?.nome || usuarioAtual.email) : (usuarioAtual.user_metadata?.nome || usuarioAtual.email);
+                            await carregarDados();
+                            return;
+                        }
                     }
                 } catch (e) {
-                    console.error(e);
-                    // Se Supabase não carregou, usa modo convidado
-                    $('telaLogin').classList.remove('hidden');
-                    $('telaApp').classList.add('hidden');
+                    console.warn('Supabase indisponível, iniciando como convidado.');
+                    supabase = null;
                 }
+                // Sem sessão ou sem Supabase
+                mostrarLogin();
             }
 
-            // Expor API
+            // Expor App
             window.App = {
                 selecionarAba,
                 abrirModalDiaria,
@@ -431,6 +456,7 @@
             $('formDiaria').addEventListener('submit', salvarDiaria);
             $('formDesconto').addEventListener('submit', salvarDesconto);
 
+            // Iniciar
             inicializar();
         })();
     </script>
