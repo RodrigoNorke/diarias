@@ -159,10 +159,7 @@
                 <input id="emailLogin" type="email" placeholder="Seu e-mail" class="w-full mb-3">
                 <input id="senhaLogin" type="password" placeholder="Sua senha" class="w-full mb-4">
                 <button onclick="App.fazerLogin()" class="btn-primary w-full mb-3">Entrar</button>
-                <p style="text-align:center;color:var(--text-soft);font-size:14px;margin:0;">
-                    Não tem conta? <a href="#" onclick="App.mostrarCadastro();return false;" style="color:var(--accent);font-weight:500;">Criar conta</a> | 
-                    <a href="#" onclick="App.entrarConvidado();return false;" style="color:var(--accent2);font-weight:500;">Convidado</a>
-                </p>
+                <p style="text-align:center;color:var(--text-soft);font-size:14px;margin:0;">Não tem conta? <a href="#" onclick="App.mostrarCadastro();return false;" style="color:var(--accent);font-weight:500;">Criar conta</a></p>
             </div>
             <div id="formCadastro" style="display:none;">
                 <input id="nomeCad" type="text" placeholder="Seu nome completo" class="w-full mb-3">
@@ -449,7 +446,7 @@
             const ITENS_POR_PAGINA = 15;
 
             // Estado
-            let supabase = null;
+            let supabase;
             let usuarioAtual = null;
             let ehAdmin = false;
             let temaEscuro = true;
@@ -572,7 +569,7 @@
             function mostrarLogin(){ $('formEntrar').style.display='block'; $('formCadastro').style.display='none'; $('mensagemLogin').innerHTML=''; }
 
             async function fazerCadastro(){
-                if(!supabase){ toast('Supabase não disponível. Modo convidado ativo.', 'aviso'); return; }
+                if(!supabase){ toast('Supabase não disponível.', 'aviso'); return; }
                 const nome=$('nomeCad').value.trim();
                 const email=$('emailCad').value.trim();
                 const senha=$('senhaCad').value;
@@ -588,7 +585,7 @@
             }
 
             async function fazerLogin(){
-                if(!supabase){ toast('Supabase não disponível. Modo convidado ativo.', 'aviso'); return; }
+                if(!supabase){ toast('Supabase não disponível.', 'aviso'); return; }
                 const email=$('emailLogin').value.trim();
                 const senha=$('senhaLogin').value;
                 if(!email||!senha){
@@ -607,19 +604,6 @@
                 }
             }
 
-            function entrarConvidado(){
-                usuarioAtual = null;
-                ehAdmin = false;
-                $('telaLogin').style.display='none';
-                $('telaApp').style.display='block';
-                $('nomeUsuario').textContent = '👤 Convidado';
-                carregarLocal();
-                atualizarTudoDiarias();
-                atualizarTudoDescontos();
-                setStatus('🟢 Modo convidado','rgba(0,212,255,.15)');
-                verificarConexao();
-            }
-
             async function sairConta(){
                 if(supabase && usuarioAtual) await supabase.auth.signOut();
                 diarias=[]; descontos=[];
@@ -631,38 +615,27 @@
                 if(elExiste('mensagemLogin')) $('mensagemLogin').innerHTML='';
             }
 
-            function entrarApp(usuario){
+            async function entrarApp(usuario){
                 console.log('Entrando no app com usuário:', usuario?.email);
-                usuarioAtual = usuario;
-                ehAdmin = (usuario.email||'').toLowerCase() === ADM_EMAIL.toLowerCase();
+                usuarioAtual=usuario;
+                ehAdmin=(usuario.email||'').toLowerCase()===ADM_EMAIL.toLowerCase();
                 $('telaLogin').style.display='none';
                 $('telaApp').style.display='block';
                 carregarTema();
-                const nome = usuario.user_metadata?.nome || usuario.email?.split('@')[0] || 'Usuário';
-                $('nomeUsuario').textContent = ehAdmin ? `👑 ${nome}` : nome;
-                $('graficoUsuarioSecao').style.display = ehAdmin ? 'block' : 'none';
-                carregarTudoDoBanco();
+                const nome=usuario.user_metadata?.nome||usuario.email?.split('@')[0]||'Usuário';
+                $('nomeUsuario').textContent=ehAdmin?`👑 ${nome}`:nome;
+                $('graficoUsuarioSecao').style.display=ehAdmin?'block':'none';
+
+                await carregarTudoDoBanco();
+                // Se não houver diárias, abrir modal automaticamente
+                if (diarias.length === 0) {
+                    abrirModalDiaria();
+                }
             }
 
             // ---------- BANCO DE DADOS ----------
-            function salvarLocal(){
-                localStorage.setItem('cashlog_diarias', JSON.stringify(diarias));
-                localStorage.setItem('cashlog_descontos', JSON.stringify(descontos));
-            }
-            function carregarLocal(){
-                const d = localStorage.getItem('cashlog_diarias');
-                const e = localStorage.getItem('cashlog_descontos');
-                diarias = d ? JSON.parse(d) : [];
-                descontos = e ? JSON.parse(e) : [];
-            }
-
             async function carregarTudoDoBanco(){
-                if(!supabase || !usuarioAtual){
-                    carregarLocal();
-                    atualizarTudoDiarias();
-                    atualizarTudoDescontos();
-                    return;
-                }
+                if(!supabase || !usuarioAtual) return;
                 verificarConexao();
                 if(!elExiste('carregandoDiarias') || !elExiste('carregandoDescontos')) return;
                 try{
@@ -670,19 +643,17 @@
                     $('carregandoDiarias').style.display='block';
                     $('carregandoDescontos').style.display='block';
 
-                    let qDiarias = supabase.from('diarias').select('*').order('data',{ascending:false});
-                    if(!ehAdmin) qDiarias = qDiarias.eq('usuario_id', usuarioAtual.id);
-                    const { data: dadosDiarias, error: eDiarias } = await qDiarias;
+                    let qDiarias=supabase.from('diarias').select('*').order('data',{ascending:false});
+                    if(!ehAdmin) qDiarias=qDiarias.eq('usuario_id',usuarioAtual.id);
+                    const {data:dadosDiarias,error:eDiarias}=await qDiarias;
                     if(eDiarias) throw eDiarias;
                     diarias = dadosDiarias || [];
-                    console.log('Diárias carregadas:', diarias.length);
 
-                    let qDescontos = supabase.from('descontos').select('*').order('data',{ascending:false});
-                    if(!ehAdmin) qDescontos = qDescontos.eq('usuario_id', usuarioAtual.id);
-                    const { data: dadosDescontos, error: eDescontos } = await qDescontos;
+                    let qDescontos=supabase.from('descontos').select('*').order('data',{ascending:false});
+                    if(!ehAdmin) qDescontos=qDescontos.eq('usuario_id',usuarioAtual.id);
+                    const {data:dadosDescontos,error:eDescontos}=await qDescontos;
                     if(eDescontos) throw eDescontos;
                     descontos = dadosDescontos || [];
-                    console.log('Descontos carregados:', descontos.length);
 
                     atualizarTudoDiarias();
                     atualizarTudoDescontos();
@@ -692,7 +663,8 @@
                     console.error('Erro ao carregar dados:', erro);
                     setStatus('🔴 Erro','rgba(239,68,68,.15)');
                     toast('Erro ao carregar dados: '+mensagemAmigavel(erro),'erro');
-                    carregarLocal();
+                    diarias = [];
+                    descontos = [];
                     atualizarTudoDiarias();
                     atualizarTudoDescontos();
                 }finally{
@@ -1283,7 +1255,7 @@
                     const { data: { session } } = await supabase.auth.getSession();
                     if(session?.user){
                         console.log('Sessão encontrada:', session.user.email);
-                        entrarApp(session.user);
+                        await entrarApp(session.user);
                     } else {
                         console.log('Nenhuma sessão, mostrando login.');
                         if(elExiste('telaLogin')) $('telaLogin').style.display='flex';
@@ -1328,7 +1300,7 @@
             // Expor API pública
             window.App = {
                 fazerCadastro, fazerLogin, mostrarCadastro, mostrarLogin,
-                sairConta, alternarTema, selecionarAba, entrarConvidado,
+                sairConta, alternarTema, selecionarAba,
                 abrirModalDiaria, fecharModalDiaria, salvarDiaria, editarDiaria, excluirDiaria,
                 abrirModalDesconto, fecharModalDesconto, salvarDesconto, editarDesconto, excluirDesconto,
                 filtrarDiarias, limparFiltrosDiarias, debounceAtualizarDiarias, irPaginaDiarias,
