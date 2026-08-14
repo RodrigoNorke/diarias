@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* ============================================
-           CASHLOG – TEMA FUTURISTA
+           CASHLOG – TEMA FUTURISTA (CSS mantido)
         ============================================ */
         :root{
             --bg: #0a0e17;
@@ -438,885 +438,778 @@
     </div>
 
     <script>
-        (function() {
-            // Configuração
-            const SUPABASE_URL = "https://ompukaiwkovmjzlfadpp.supabase.co";
-            const SUPABASE_KEY = "sb_publishable_l7bWwOwGNWaTQuENabb3Fw_YZMaAv_Y";
-            const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
-            const ITENS_POR_PAGINA = 15;
+        // ============================================================
+        // CASHLOG – SCRIPT GLOBAL (sem IIFE, variáveis acessíveis)
+        // ============================================================
+        const SUPABASE_URL = "https://ompukaiwkovmjzlfadpp.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_l7bWwOwGNWaTQuENabb3Fw_YZMaAv_Y";
+        const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
+        const ITENS_POR_PAGINA = 15;
 
-            // Estado
-            let supabase;
-            let usuarioAtual = null;
-            let ehAdmin = false;
-            let temaEscuro = true;
-            let abaAtiva = 'diarias';
-            let diarias = [];
-            let descontos = [];
-            let graficoInstancia = null;
-            let graficoUsuarioInstancia = null;
-            let paginaDiarias = 1;
-            let paginaDescontos = 1;
-            let ultimoDesfazer = null;
-            let desfazerTimer = null;
-            let debounceTimerDiarias = null;
-            let debounceTimerDescontos = null;
+        let supabase = null;
+        let usuarioAtual = null;
+        let ehAdmin = false;
+        let temaEscuro = true;
+        let abaAtiva = 'diarias';
+        let diarias = [];
+        let descontos = [];
+        let graficoInstancia = null;
+        let graficoUsuarioInstancia = null;
+        let paginaDiarias = 1;
+        let paginaDescontos = 1;
+        let ultimoDesfazer = null;
+        let desfazerTimer = null;
+        let debounceTimerDiarias = null;
+        let debounceTimerDescontos = null;
 
-            // Helpers
-            const $ = (id) => document.getElementById(id);
-            const elExiste = (id) => !!$(id);
+        const $ = (id) => document.getElementById(id);
+        const elExiste = (id) => !!$(id);
 
-            function garantirElementos() {
-                const ids = [
-                    'telaLogin', 'telaApp', 'statusConexao', 'nomeUsuario',
-                    'totalDiarias', 'totalDescontos', 'tabelaDiarias', 'tabelaDescontos',
-                    'vazioDiarias', 'vazioDescontos', 'grafico', 'graficoUsuario',
-                    'modalDiaria', 'modalDesconto', 'carregandoDiarias', 'carregandoDescontos',
-                    'paginacaoDiarias', 'paginacaoDescontos'
-                ];
-                ids.forEach(id => {
-                    if (!elExiste(id)) {
-                        console.error(`Elemento com id "${id}" não encontrado!`);
-                    }
-                });
-            }
-
-            // ---------- UTILITÁRIOS ----------
-            function moeda(v){ return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-            function moedaParaNumero(v){ return Number(String(v||'').replace(/\D/g,''))/100; }
-            function formatarValor(input){
-                const digits = input.value.replace(/\D/g,'');
-                if(!digits){ input.value=''; return; }
-                const num = parseInt(digits,10);
-                input.value = (num/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-            }
-            function dataBr(d){ return new Date(d+'T00:00:00').toLocaleDateString('pt-BR'); }
-            function mesAno(d){ return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'}); }
-            function chaveMes(d){ const dt=new Date(d+'T00:00:00'); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; }
-            function nomeMes(m){ const nomes=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']; return nomes[Number(m)-1]||m; }
-            function hoje(){ return new Date().toISOString().split('T')[0]; }
-            function toast(msg,tipo='sucesso'){
-                const t=document.createElement('div');
-                t.className=`toast ${tipo}`;
-                t.innerHTML=msg;
-                document.body.appendChild(t);
-                setTimeout(()=>t.remove(),3500);
-            }
-            function mensagemAmigavel(erro){
-                const map={
-                    'Email not confirmed':'E-mail não confirmado — verifique sua caixa de entrada',
-                    'Invalid login credentials':'E-mail ou senha incorretos',
-                    'Password should be at least 6 characters':'Senha deve ter pelo menos 6 caracteres',
-                    'User already registered':'Este e-mail já está cadastrado',
-                    'data_nao_futura':'A data não pode ser futura',
-                    'valor_positivo':'O valor deve ser maior que zero',
-                    'desconto_valor_positivo':'O valor deve ser maior que zero',
-                    'desconto_data_nao_futura':'A data não pode ser futura',
-                    'relation "diarias" does not exist':'Tabela "diarias" não existe no banco. Execute o script SQL de criação.',
-                    'relation "descontos" does not exist':'Tabela "descontos" não existe no banco. Execute o script SQL de criação.'
-                };
-                const msg = erro?.message || erro?.details || 'Ocorreu um erro. Tente novamente.';
-                for(const [chave,texto] of Object.entries(map)){
-                    if(msg.includes(chave)) return texto;
+        function garantirElementos() {
+            const ids = [
+                'telaLogin', 'telaApp', 'statusConexao', 'nomeUsuario',
+                'totalDiarias', 'totalDescontos', 'tabelaDiarias', 'tabelaDescontos',
+                'vazioDiarias', 'vazioDescontos', 'grafico', 'graficoUsuario',
+                'modalDiaria', 'modalDesconto', 'carregandoDiarias', 'carregandoDescontos',
+                'paginacaoDiarias', 'paginacaoDescontos'
+            ];
+            ids.forEach(id => {
+                if (!elExiste(id)) {
+                    console.error(`Elemento com id "${id}" não encontrado!`);
                 }
-                return msg;
+            });
+        }
+
+        function moeda(v) { return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+        function moedaParaNumero(v) { return Number(String(v||'').replace(/\D/g,''))/100; }
+        function formatarValor(input) {
+            const digits = input.value.replace(/\D/g,'');
+            if(!digits){ input.value=''; return; }
+            const num = parseInt(digits,10);
+            input.value = (num/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+        }
+        function dataBr(d) { return new Date(d+'T00:00:00').toLocaleDateString('pt-BR'); }
+        function mesAno(d) { return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'}); }
+        function chaveMes(d) { const dt=new Date(d+'T00:00:00'); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; }
+        function nomeMes(m) { const nomes=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']; return nomes[Number(m)-1]||m; }
+        function hoje() { return new Date().toISOString().split('T')[0]; }
+        function toast(msg,tipo='sucesso') {
+            const t=document.createElement('div');
+            t.className=`toast ${tipo}`;
+            t.innerHTML=msg;
+            document.body.appendChild(t);
+            setTimeout(()=>t.remove(),3500);
+        }
+        function mensagemAmigavel(erro) {
+            const map = {
+                'Email not confirmed':'E-mail não confirmado — verifique sua caixa de entrada',
+                'Invalid login credentials':'E-mail ou senha incorretos',
+                'Password should be at least 6 characters':'Senha deve ter pelo menos 6 caracteres',
+                'User already registered':'Este e-mail já está cadastrado',
+                'data_nao_futura':'A data não pode ser futura',
+                'valor_positivo':'O valor deve ser maior que zero',
+                'desconto_valor_positivo':'O valor deve ser maior que zero',
+                'desconto_data_nao_futura':'A data não pode ser futura',
+                'relation "diarias" does not exist':'Tabela "diarias" não existe no banco. Execute o script SQL.',
+                'relation "descontos" does not exist':'Tabela "descontos" não existe no banco. Execute o script SQL.'
+            };
+            const msg = erro?.message || erro?.details || 'Ocorreu um erro. Tente novamente.';
+            for(const [chave,texto] of Object.entries(map)){
+                if(msg.includes(chave)) return texto;
             }
-            function setStatus(texto,cor){
-                const el=$('statusConexao');
-                if(!el) return;
-                el.innerHTML=texto;
-                if(cor) el.style.background=cor;
+            return msg;
+        }
+        function setStatus(texto,cor){
+            const el=$('statusConexao');
+            if(!el) return;
+            el.innerHTML=texto;
+            if(cor) el.style.background=cor;
+        }
+        function verificarConexao(){
+            const off=$('avisoOffline');
+            if(!off) return;
+            if(navigator.onLine){
+                off.style.display='none';
+                setStatus('🟢 Online','rgba(74,222,128,.15)');
+            }else{
+                off.style.display='block';
+                setStatus('⚠️ Offline','rgba(250,204,21,.15)');
             }
-            function verificarConexao(){
-                const off=$('avisoOffline');
-                if(!off) return;
-                if(navigator.onLine){
-                    off.style.display='none';
-                    setStatus('🟢 Online','rgba(74,222,128,.15)');
-                }else{
-                    off.style.display='block';
-                    setStatus('⚠️ Offline','rgba(250,204,21,.15)');
+        }
+        window.addEventListener('online',verificarConexao);
+        window.addEventListener('offline',verificarConexao);
+
+        function carregarTema(){
+            const t=localStorage.getItem('tema');
+            if(t==='claro'){
+                temaEscuro=false;
+                $('corpo')?.classList.add('tema-claro');
+            }
+        }
+        function alternarTema(){
+            temaEscuro=!temaEscuro;
+            $('corpo')?.classList.toggle('tema-claro',!temaEscuro);
+            localStorage.setItem('tema',temaEscuro?'escuro':'claro');
+            setTimeout(()=>{ if(graficoInstancia)graficoInstancia.resize(); if(graficoUsuarioInstancia)graficoUsuarioInstancia.resize(); },100);
+        }
+
+        function selecionarAba(nome){
+            abaAtiva=nome;
+            document.querySelectorAll('.aba').forEach(a=>a.classList.remove('ativa'));
+            document.querySelectorAll('.painel-conteudo').forEach(p=>p.classList.remove('ativa'));
+            $(`aba${nome.charAt(0).toUpperCase()+nome.slice(1)}`)?.classList.add('ativa');
+            $(`painel${nome.charAt(0).toUpperCase()+nome.slice(1)}`)?.classList.add('ativa');
+        }
+
+        function mostrarCadastro(){ $('formEntrar').style.display='none'; $('formCadastro').style.display='block'; $('mensagemLogin').innerHTML=''; }
+        function mostrarLogin(){ $('formEntrar').style.display='block'; $('formCadastro').style.display='none'; $('mensagemLogin').innerHTML=''; }
+
+        async function fazerCadastro(){
+            if(!supabase){ toast('Supabase não disponível.', 'aviso'); return; }
+            const nome=$('nomeCad').value.trim();
+            const email=$('emailCad').value.trim();
+            const senha=$('senhaCad').value;
+            if(!nome||!email||senha.length<6){
+                $('mensagemLogin').innerHTML='<span style="color:var(--erro)">Preencha todos os campos. Senha com mínimo 6 caracteres.</span>';
+                return;
+            }
+            const {error}=await supabase.auth.signUp({email,password:senha,options:{data:{nome}}});
+            if(error){ $('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`; return; }
+            $('mensagemLogin').innerHTML='<span style="color:var(--sucesso)">✅ Conta criada! Verifique seu e-mail para ativar.</span>';
+            toast('Conta criada! Confirme seu e-mail antes de entrar.','aviso');
+            mostrarLogin();
+        }
+
+        async function fazerLogin(){
+            if(!supabase){ toast('Supabase não disponível.', 'aviso'); return; }
+            const email=$('emailLogin').value.trim();
+            const senha=$('senhaLogin').value;
+            if(!email||!senha){
+                $('mensagemLogin').innerHTML='<span style="color:var(--erro)">Preencha e-mail e senha.</span>';
+                return;
+            }
+            try{
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+                if(error){ 
+                    $('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`; 
+                    return; 
                 }
+                if(data?.user) await entrarApp(data.user);
+            }catch(e){
+                $('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(e)}</span>`;
             }
-            window.addEventListener('online',verificarConexao);
-            window.addEventListener('offline',verificarConexao);
+        }
 
-            function carregarTema(){
-                const t=localStorage.getItem('tema');
-                if(t==='claro'){
-                    temaEscuro=false;
-                    $('corpo')?.classList.add('tema-claro');
-                }
+        async function sairConta(){
+            if(supabase && usuarioAtual) await supabase.auth.signOut();
+            diarias=[]; descontos=[];
+            usuarioAtual=null; ehAdmin=false;
+            $('telaLogin').style.display='flex';
+            $('telaApp').style.display='none';
+            if(elExiste('emailLogin')) $('emailLogin').value='';
+            if(elExiste('senhaLogin')) $('senhaLogin').value='';
+            if(elExiste('mensagemLogin')) $('mensagemLogin').innerHTML='';
+        }
+
+        async function entrarApp(usuario){
+            console.log('Entrando no app com usuário:', usuario?.email);
+            usuarioAtual=usuario;
+            ehAdmin=(usuario.email||'').toLowerCase()===ADM_EMAIL.toLowerCase();
+            $('telaLogin').style.display='none';
+            $('telaApp').style.display='block';
+            carregarTema();
+            const nome=usuario.user_metadata?.nome||usuario.email?.split('@')[0]||'Usuário';
+            $('nomeUsuario').textContent=ehAdmin?`👑 ${nome}`:nome;
+            $('graficoUsuarioSecao').style.display=ehAdmin?'block':'none';
+
+            await carregarTudoDoBanco();
+            // Se não houver diárias, abrir modal automaticamente
+            if (diarias.length === 0) {
+                abrirModalDiaria();
             }
-            function alternarTema(){
-                temaEscuro=!temaEscuro;
-                $('corpo')?.classList.toggle('tema-claro',!temaEscuro);
-                localStorage.setItem('tema',temaEscuro?'escuro':'claro');
-                setTimeout(()=>{ if(graficoInstancia)graficoInstancia.resize(); if(graficoUsuarioInstancia)graficoUsuarioInstancia.resize(); },100);
-            }
+        }
 
-            // ---------- ABAS ----------
-            function selecionarAba(nome){
-                abaAtiva=nome;
-                document.querySelectorAll('.aba').forEach(a=>a.classList.remove('ativa'));
-                document.querySelectorAll('.painel-conteudo').forEach(p=>p.classList.remove('ativa'));
-                $(`aba${nome.charAt(0).toUpperCase()+nome.slice(1)}`)?.classList.add('ativa');
-                $(`painel${nome.charAt(0).toUpperCase()+nome.slice(1)}`)?.classList.add('ativa');
-            }
+        async function carregarTudoDoBanco(){
+            if(!supabase || !usuarioAtual) return;
+            verificarConexao();
+            if(!elExiste('carregandoDiarias') || !elExiste('carregandoDescontos')) return;
+            try{
+                setStatus('🔄 Carregando...','rgba(14,165,233,.15)');
+                $('carregandoDiarias').style.display='block';
+                $('carregandoDescontos').style.display='block';
 
-            // ---------- AUTENTICAÇÃO ----------
-            function mostrarCadastro(){ $('formEntrar').style.display='none'; $('formCadastro').style.display='block'; $('mensagemLogin').innerHTML=''; }
-            function mostrarLogin(){ $('formEntrar').style.display='block'; $('formCadastro').style.display='none'; $('mensagemLogin').innerHTML=''; }
+                let qDiarias=supabase.from('diarias').select('*').order('data',{ascending:false});
+                if(!ehAdmin) qDiarias=qDiarias.eq('usuario_id',usuarioAtual.id);
+                const {data:dadosDiarias,error:eDiarias}=await qDiarias;
+                if(eDiarias) throw eDiarias;
+                diarias = dadosDiarias || [];
 
-            async function fazerCadastro(){
-                if(!supabase){ toast('Supabase não disponível.', 'aviso'); return; }
-                const nome=$('nomeCad').value.trim();
-                const email=$('emailCad').value.trim();
-                const senha=$('senhaCad').value;
-                if(!nome||!email||senha.length<6){
-                    $('mensagemLogin').innerHTML='<span style="color:var(--erro)">Preencha todos os campos. Senha com mínimo 6 caracteres.</span>';
-                    return;
-                }
-                const {error}=await supabase.auth.signUp({email,password:senha,options:{data:{nome}}});
-                if(error){ $('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`; return; }
-                $('mensagemLogin').innerHTML='<span style="color:var(--sucesso)">✅ Conta criada! Verifique seu e-mail para ativar.</span>';
-                toast('Conta criada! Confirme seu e-mail antes de entrar.','aviso');
-                mostrarLogin();
-            }
+                let qDescontos=supabase.from('descontos').select('*').order('data',{ascending:false});
+                if(!ehAdmin) qDescontos=qDescontos.eq('usuario_id',usuarioAtual.id);
+                const {data:dadosDescontos,error:eDescontos}=await qDescontos;
+                if(eDescontos) throw eDescontos;
+                descontos = dadosDescontos || [];
 
-            async function fazerLogin(){
-                if(!supabase){ toast('Supabase não disponível.', 'aviso'); return; }
-                const email=$('emailLogin').value.trim();
-                const senha=$('senhaLogin').value;
-                if(!email||!senha){
-                    $('mensagemLogin').innerHTML='<span style="color:var(--erro)">Preencha e-mail e senha.</span>';
-                    return;
-                }
-                try{
-                    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
-                    if(error){ 
-                        $('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(error)}</span>`; 
-                        return; 
-                    }
-                    if(data?.user) entrarApp(data.user);
-                }catch(e){
-                    $('mensagemLogin').innerHTML=`<span style="color:var(--erro)">${mensagemAmigavel(e)}</span>`;
-                }
-            }
-
-            async function sairConta(){
-                if(supabase && usuarioAtual) await supabase.auth.signOut();
-                diarias=[]; descontos=[];
-                usuarioAtual=null; ehAdmin=false;
-                $('telaLogin').style.display='flex';
-                $('telaApp').style.display='none';
-                if(elExiste('emailLogin')) $('emailLogin').value='';
-                if(elExiste('senhaLogin')) $('senhaLogin').value='';
-                if(elExiste('mensagemLogin')) $('mensagemLogin').innerHTML='';
-            }
-
-            async function entrarApp(usuario){
-                console.log('Entrando no app com usuário:', usuario?.email);
-                usuarioAtual=usuario;
-                ehAdmin=(usuario.email||'').toLowerCase()===ADM_EMAIL.toLowerCase();
-                $('telaLogin').style.display='none';
-                $('telaApp').style.display='block';
-                carregarTema();
-                const nome=usuario.user_metadata?.nome||usuario.email?.split('@')[0]||'Usuário';
-                $('nomeUsuario').textContent=ehAdmin?`👑 ${nome}`:nome;
-                $('graficoUsuarioSecao').style.display=ehAdmin?'block':'none';
-
-                await carregarTudoDoBanco();
-                // Se não houver diárias, abrir modal automaticamente
-                if (diarias.length === 0) {
-                    abrirModalDiaria();
-                }
-            }
-
-            // ---------- BANCO DE DADOS ----------
-            async function carregarTudoDoBanco(){
-                if(!supabase || !usuarioAtual) return;
-                verificarConexao();
-                if(!elExiste('carregandoDiarias') || !elExiste('carregandoDescontos')) return;
-                try{
-                    setStatus('🔄 Carregando...','rgba(14,165,233,.15)');
-                    $('carregandoDiarias').style.display='block';
-                    $('carregandoDescontos').style.display='block';
-
-                    let qDiarias=supabase.from('diarias').select('*').order('data',{ascending:false});
-                    if(!ehAdmin) qDiarias=qDiarias.eq('usuario_id',usuarioAtual.id);
-                    const {data:dadosDiarias,error:eDiarias}=await qDiarias;
-                    if(eDiarias) throw eDiarias;
-                    diarias = dadosDiarias || [];
-
-                    let qDescontos=supabase.from('descontos').select('*').order('data',{ascending:false});
-                    if(!ehAdmin) qDescontos=qDescontos.eq('usuario_id',usuarioAtual.id);
-                    const {data:dadosDescontos,error:eDescontos}=await qDescontos;
-                    if(eDescontos) throw eDescontos;
-                    descontos = dadosDescontos || [];
-
-                    atualizarTudoDiarias();
-                    atualizarTudoDescontos();
-                    setStatus('🟢 Online','rgba(74,222,128,.15)');
-                    toast(`✅ ${diarias.length+descontos.length} registros carregados`,'sucesso');
-                }catch(erro){
-                    console.error('Erro ao carregar dados:', erro);
-                    setStatus('🔴 Erro','rgba(239,68,68,.15)');
-                    toast('Erro ao carregar dados: '+mensagemAmigavel(erro),'erro');
-                    diarias = [];
-                    descontos = [];
-                    atualizarTudoDiarias();
-                    atualizarTudoDescontos();
-                }finally{
-                    if(elExiste('carregandoDiarias')) $('carregandoDiarias').style.display='none';
-                    if(elExiste('carregandoDescontos')) $('carregandoDescontos').style.display='none';
-                }
-            }
-
-            // ---------- FILTROS DIÁRIAS ----------
-            function diariasFiltradas(){
-                let lista=[...diarias];
-                const busca=($('buscaDiarias')?.value||'').toLowerCase().trim();
-                const dataInicio=$('dataInicioDiarias')?.value;
-                const dataFim=$('dataFimDiarias')?.value;
-                const filtroMes=$('filtroMesDiarias')?.value;
-                const filtroAno=$('filtroAnoDiarias')?.value;
-
-                if(busca) lista=lista.filter(d=>
-                    (d.descricao||'').toLowerCase().includes(busca) ||
-                    (d.usuario_email||'').toLowerCase().includes(busca)
-                );
-                if(dataInicio) lista=lista.filter(d=>d.data>=dataInicio);
-                if(dataFim) lista=lista.filter(d=>d.data<=dataFim);
-                if(filtroMes&&filtroMes!=='todos') lista=lista.filter(d=>chaveMes(d.data)===filtroMes);
-                if(filtroAno&&filtroAno!=='todos') lista=lista.filter(d=>d.data?.startsWith(filtroAno));
-
-                return lista;
-            }
-
-            function preencherFiltrosDiarias(){
-                const meses=[...new Set(diarias.map(d=>chaveMes(d.data)))].sort().reverse();
-                const anos=[...new Set(diarias.map(d=>d.data?.substring(0,4)))].sort().reverse();
-                const selMes=$('filtroMesDiarias');
-                const selAno=$('filtroAnoDiarias');
-                if(!selMes||!selAno) return;
-                const atualMes=selMes.value||'todos';
-                const atualAno=selAno.value||'todos';
-                selMes.innerHTML='<option value="todos">Todos os meses</option>';
-                selAno.innerHTML='<option value="todos">Todos os anos</option>';
-                meses.forEach(m=>{
-                    const [ano,mes]=m.split('-');
-                    selMes.innerHTML+=`<option value="${m}">${nomeMes(Number(mes))} / ${ano}</option>`;
-                });
-                anos.forEach(a=>selAno.innerHTML+=`<option value="${a}">${a}</option>`);
-                selMes.value=atualMes;
-                selAno.value=atualAno;
-            }
-
-            function filtrarDiarias(){ paginaDiarias=1; atualizarTudoDiarias(); }
-            function limparFiltrosDiarias(){
-                $('buscaDiarias').value='';
-                $('dataInicioDiarias').value='';
-                $('dataFimDiarias').value='';
-                $('filtroMesDiarias').value='todos';
-                $('filtroAnoDiarias').value='todos';
-                paginaDiarias=1;
                 atualizarTudoDiarias();
+                atualizarTudoDescontos();
+                setStatus('🟢 Online','rgba(74,222,128,.15)');
+                toast(`✅ ${diarias.length+descontos.length} registros carregados`,'sucesso');
+            }catch(erro){
+                console.error('Erro ao carregar dados:', erro);
+                setStatus('🔴 Erro','rgba(239,68,68,.15)');
+                toast('Erro ao carregar dados: '+mensagemAmigavel(erro),'erro');
+                diarias = [];
+                descontos = [];
+                atualizarTudoDiarias();
+                atualizarTudoDescontos();
+            }finally{
+                if(elExiste('carregandoDiarias')) $('carregandoDiarias').style.display='none';
+                if(elExiste('carregandoDescontos')) $('carregandoDescontos').style.display='none';
             }
-            function debounceAtualizarDiarias(){
-                clearTimeout(debounceTimerDiarias);
-                debounceTimerDiarias=setTimeout(filtrarDiarias,300);
-            }
+        }
 
-            // ---------- ATUALIZAÇÃO TELA DIÁRIAS ----------
-            function atualizarMetricasDiarias(){
-                const lista=diariasFiltradas();
-                if(!lista.length){
-                    if(elExiste('totalDiarias')) $('totalDiarias').textContent='R$ 0,00';
-                    if(elExiste('qtdDiarias')) $('qtdDiarias').textContent='0 registros';
-                    if(elExiste('mediaDiarias')) $('mediaDiarias').textContent='R$ 0,00';
-                    if(elExiste('maiorDiarias')) $('maiorDiarias').textContent='R$ 0,00';
-                    if(elExiste('maiorDataDiarias')) $('maiorDataDiarias').textContent='—';
-                    if(elExiste('mesAtualDiarias')) $('mesAtualDiarias').textContent='R$ 0,00';
-                    if(elExiste('mesInfoDiarias')) $('mesInfoDiarias').textContent='—';
-                    return;
+        function diariasFiltradas(){
+            let lista=[...diarias];
+            const busca=($('buscaDiarias')?.value||'').toLowerCase().trim();
+            const dataInicio=$('dataInicioDiarias')?.value;
+            const dataFim=$('dataFimDiarias')?.value;
+            const filtroMes=$('filtroMesDiarias')?.value;
+            const filtroAno=$('filtroAnoDiarias')?.value;
+
+            if(busca) lista=lista.filter(d=>
+                (d.descricao||'').toLowerCase().includes(busca) ||
+                (d.usuario_email||'').toLowerCase().includes(busca)
+            );
+            if(dataInicio) lista=lista.filter(d=>d.data>=dataInicio);
+            if(dataFim) lista=lista.filter(d=>d.data<=dataFim);
+            if(filtroMes&&filtroMes!=='todos') lista=lista.filter(d=>chaveMes(d.data)===filtroMes);
+            if(filtroAno&&filtroAno!=='todos') lista=lista.filter(d=>d.data?.startsWith(filtroAno));
+            return lista;
+        }
+        function descontosFiltrados(){
+            let lista=[...descontos];
+            const busca=($('buscaDescontos')?.value||'').toLowerCase().trim();
+            const dataInicio=$('dataInicioDescontos')?.value;
+            const dataFim=$('dataFimDescontos')?.value;
+            const filtroMes=$('filtroMesDescontos')?.value;
+            const filtroAno=$('filtroAnoDescontos')?.value;
+            if(busca) lista=lista.filter(d=>
+                (d.descricao||'').toLowerCase().includes(busca) ||
+                (d.usuario_email||'').toLowerCase().includes(busca)
+            );
+            if(dataInicio) lista=lista.filter(d=>d.data>=dataInicio);
+            if(dataFim) lista=lista.filter(d=>d.data<=dataFim);
+            if(filtroMes&&filtroMes!=='todos') lista=lista.filter(d=>chaveMes(d.data)===filtroMes);
+            if(filtroAno&&filtroAno!=='todos') lista=lista.filter(d=>d.data?.startsWith(filtroAno));
+            return lista;
+        }
+
+        function preencherFiltrosDiarias(){
+            const meses=[...new Set(diarias.map(d=>chaveMes(d.data)))].sort().reverse();
+            const anos=[...new Set(diarias.map(d=>d.data?.substring(0,4)))].sort().reverse();
+            const selMes=$('filtroMesDiarias');
+            const selAno=$('filtroAnoDiarias');
+            if(!selMes||!selAno) return;
+            const atualMes=selMes.value||'todos';
+            const atualAno=selAno.value||'todos';
+            selMes.innerHTML='<option value="todos">Todos os meses</option>';
+            selAno.innerHTML='<option value="todos">Todos os anos</option>';
+            meses.forEach(m=>{
+                const [ano,mes]=m.split('-');
+                selMes.innerHTML+=`<option value="${m}">${nomeMes(Number(mes))} / ${ano}</option>`;
+            });
+            anos.forEach(a=>selAno.innerHTML+=`<option value="${a}">${a}</option>`);
+            selMes.value=atualMes;
+            selAno.value=atualAno;
+        }
+        function preencherFiltrosDescontos(){
+            const meses=[...new Set(descontos.map(d=>chaveMes(d.data)))].sort().reverse();
+            const anos=[...new Set(descontos.map(d=>d.data?.substring(0,4)))].sort().reverse();
+            const selMes=$('filtroMesDescontos');
+            const selAno=$('filtroAnoDescontos');
+            if(!selMes||!selAno) return;
+            const atualMes=selMes.value||'todos';
+            const atualAno=selAno.value||'todos';
+            selMes.innerHTML='<option value="todos">Todos os meses</option>';
+            selAno.innerHTML='<option value="todos">Todos os anos</option>';
+            meses.forEach(m=>{
+                const [ano,mes]=m.split('-');
+                selMes.innerHTML+=`<option value="${m}">${nomeMes(Number(mes))} / ${ano}</option>`;
+            });
+            anos.forEach(a=>selAno.innerHTML+=`<option value="${a}">${a}</option>`);
+            selMes.value=atualMes;
+            selAno.value=atualAno;
+        }
+        function filtrarDiarias(){ paginaDiarias=1; atualizarTudoDiarias(); }
+        function filtrarDescontos(){ paginaDescontos=1; atualizarTudoDescontos(); }
+        function limparFiltrosDiarias(){
+            $('buscaDiarias').value='';
+            $('dataInicioDiarias').value='';
+            $('dataFimDiarias').value='';
+            $('filtroMesDiarias').value='todos';
+            $('filtroAnoDiarias').value='todos';
+            paginaDiarias=1;
+            atualizarTudoDiarias();
+        }
+        function limparFiltrosDescontos(){
+            $('buscaDescontos').value='';
+            $('dataInicioDescontos').value='';
+            $('dataFimDescontos').value='';
+            $('filtroMesDescontos').value='todos';
+            $('filtroAnoDescontos').value='todos';
+            paginaDescontos=1;
+            atualizarTudoDescontos();
+        }
+        function debounceAtualizarDiarias(){
+            clearTimeout(debounceTimerDiarias);
+            debounceTimerDiarias=setTimeout(filtrarDiarias,300);
+        }
+        function debounceAtualizarDescontos(){
+            clearTimeout(debounceTimerDescontos);
+            debounceTimerDescontos=setTimeout(filtrarDescontos,300);
+        }
+
+        function atualizarTabelaDiarias(){
+            const lista=diariasFiltradas();
+            const tbody=$('tabelaDiarias');
+            const vazio=$('vazioDiarias');
+            if(!tbody||!vazio) return;
+            tbody.innerHTML='';
+            if(lista.length===0){
+                vazio.style.display='block';
+                $('paginacaoDiarias')?.innerHTML='';
+                return;
+            }
+            vazio.style.display='none';
+            const totalPaginas=Math.ceil(lista.length/ITENS_POR_PAGINA);
+            const inicio=(paginaDiarias-1)*ITENS_POR_PAGINA;
+            const paged=lista.slice(inicio,inicio+ITENS_POR_PAGINA);
+            let html='';
+            let ultimoMes='';
+            paged.forEach(d=>{
+                const m=mesAno(d.data);
+                if(m!==ultimoMes){
+                    ultimoMes=m;
+                    html+=`<tr class="mes-separador"><td colspan="5" style="padding:8px;">📅 ${m}</td></tr>`;
                 }
-                const total=lista.reduce((s,d)=>s+Number(d.valor||0),0);
-                const diasUnicos=[...new Set(lista.map(d=>d.data))].length;
-                const maior=lista.reduce((a,d)=>Number(d.valor||0)>Number(a.valor||0)?d:a,lista[0]);
-                const hojeData=new Date();
-                const mesCorrente=lista.filter(d=>{
-                    const dt=new Date(d.data+'T00:00:00');
-                    return dt.getMonth()===hojeData.getMonth() && dt.getFullYear()===hojeData.getFullYear();
-                }).reduce((s,d)=>s+Number(d.valor||0),0);
-
-                $('totalDiarias').textContent='R$ '+moeda(total);
-                $('qtdDiarias').textContent=`${lista.length} registros`;
-                $('mediaDiarias').textContent='R$ '+moeda(diasUnicos?total/diasUnicos:0);
-                $('maiorDiarias').textContent='R$ '+moeda(maior.valor);
-                $('maiorDataDiarias').textContent=dataBr(maior.data);
-                $('mesAtualDiarias').textContent='R$ '+moeda(mesCorrente);
-                $('mesInfoDiarias').textContent=nomeMes(hojeData.getMonth()+1);
-            }
-
-            function atualizarTabelaDiarias(){
-                const lista=diariasFiltradas();
-                const tbody=$('tabelaDiarias');
-                const vazio=$('vazioDiarias');
-                if(!tbody||!vazio) return;
-                
-                if(lista.length===0){
-                    tbody.innerHTML='';
-                    vazio.style.display='block';
-                    if(elExiste('paginacaoDiarias')) $('paginacaoDiarias').innerHTML='';
-                    return;
+                html+=`
+                    <tr class="tbl-row">
+                        <td>${dataBr(d.data)}</td>
+                        <td>${d.descricao||'—'}</td>
+                        <td>${(d.usuario_email||'').split('@')[0]||'—'}</td>
+                        <td>R$ ${moeda(d.valor)}</td>
+                        <td>
+                            <button class="btn-icone" onclick="App.editarDiaria('${d.id}')">✏️</button>
+                            <button class="btn-icone excluir-btn" onclick="App.excluirDiaria('${d.id}')">🗑️</button>
+                        </td>
+                    </tr>`;
+            });
+            tbody.innerHTML=html;
+            const pag=$('paginacaoDiarias');
+            if(pag){
+                if(totalPaginas<=1){ pag.innerHTML=''; return; }
+                let pagHtml='';
+                for(let i=1;i<=totalPaginas;i++){
+                    pagHtml+=`<button class="btn-secondary ${i===paginaDiarias?'ativo':''}" onclick="App.irPaginaDiarias(${i})">${i}</button>`;
                 }
-                vazio.style.display='none';
-                const totalPaginas=Math.ceil(lista.length/ITENS_POR_PAGINA);
-                const inicio=(paginaDiarias-1)*ITENS_POR_PAGINA;
-                const paged=lista.slice(inicio,inicio+ITENS_POR_PAGINA);
-                tbody.innerHTML='';
-                let ultimoMes='';
-                paged.forEach(d=>{
-                    const m=mesAno(d.data);
-                    if(m!==ultimoMes){
-                        ultimoMes=m;
-                        tbody.innerHTML+=`<tr class="mes-separador"><td colspan="5" style="padding:8px;">📅 ${m}</td></tr>`;
-                    }
-                    tbody.innerHTML+=`
-                        <tr class="tbl-row">
-                            <td style="padding:10px 8px;">${dataBr(d.data)}</td>
-                            <td style="padding:10px 8px;">${d.descricao||'—'}</td>
-                            <td style="padding:10px 8px;font-size:13px;color:var(--text-soft);">${(d.usuario_email||'').split('@')[0]||'—'}</td>
-                            <td style="padding:10px 8px;text-align:right;font-weight:500;color:var(--accent)">R$ ${moeda(d.valor)}</td>
-                            <td style="padding:10px 8px;text-align:right;">
-                                <button class="btn-icone" onclick="App.editarDiaria('${d.id}')" title="Editar">✏️</button>
-                                <button class="btn-icone excluir-btn" onclick="App.excluirDiaria('${d.id}')" title="Excluir">🗑️</button>
-                            </td>
-                        </tr>`;
-                });
-                const pag=$('paginacaoDiarias');
-                if(pag){
-                    if(totalPaginas<=1){ pag.innerHTML=''; return; }
-                    let pagHtml='';
-                    for(let i=1;i<=totalPaginas;i++){
-                        pagHtml+=`<button class="btn-secondary ${i===paginaDiarias?'ativo':''}" onclick="App.irPaginaDiarias(${i})">${i}</button>`;
-                    }
-                    pag.innerHTML=pagHtml;
+                pag.innerHTML=pagHtml;
+            }
+        }
+        function atualizarTabelaDescontos(){
+            const lista=descontosFiltrados();
+            const tbody=$('tabelaDescontos');
+            const vazio=$('vazioDescontos');
+            if(!tbody||!vazio) return;
+            tbody.innerHTML='';
+            if(lista.length===0){
+                vazio.style.display='block';
+                $('paginacaoDescontos')?.innerHTML='';
+                return;
+            }
+            vazio.style.display='none';
+            const totalPaginas=Math.ceil(lista.length/ITENS_POR_PAGINA);
+            const inicio=(paginaDescontos-1)*ITENS_POR_PAGINA;
+            const paged=lista.slice(inicio,inicio+ITENS_POR_PAGINA);
+            let html='';
+            let ultimoMes='';
+            paged.forEach(d=>{
+                const m=mesAno(d.data);
+                if(m!==ultimoMes){
+                    ultimoMes=m;
+                    html+=`<tr class="mes-separador mes-separador-desconto"><td colspan="5" style="padding:8px;">📅 ${m}</td></tr>`;
                 }
-            }
-
-            function irPaginaDiarias(p){ paginaDiarias=p; atualizarTabelaDiarias(); }
-
-            function atualizarGraficoPrincipal(){
-                const lista=diariasFiltradas();
-                const el=$('grafico');
-                if(!el||!window.echarts) return;
-                if(!graficoInstancia) graficoInstancia=echarts.init(el);
-                const agrupado={};
-                lista.forEach(d=>{
-                    const ch=chaveMes(d.data);
-                    agrupado[ch]=(agrupado[ch]||0)+Number(d.valor||0);
-                });
-                const ordenado=Object.entries(agrupado).sort((a,b)=>a[0].localeCompare(b[0]));
-                const labels=ordenado.map(([k])=>{const [a,m]=k.split('-'); return `${nomeMes(Number(m)).substring(0,3)}/${a.substring(2)}`;});
-                const valores=ordenado.map(([,v])=>v);
-
-                const corTexto = getComputedStyle(document.body).getPropertyValue('--text').trim();
-                const corTextoSuave = getComputedStyle(document.body).getPropertyValue('--text-soft').trim();
-                const corBorda = getComputedStyle(document.body).getPropertyValue('--border').trim();
-
-                graficoInstancia.setOption({
-                    backgroundColor:'transparent',
-                    textStyle:{color:corTexto},
-                    tooltip:{
-                        trigger:'axis',
-                        backgroundColor:'rgba(17,24,39,.9)',
-                        borderColor:corBorda,
-                        textStyle:{color:'#fff'},
-                        formatter:p=>{
-                            const v=p[0].value;
-                            return `${p[0].axisValue}<br/>Total: <b>R$ ${moeda(v)}</b>`;
-                        }
-                    },
-                    grid:{left:'3%',right:'4%',bottom:'3%',containLabel:true},
-                    xAxis:{
-                        type:'category',
-                        data:labels,
-                        axisLine:{lineStyle:{color:corBorda}},
-                        axisLabel:{color:corTextoSuave}
-                    },
-                    yAxis:{
-                        type:'value',
-                        axisLine:{lineStyle:{color:corBorda}},
-                        axisLabel:{color:corTextoSuave},
-                        splitLine:{lineStyle:{color:corBorda}}
-                    },
-                    series:[{
-                        name:'Diárias',
-                        type:'bar',
-                        data:valores,
-                        itemStyle:{
-                            borderRadius:[6,6,0,0],
-                            color:new echarts.graphic.LinearGradient(0,0,0,1,[
-                                {offset:0,color:'#00d4ff'},
-                                {offset:1,color:'#0090ff'}
-                            ])
-                        },
-                        barWidth:'50%'
-                    }]
-                });
-            }
-
-            function atualizarGraficoPorUsuario(){
-                if(!ehAdmin) return;
-                const lista=diariasFiltradas();
-                const el=$('graficoUsuario');
-                if(!el||!window.echarts) return;
-                if(!graficoUsuarioInstancia) graficoUsuarioInstancia=echarts.init(el);
-                const porUser={};
-                lista.forEach(d=>{
-                    const email=d.usuario_email||'Desconhecido';
-                    porUser[email]=(porUser[email]||0)+Number(d.valor||0);
-                });
-                const ordenado=Object.entries(porUser).sort((a,b)=>b[1]-a[1]);
-                const corTexto = getComputedStyle(document.body).getPropertyValue('--text').trim();
-                const corBorda = getComputedStyle(document.body).getPropertyValue('--border').trim();
-                graficoUsuarioInstancia.setOption({
-                    backgroundColor:'transparent',
-                    tooltip:{
-                        trigger:'item',
-                        backgroundColor:'rgba(17,24,39,.9)',
-                        borderColor:corBorda,
-                        textStyle:{color:'#fff'},
-                        formatter:p=>`${p.name}<br/>Total: <b>R$ ${moeda(p.value)}</b>`
-                    },
-                    series:[{
-                        type:'pie',
-                        radius:['40%','70%'],
-                        center:['50%','50%'],
-                        data:ordenado.map(([k,v])=>({name:k.split('@')[0],value:v})),
-                        color:['#00d4ff','#a855f7','#ff4d6d','#facc15','#4ade80','#fb923c','#8b5cf6','#2dd4bf']
-                    }]
-                });
-            }
-
-            function atualizarTudoDiarias(){
-                preencherFiltrosDiarias();
-                atualizarMetricasDiarias();
-                atualizarTabelaDiarias();
-                atualizarGraficoPrincipal();
-                atualizarGraficoPorUsuario();
-            }
-
-            // ---------- CRUD DIÁRIAS ----------
-            function abrirModalDiaria(id=null){
-                if(!elExiste('modalDiaria')) return;
-                $('modalDiaria').style.display='flex';
-                $('tituloModalDiaria').textContent=id?'Editar Diária':'Nova Diária';
-                $('editIdDiaria').value=id||'';
-                $('valorDiaria').value='';
-                $('dataDiaria').value=hoje();
-                $('descricaoDiaria').value='';
-                if(id){
-                    const d=diarias.find(x=>x.id===id);
-                    if(d){
-                        $('valorDiaria').value=moeda(d.valor);
-                        $('dataDiaria').value=d.data;
-                        $('descricaoDiaria').value=d.descricao||'';
-                    }
+                html+=`
+                    <tr class="tbl-row tbl-row-desconto">
+                        <td>${dataBr(d.data)}</td>
+                        <td>${d.descricao||'—'}</td>
+                        <td>${(d.usuario_email||'').split('@')[0]||'—'}</td>
+                        <td>R$ ${moeda(d.valor)}</td>
+                        <td>
+                            <button class="btn-icone" onclick="App.editarDesconto('${d.id}')">✏️</button>
+                            <button class="btn-icone excluir-btn" onclick="App.excluirDesconto('${d.id}')">🗑️</button>
+                        </td>
+                    </tr>`;
+            });
+            tbody.innerHTML=html;
+            const pag=$('paginacaoDescontos');
+            if(pag){
+                if(totalPaginas<=1){ pag.innerHTML=''; return; }
+                let pagHtml='';
+                for(let i=1;i<=totalPaginas;i++){
+                    pagHtml+=`<button class="btn-secondary ${i===paginaDescontos?'ativo':''}" onclick="App.irPaginaDescontos(${i})">${i}</button>`;
                 }
-                $('valorDiaria')?.focus();
+                pag.innerHTML=pagHtml;
             }
-            function fecharModalDiaria(){ if(elExiste('modalDiaria')) $('modalDiaria').style.display='none'; }
-
-            async function salvarDiaria(e){
-                e.preventDefault();
-                const id=$('editIdDiaria').value;
-                const valor=moedaParaNumero($('valorDiaria').value);
-                const data=$('dataDiaria').value;
-                const descricao=$('descricaoDiaria').value.trim();
-
-                if(valor<=0){ toast('O valor deve ser maior que zero','erro'); return; }
-                if(data>hoje()){ toast('A data não pode ser futura','erro'); return; }
-
-                const payload={
-                    valor,
-                    data,
-                    descricao,
-                    usuario_id:usuarioAtual.id,
-                    usuario_email:usuarioAtual.email
-                };
-
-                try{
-                    let error;
-                    if(id){
-                        ({error}=await supabase.from('diarias').update(payload).eq('id',id));
-                    } else {
-                        ({error}=await supabase.from('diarias').insert(payload));
-                    }
-                    if(error) throw error;
-                    fecharModalDiaria();
-                    await carregarTudoDoBanco();
-                    toast(id?'Diária atualizada! ✅':'Diária cadastrada! ✅','sucesso');
-                } catch(erro){
-                    toast('Erro: '+mensagemAmigavel(erro),'erro');
-                }
+        }
+        function atualizarMetricasDiarias(){
+            const lista=diariasFiltradas();
+            if(!lista.length){
+                if(elExiste('totalDiarias')) $('totalDiarias').textContent='R$ 0,00';
+                if(elExiste('qtdDiarias')) $('qtdDiarias').textContent='0 registros';
+                if(elExiste('mediaDiarias')) $('mediaDiarias').textContent='R$ 0,00';
+                if(elExiste('maiorDiarias')) $('maiorDiarias').textContent='R$ 0,00';
+                if(elExiste('maiorDataDiarias')) $('maiorDataDiarias').textContent='—';
+                if(elExiste('mesAtualDiarias')) $('mesAtualDiarias').textContent='R$ 0,00';
+                if(elExiste('mesInfoDiarias')) $('mesInfoDiarias').textContent='—';
+                return;
             }
+            const total=lista.reduce((s,d)=>s+Number(d.valor||0),0);
+            const diasUnicos=[...new Set(lista.map(d=>d.data))].length;
+            const maior=lista.reduce((a,d)=>Number(d.valor||0)>Number(a.valor||0)?d:a,lista[0]);
+            const hojeData=new Date();
+            const mesCorrente=lista.filter(d=>{
+                const dt=new Date(d.data+'T00:00:00');
+                return dt.getMonth()===hojeData.getMonth() && dt.getFullYear()===hojeData.getFullYear();
+            }).reduce((s,d)=>s+Number(d.valor||0),0);
+            $('totalDiarias').textContent='R$ '+moeda(total);
+            $('qtdDiarias').textContent=`${lista.length} registros`;
+            $('mediaDiarias').textContent='R$ '+moeda(diasUnicos?total/diasUnicos:0);
+            $('maiorDiarias').textContent='R$ '+moeda(maior.valor);
+            $('maiorDataDiarias').textContent=dataBr(maior.data);
+            $('mesAtualDiarias').textContent='R$ '+moeda(mesCorrente);
+            $('mesInfoDiarias').textContent=nomeMes(hojeData.getMonth()+1);
+        }
+        function atualizarMetricasDescontos(){
+            const lista=descontosFiltrados();
+            if(!lista.length){
+                if(elExiste('totalDescontos')) $('totalDescontos').textContent='R$ 0,00';
+                if(elExiste('qtdDescontos')) $('qtdDescontos').textContent='0 registros';
+                if(elExiste('mediaDescontos')) $('mediaDescontos').textContent='R$ 0,00';
+                if(elExiste('maiorDescontos')) $('maiorDescontos').textContent='R$ 0,00';
+                if(elExiste('maiorDataDescontos')) $('maiorDataDescontos').textContent='—';
+                if(elExiste('mesAtualDescontos')) $('mesAtualDescontos').textContent='R$ 0,00';
+                if(elExiste('mesInfoDescontos')) $('mesInfoDescontos').textContent='—';
+                return;
+            }
+            const total=lista.reduce((s,d)=>s+Number(d.valor||0),0);
+            const mesesUnicos=[...new Set(lista.map(d=>chaveMes(d.data)))].length;
+            const maior=lista.reduce((a,d)=>Number(d.valor||0)>Number(a.valor||0)?d:a,lista[0]);
+            const hojeData=new Date();
+            const mesCorrente=lista.filter(d=>{
+                const dt=new Date(d.data+'T00:00:00');
+                return dt.getMonth()===hojeData.getMonth() && dt.getFullYear()===hojeData.getFullYear();
+            }).reduce((s,d)=>s+Number(d.valor||0),0);
+            $('totalDescontos').textContent='R$ '+moeda(total);
+            $('qtdDescontos').textContent=`${lista.length} registros`;
+            $('mediaDescontos').textContent='R$ '+moeda(mesesUnicos?total/mesesUnicos:0);
+            $('maiorDescontos').textContent='R$ '+moeda(maior.valor);
+            $('maiorDataDescontos').textContent=dataBr(maior.data);
+            $('mesAtualDescontos').textContent='R$ '+moeda(mesCorrente);
+            $('mesInfoDescontos').textContent=nomeMes(hojeData.getMonth()+1);
+        }
+        function atualizarGraficoPrincipal(){
+            const lista=diariasFiltradas();
+            const el=$('grafico');
+            if(!el||!window.echarts) return;
+            if(!graficoInstancia) graficoInstancia=echarts.init(el);
+            const agrupado={};
+            lista.forEach(d=>{
+                const ch=chaveMes(d.data);
+                agrupado[ch]=(agrupado[ch]||0)+Number(d.valor||0);
+            });
+            const ordenado=Object.entries(agrupado).sort((a,b)=>a[0].localeCompare(b[0]));
+            const labels=ordenado.map(([k])=>{const [a,m]=k.split('-'); return `${nomeMes(Number(m)).substring(0,3)}/${a.substring(2)}`;});
+            const valores=ordenado.map(([,v])=>v);
+            const corTexto=getComputedStyle(document.body).getPropertyValue('--text').trim();
+            const corTextoSuave=getComputedStyle(document.body).getPropertyValue('--text-soft').trim();
+            const corBorda=getComputedStyle(document.body).getPropertyValue('--border').trim();
+            graficoInstancia.setOption({
+                backgroundColor:'transparent',
+                tooltip:{trigger:'axis',backgroundColor:'rgba(17,24,39,.9)',borderColor:corBorda,textStyle:{color:'#fff'}},
+                grid:{left:'3%',right:'4%',bottom:'3%',containLabel:true},
+                xAxis:{type:'category',data:labels,axisLabel:{color:corTextoSuave},axisLine:{lineStyle:{color:corBorda}}},
+                yAxis:{type:'value',axisLabel:{color:corTextoSuave},splitLine:{lineStyle:{color:corBorda,type:'dashed'}}},
+                series:[{
+                    type:'bar',data:valores,barWidth:'50%',
+                    itemStyle:{borderRadius:[6,6,0,0],color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#00d4ff'},{offset:1,color:'#0090ff'}])}
+                }]
+            });
+        }
+        function atualizarGraficoPorUsuario(){
+            if(!ehAdmin) return;
+            const lista=diariasFiltradas();
+            const el=$('graficoUsuario');
+            if(!el||!window.echarts) return;
+            if(!graficoUsuarioInstancia) graficoUsuarioInstancia=echarts.init(el);
+            const porUser={};
+            lista.forEach(d=>{
+                const email=d.usuario_email||'Desconhecido';
+                porUser[email]=(porUser[email]||0)+Number(d.valor||0);
+            });
+            const ordenado=Object.entries(porUser).sort((a,b)=>b[1]-a[1]);
+            const corBorda=getComputedStyle(document.body).getPropertyValue('--border').trim();
+            graficoUsuarioInstancia.setOption({
+                backgroundColor:'transparent',
+                tooltip:{trigger:'item',backgroundColor:'rgba(17,24,39,.9)',borderColor:corBorda,textStyle:{color:'#fff'}},
+                series:[{
+                    type:'pie',radius:['40%','70%'],
+                    data:ordenado.map(([k,v])=>({name:k.split('@')[0],value:v})),
+                    color:['#00d4ff','#a855f7','#ff4d6d','#facc15','#4ade80','#fb923c']
+                }]
+            });
+        }
+        function atualizarTudoDiarias(){
+            preencherFiltrosDiarias();
+            atualizarMetricasDiarias();
+            atualizarTabelaDiarias();
+            atualizarGraficoPrincipal();
+            atualizarGraficoPorUsuario();
+        }
+        function atualizarTudoDescontos(){
+            preencherFiltrosDescontos();
+            atualizarMetricasDescontos();
+            atualizarTabelaDescontos();
+        }
 
-            function editarDiaria(id){ abrirModalDiaria(id); }
-
-            async function excluirDiaria(id){
-                if(!confirm('Tem certeza? Essa ação pode ser desfeita nos próximos 10 segundos.')) return;
+        function abrirModalDiaria(id=null){
+            if(!elExiste('modalDiaria')) return;
+            $('modalDiaria').style.display='flex';
+            $('tituloModalDiaria').textContent=id?'Editar Diária':'Nova Diária';
+            $('editIdDiaria').value=id||'';
+            $('valorDiaria').value='';
+            $('dataDiaria').value=hoje();
+            $('descricaoDiaria').value='';
+            if(id){
                 const d=diarias.find(x=>x.id===id);
-                if(!d) return;
-                ultimoDesfazer={tipo:'diaria',id:d.id,dados:d};
-                clearTimeout(desfazerTimer);
-                desfazerTimer=setTimeout(()=>{ ultimoDesfazer=null; },10000);
-
-                diarias=diarias.filter(x=>x.id!==id);
-                atualizarTudoDiarias();
-                toast(`Diária excluída. <button onclick="App.desfazer()" style="background:var(--sucesso);color:#000;border:none;padding:4px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">↩️ Desfazer</button>`,'aviso');
-
-                const {error}=await supabase.from('diarias').delete().eq('id',id);
-                if(error){
-                    diarias.unshift(d);
-                    atualizarTudoDiarias();
-                    toast('Erro ao excluir — restaurado.','erro');
+                if(d){
+                    $('valorDiaria').value=moeda(d.valor);
+                    $('dataDiaria').value=d.data;
+                    $('descricaoDiaria').value=d.descricao||'';
                 }
             }
-
-            // ---------- Descontos ----------
-            function descontosFiltrados(){
-                let lista=[...descontos];
-                const busca=($('buscaDescontos')?.value||'').toLowerCase().trim();
-                const dataInicio=$('dataInicioDescontos')?.value;
-                const dataFim=$('dataFimDescontos')?.value;
-                const filtroMes=$('filtroMesDescontos')?.value;
-                const filtroAno=$('filtroAnoDescontos')?.value;
-
-                if(busca) lista=lista.filter(d=>
-                    (d.descricao||'').toLowerCase().includes(busca) ||
-                    (d.usuario_email||'').toLowerCase().includes(busca)
-                );
-                if(dataInicio) lista=lista.filter(d=>d.data>=dataInicio);
-                if(dataFim) lista=lista.filter(d=>d.data<=dataFim);
-                if(filtroMes&&filtroMes!=='todos') lista=lista.filter(d=>chaveMes(d.data)===filtroMes);
-                if(filtroAno&&filtroAno!=='todos') lista=lista.filter(d=>d.data?.startsWith(filtroAno));
-
-                return lista;
-            }
-            function preencherFiltrosDescontos(){
-                const meses=[...new Set(descontos.map(d=>chaveMes(d.data)))].sort().reverse();
-                const anos=[...new Set(descontos.map(d=>d.data?.substring(0,4)))].sort().reverse();
-                const selMes=$('filtroMesDescontos');
-                const selAno=$('filtroAnoDescontos');
-                if(!selMes||!selAno) return;
-                const atualMes=selMes.value||'todos';
-                const atualAno=selAno.value||'todos';
-                selMes.innerHTML='<option value="todos">Todos os meses</option>';
-                selAno.innerHTML='<option value="todos">Todos os anos</option>';
-                meses.forEach(m=>{
-                    const [ano,mes]=m.split('-');
-                    selMes.innerHTML+=`<option value="${m}">${nomeMes(Number(mes))} / ${ano}</option>`;
-                });
-                anos.forEach(a=>selAno.innerHTML+=`<option value="${a}">${a}</option>`);
-                selMes.value=atualMes;
-                selAno.value=atualAno;
-            }
-            function filtrarDescontos(){ paginaDescontos=1; atualizarTudoDescontos(); }
-            function limparFiltrosDescontos(){
-                $('buscaDescontos').value='';
-                $('dataInicioDescontos').value='';
-                $('dataFimDescontos').value='';
-                $('filtroMesDescontos').value='todos';
-                $('filtroAnoDescontos').value='todos';
-                paginaDescontos=1;
-                atualizarTudoDescontos();
-            }
-            function debounceAtualizarDescontos(){
-                clearTimeout(debounceTimerDescontos);
-                debounceTimerDescontos=setTimeout(filtrarDescontos,300);
-            }
-            function atualizarMetricasDescontos(){
-                const lista=descontosFiltrados();
-                if(!lista.length){
-                    if(elExiste('totalDescontos')) $('totalDescontos').textContent='R$ 0,00';
-                    if(elExiste('qtdDescontos')) $('qtdDescontos').textContent='0 registros';
-                    if(elExiste('mediaDescontos')) $('mediaDescontos').textContent='R$ 0,00';
-                    if(elExiste('maiorDescontos')) $('maiorDescontos').textContent='R$ 0,00';
-                    if(elExiste('maiorDataDescontos')) $('maiorDataDescontos').textContent='—';
-                    if(elExiste('mesAtualDescontos')) $('mesAtualDescontos').textContent='R$ 0,00';
-                    if(elExiste('mesInfoDescontos')) $('mesInfoDescontos').textContent='—';
-                    return;
-                }
-                const total=lista.reduce((s,d)=>s+Number(d.valor||0),0);
-                const mesesUnicos=[...new Set(lista.map(d=>chaveMes(d.data)))].length;
-                const maior=lista.reduce((a,d)=>Number(d.valor||0)>Number(a.valor||0)?d:a,lista[0]);
-                const hojeData=new Date();
-                const mesCorrente=lista.filter(d=>{
-                    const dt=new Date(d.data+'T00:00:00');
-                    return dt.getMonth()===hojeData.getMonth() && dt.getFullYear()===hojeData.getFullYear();
-                }).reduce((s,d)=>s+Number(d.valor||0),0);
-
-                $('totalDescontos').textContent='R$ '+moeda(total);
-                $('qtdDescontos').textContent=`${lista.length} registros`;
-                $('mediaDescontos').textContent='R$ '+moeda(mesesUnicos?total/mesesUnicos:0);
-                $('maiorDescontos').textContent='R$ '+moeda(maior.valor);
-                $('maiorDataDescontos').textContent=dataBr(maior.data);
-                $('mesAtualDescontos').textContent='R$ '+moeda(mesCorrente);
-                $('mesInfoDescontos').textContent=nomeMes(hojeData.getMonth()+1);
-            }
-            function atualizarTabelaDescontos(){
-                const lista=descontosFiltrados();
-                const tbody=$('tabelaDescontos');
-                const vazio=$('vazioDescontos');
-                if(!tbody||!vazio) return;
-                if(lista.length===0){
-                    tbody.innerHTML='';
-                    vazio.style.display='block';
-                    if(elExiste('paginacaoDescontos')) $('paginacaoDescontos').innerHTML='';
-                    return;
-                }
-                vazio.style.display='none';
-                const totalPaginas=Math.ceil(lista.length/ITENS_POR_PAGINA);
-                const inicio=(paginaDescontos-1)*ITENS_POR_PAGINA;
-                const paged=lista.slice(inicio,inicio+ITENS_POR_PAGINA);
-                tbody.innerHTML='';
-                let ultimoMes='';
-                paged.forEach(d=>{
-                    const m=mesAno(d.data);
-                    if(m!==ultimoMes){
-                        ultimoMes=m;
-                        tbody.innerHTML+=`<tr class="mes-separador mes-separador-desconto"><td colspan="5" style="padding:8px;">📅 ${m}</td></tr>`;
-                    }
-                    tbody.innerHTML+=`
-                        <tr class="tbl-row tbl-row-desconto">
-                            <td style="padding:10px 8px;">${dataBr(d.data)}</td>
-                            <td style="padding:10px 8px;">${d.descricao||'—'}</td>
-                            <td style="padding:10px 8px;font-size:13px;color:var(--text-soft);">${(d.usuario_email||'').split('@')[0]||'—'}</td>
-                            <td style="padding:10px 8px;text-align:right;font-weight:500;color:var(--accent3)">R$ ${moeda(d.valor)}</td>
-                            <td style="padding:10px 8px;text-align:right;">
-                                <button class="btn-icone" onclick="App.editarDesconto('${d.id}')" title="Editar">✏️</button>
-                                <button class="btn-icone excluir-btn" onclick="App.excluirDesconto('${d.id}')" title="Excluir">🗑️</button>
-                            </td>
-                        </tr>`;
-                });
-                const pag=$('paginacaoDescontos');
-                if(pag){
-                    if(totalPaginas<=1){ pag.innerHTML=''; return; }
-                    let pagHtml='';
-                    for(let i=1;i<=totalPaginas;i++){
-                        pagHtml+=`<button class="btn-secondary ${i===paginaDescontos?'ativo':''}" onclick="App.irPaginaDescontos(${i})">${i}</button>`;
-                    }
-                    pag.innerHTML=pagHtml;
-                }
-            }
-            function irPaginaDescontos(p){ paginaDescontos=p; atualizarTabelaDescontos(); }
-            function atualizarTudoDescontos(){
-                preencherFiltrosDescontos();
-                atualizarMetricasDescontos();
-                atualizarTabelaDescontos();
-            }
-
-            // CRUD Descontos
-            function abrirModalDesconto(id=null){
-                if(!elExiste('modalDesconto')) return;
-                $('modalDesconto').style.display='flex';
-                $('tituloModalDesconto').textContent=id?'Editar Desconto':'Novo Desconto';
-                $('editIdDesconto').value=id||'';
-                $('descricaoDesconto').value='';
-                $('valorDesconto').value='';
-                $('dataDesconto').value=hoje();
+            $('valorDiaria')?.focus();
+        }
+        function fecharModalDiaria(){ if(elExiste('modalDiaria')) $('modalDiaria').style.display='none'; }
+        async function salvarDiaria(e){
+            e.preventDefault();
+            const id=$('editIdDiaria').value;
+            const valor=moedaParaNumero($('valorDiaria').value);
+            const data=$('dataDiaria').value;
+            const descricao=$('descricaoDiaria').value.trim();
+            if(valor<=0){ toast('O valor deve ser maior que zero','erro'); return; }
+            if(data>hoje()){ toast('A data não pode ser futura','erro'); return; }
+            const payload={valor,data,descricao,usuario_id:usuarioAtual.id,usuario_email:usuarioAtual.email};
+            try{
+                let error;
                 if(id){
-                    const d=descontos.find(x=>x.id===id);
-                    if(d){
-                        $('descricaoDesconto').value=d.descricao||'';
-                        $('valorDesconto').value=moeda(d.valor);
-                        $('dataDesconto').value=d.data;
-                    }
+                    ({error}=await supabase.from('diarias').update(payload).eq('id',id));
+                } else {
+                    ({error}=await supabase.from('diarias').insert(payload));
                 }
-                $('descricaoDesconto')?.focus();
+                if(error) throw error;
+                fecharModalDiaria();
+                await carregarTudoDoBanco();
+                toast(id?'Diária atualizada! ✅':'Diária cadastrada! ✅','sucesso');
+            }catch(erro){
+                toast('Erro: '+mensagemAmigavel(erro),'erro');
             }
-            function fecharModalDesconto(){ if(elExiste('modalDesconto')) $('modalDesconto').style.display='none'; }
-            async function salvarDesconto(e){
-                e.preventDefault();
-                const id=$('editIdDesconto').value;
-                const descricao=$('descricaoDesconto').value.trim();
-                const valor=moedaParaNumero($('valorDesconto').value);
-                const data=$('dataDesconto').value;
-
-                if(!descricao){ toast('Informe o que foi descontado','erro'); return; }
-                if(valor<=0){ toast('O valor deve ser maior que zero','erro'); return; }
-                if(data>hoje()){ toast('A data não pode ser futura','erro'); return; }
-
-                const payload={
-                    descricao,
-                    valor,
-                    data,
-                    usuario_id:usuarioAtual.id,
-                    usuario_email:usuarioAtual.email
-                };
-
-                try{
-                    let error;
-                    if(id){
-                        ({error}=await supabase.from('descontos').update(payload).eq('id',id));
-                    } else {
-                        ({error}=await supabase.from('descontos').insert(payload));
-                    }
-                    if(error) throw error;
-                    fecharModalDesconto();
-                    await carregarTudoDoBanco();
-                    toast(id?'Desconto atualizado! ✅':'Desconto cadastrado! ✅','sucesso');
-                } catch(erro){
-                    toast('Erro: '+mensagemAmigavel(erro),'erro');
-                }
+        }
+        function editarDiaria(id){ abrirModalDiaria(id); }
+        async function excluirDiaria(id){
+            if(!confirm('Tem certeza? Essa ação pode ser desfeita nos próximos 10 segundos.')) return;
+            const d=diarias.find(x=>x.id===id);
+            if(!d) return;
+            ultimoDesfazer={tipo:'diaria',id:d.id,dados:d};
+            clearTimeout(desfazerTimer);
+            desfazerTimer=setTimeout(()=>{ ultimoDesfazer=null; },10000);
+            diarias=diarias.filter(x=>x.id!==id);
+            atualizarTudoDiarias();
+            toast(`Diária excluída. <button onclick="App.desfazer()" style="background:var(--sucesso);color:#000;border:none;padding:4px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">↩️ Desfazer</button>`,'aviso');
+            const {error}=await supabase.from('diarias').delete().eq('id',id);
+            if(error){
+                diarias.unshift(d);
+                atualizarTudoDiarias();
+                toast('Erro ao excluir — restaurado.','erro');
             }
-            function editarDesconto(id){ abrirModalDesconto(id); }
-            async function excluirDesconto(id){
-                if(!confirm('Tem certeza? Pode desfazer em 10s.')) return;
+        }
+        function abrirModalDesconto(id=null){
+            if(!elExiste('modalDesconto')) return;
+            $('modalDesconto').style.display='flex';
+            $('tituloModalDesconto').textContent=id?'Editar Desconto':'Novo Desconto';
+            $('editIdDesconto').value=id||'';
+            $('descricaoDesconto').value='';
+            $('valorDesconto').value='';
+            $('dataDesconto').value=hoje();
+            if(id){
                 const d=descontos.find(x=>x.id===id);
-                if(!d) return;
-                ultimoDesfazer={tipo:'desconto',id:d.id,dados:d};
-                clearTimeout(desfazerTimer);
-                desfazerTimer=setTimeout(()=>{ ultimoDesfazer=null; },10000);
-                descontos=descontos.filter(x=>x.id!==id);
+                if(d){
+                    $('descricaoDesconto').value=d.descricao||'';
+                    $('valorDesconto').value=moeda(d.valor);
+                    $('dataDesconto').value=d.data;
+                }
+            }
+            $('descricaoDesconto')?.focus();
+        }
+        function fecharModalDesconto(){ if(elExiste('modalDesconto')) $('modalDesconto').style.display='none'; }
+        async function salvarDesconto(e){
+            e.preventDefault();
+            const id=$('editIdDesconto').value;
+            const descricao=$('descricaoDesconto').value.trim();
+            const valor=moedaParaNumero($('valorDesconto').value);
+            const data=$('dataDesconto').value;
+            if(!descricao){ toast('Informe o que foi descontado','erro'); return; }
+            if(valor<=0){ toast('O valor deve ser maior que zero','erro'); return; }
+            if(data>hoje()){ toast('A data não pode ser futura','erro'); return; }
+            const payload={descricao,valor,data,usuario_id:usuarioAtual.id,usuario_email:usuarioAtual.email};
+            try{
+                let error;
+                if(id){
+                    ({error}=await supabase.from('descontos').update(payload).eq('id',id));
+                } else {
+                    ({error}=await supabase.from('descontos').insert(payload));
+                }
+                if(error) throw error;
+                fecharModalDesconto();
+                await carregarTudoDoBanco();
+                toast(id?'Desconto atualizado! ✅':'Desconto cadastrado! ✅','sucesso');
+            }catch(erro){
+                toast('Erro: '+mensagemAmigavel(erro),'erro');
+            }
+        }
+        function editarDesconto(id){ abrirModalDesconto(id); }
+        async function excluirDesconto(id){
+            if(!confirm('Tem certeza? Pode desfazer em 10s.')) return;
+            const d=descontos.find(x=>x.id===id);
+            if(!d) return;
+            ultimoDesfazer={tipo:'desconto',id:d.id,dados:d};
+            clearTimeout(desfazerTimer);
+            desfazerTimer=setTimeout(()=>{ ultimoDesfazer=null; },10000);
+            descontos=descontos.filter(x=>x.id!==id);
+            atualizarTudoDescontos();
+            toast(`Desconto excluído. <button onclick="App.desfazer()" style="background:var(--sucesso);color:#000;border:none;padding:4px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">↩️ Desfazer</button>`,'aviso');
+            const {error}=await supabase.from('descontos').delete().eq('id',id);
+            if(error){
+                descontos.unshift(d);
                 atualizarTudoDescontos();
-                toast(`Desconto excluído. <button onclick="App.desfazer()" style="background:var(--sucesso);color:#000;border:none;padding:4px 8px;border-radius:6px;margin-left:8px;cursor:pointer;font-weight:600;">↩️ Desfazer</button>`,'aviso');
-                const {error}=await supabase.from('descontos').delete().eq('id',id);
-                if(error){
-                    descontos.unshift(d);
-                    atualizarTudoDescontos();
-                    toast('Erro ao excluir — restaurado.','erro');
+                toast('Erro ao excluir — restaurado.','erro');
+            }
+        }
+        async function desfazer(){
+            if(!ultimoDesfazer) return toast('Tempo esgotado. Não é mais possível desfazer.','aviso');
+            const {tipo,id,dados}=ultimoDesfazer;
+            ultimoDesfazer=null;
+            try{
+                let error;
+                if(tipo==='diaria'){
+                    ({error}=await supabase.from('diarias').insert(dados));
+                }else{
+                    ({error}=await supabase.from('descontos').insert(dados));
                 }
+                if(error) throw error;
+                await carregarTudoDoBanco();
+                toast('✅ Ação desfeita com sucesso!','sucesso');
+            }catch(erro){
+                toast('Não foi possível desfazer: '+mensagemAmigavel(erro),'erro');
             }
+        }
+        function exportarCSV(lista, nomeArquivo){
+            if(!lista.length) return toast('Sem dados para exportar','aviso');
+            const cabecalho='Data;Descrição;Usuário;Valor\n';
+            const linhas=lista.map(d=>`${d.data};"${(d.descricao||'').replace(/;/g,',')}";"${d.usuario_email||''}";${moeda(d.valor)}`).join('\n');
+            const blob=new Blob([cabecalho+linhas],{type:'text/csv;charset=utf-8'});
+            const url=URL.createObjectURL(blob);
+            const a=document.createElement('a');
+            a.href=url; a.download=nomeArquivo; a.click();
+            URL.revokeObjectURL(url);
+            toast('CSV exportado!');
+        }
+        function exportarDiarias(){ exportarCSV(diariasFiltradas(), `Diarias_${hoje()}.csv`); }
+        function exportarDescontos(){ exportarCSV(descontosFiltrados(), `Descontos_${hoje()}.csv`); }
+        function irPaginaDiarias(p){ paginaDiarias=p; atualizarTabelaDiarias(); }
+        function irPaginaDescontos(p){ paginaDescontos=p; atualizarTabelaDescontos(); }
 
-            async function desfazer(){
-                if(!ultimoDesfazer) return toast('Tempo esgotado. Não é mais possível desfazer.','aviso');
-                const {tipo,id,dados}=ultimoDesfazer;
-                ultimoDesfazer=null;
-                try{
-                    let error;
-                    if(tipo==='diaria'){
-                        ({error}=await supabase.from('diarias').insert(dados));
-                    }else{
-                        ({error}=await supabase.from('descontos').insert(dados));
-                    }
-                    if(error) throw error;
-                    await carregarTudoDoBanco();
-                    toast('✅ Ação desfeita com sucesso!','sucesso');
-                }catch(erro){
-                    toast('Não foi possível desfazer: '+mensagemAmigavel(erro),'erro');
+        async function inicializar(){
+            console.log('Iniciando CashLog...');
+            garantirElementos();
+            try{
+                if(!window.supabase){
+                    throw new Error('Biblioteca Supabase não carregada. Verifique sua conexão.');
                 }
-            }
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('Cliente Supabase criado.');
 
-            // Exportações
-            function exportarDiarias(){
-                const lista=diariasFiltradas();
-                if(!lista.length) return toast('Sem dados para exportar','aviso');
-                const cabecalho='Data;Descrição;Usuário;Valor\n';
-                const linhas=lista.map(d=>`${d.data};"${(d.descricao||'').replace(/;/g,',')}";"${d.usuario_email||''}";${moeda(d.valor)}`).join('\n');
-                const blob=new Blob([cabecalho+linhas],{type:'text/csv;charset=utf-8'});
-                const url=URL.createObjectURL(blob);
-                const a=document.createElement('a');
-                a.href=url;
-                a.download=`Diarias_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast('✅ CSV de diárias exportado!','sucesso');
-            }
-            function exportarDescontos(){
-                const lista=descontosFiltrados();
-                if(!lista.length) return toast('Sem dados para exportar','aviso');
-                const cabecalho='Data;Descrição;Usuário;Valor\n';
-                const linhas=lista.map(d=>`${d.data};"${(d.descricao||'').replace(/;/g,',')}";"${d.usuario_email||''}";${moeda(d.valor)}`).join('\n');
-                const blob=new Blob([cabecalho+linhas],{type:'text/csv;charset=utf-8'});
-                const url=URL.createObjectURL(blob);
-                const a=document.createElement('a');
-                a.href=url;
-                a.download=`Descontos_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast('✅ CSV de descontos exportado!','sucesso');
-            }
-
-            // Inicialização
-            async function inicializar(){
-                console.log('Iniciando CashLog...');
-                garantirElementos();
-                try{
-                    if(!window.supabase){
-                        throw new Error('Biblioteca Supabase não carregada. Verifique sua conexão.');
-                    }
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    console.log('Cliente Supabase criado.');
-
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if(session?.user){
-                        console.log('Sessão encontrada:', session.user.email);
-                        await entrarApp(session.user);
-                    } else {
-                        console.log('Nenhuma sessão, mostrando login.');
-                        if(elExiste('telaLogin')) $('telaLogin').style.display='flex';
-                    }
-
-                    supabase.auth.onAuthStateChange((event, session)=>{
-                        console.log('Estado de autenticação mudou:', event);
-                        if(event === 'SIGNED_IN' && session?.user){
-                            entrarApp(session.user);
-                        } else if(event === 'SIGNED_OUT'){
-                            sairConta();
-                        }
-                    });
-
-                    document.addEventListener('keydown', (e)=>{
-                        if((e.ctrlKey||e.metaKey)&&e.key==='n'){
-                            e.preventDefault();
-                            if(abaAtiva==='diarias') abrirModalDiaria();
-                            else abrirModalDesconto();
-                        }
-                        if(e.key==='Escape'){
-                            fecharModalDiaria();
-                            fecharModalDesconto();
-                        }
-                    });
-
-                    window.addEventListener('resize', ()=>{
-                        if(graficoInstancia) graficoInstancia.resize();
-                        if(graficoUsuarioInstancia) graficoUsuarioInstancia.resize();
-                    });
-
-                    console.log('Inicialização concluída.');
-                } catch(erro){
-                    console.error('Erro na inicialização:', erro);
-                    if(elExiste('mensagemLogin')){
-                        $('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${erro.message || 'Erro ao inicializar o aplicativo.'}</span>`;
-                    }
+                const { data: { session } } = await supabase.auth.getSession();
+                if(session?.user){
+                    console.log('Sessão encontrada:', session.user.email);
+                    await entrarApp(session.user);
+                } else {
+                    console.log('Nenhuma sessão, mostrando login.');
                     if(elExiste('telaLogin')) $('telaLogin').style.display='flex';
                 }
-            }
 
-            // Expor API pública
-            window.App = {
-                fazerCadastro, fazerLogin, mostrarCadastro, mostrarLogin,
-                sairConta, alternarTema, selecionarAba,
-                abrirModalDiaria, fecharModalDiaria, salvarDiaria, editarDiaria, excluirDiaria,
-                abrirModalDesconto, fecharModalDesconto, salvarDesconto, editarDesconto, excluirDesconto,
-                filtrarDiarias, limparFiltrosDiarias, debounceAtualizarDiarias, irPaginaDiarias,
-                filtrarDescontos, limparFiltrosDescontos, debounceAtualizarDescontos, irPaginaDescontos,
-                desfazer, exportarDiarias, exportarDescontos,
-                formatarValor,
-                carregarTudoDoBanco
-            };
+                supabase.auth.onAuthStateChange((event, session)=>{
+                    console.log('Estado de autenticação mudou:', event);
+                    if(event === 'SIGNED_IN' && session?.user){
+                        entrarApp(session.user);
+                    } else if(event === 'SIGNED_OUT'){
+                        sairConta();
+                    }
+                });
 
-            // Inicializar após DOM estar pronto
-            if(document.readyState === 'loading'){
-                document.addEventListener('DOMContentLoaded', inicializar);
-            } else {
-                inicializar();
+                document.addEventListener('keydown', (e)=>{
+                    if((e.ctrlKey||e.metaKey)&&e.key==='n'){
+                        e.preventDefault();
+                        if(abaAtiva==='diarias') abrirModalDiaria();
+                        else abrirModalDesconto();
+                    }
+                    if(e.key==='Escape'){
+                        fecharModalDiaria();
+                        fecharModalDesconto();
+                    }
+                });
+
+                window.addEventListener('resize', ()=>{
+                    if(graficoInstancia) graficoInstancia.resize();
+                    if(graficoUsuarioInstancia) graficoUsuarioInstancia.resize();
+                });
+
+                console.log('Inicialização concluída.');
+            } catch(erro){
+                console.error('Erro na inicialização:', erro);
+                if(elExiste('mensagemLogin')){
+                    $('mensagemLogin').innerHTML = `<span style="color:var(--erro)">${erro.message || 'Erro ao inicializar o aplicativo.'}</span>`;
+                }
+                if(elExiste('telaLogin')) $('telaLogin').style.display='flex';
             }
-        })();
+        }
+
+        // Expor API pública
+        window.App = {
+            fazerCadastro, fazerLogin, mostrarCadastro, mostrarLogin,
+            sairConta, alternarTema, selecionarAba,
+            abrirModalDiaria, fecharModalDiaria, salvarDiaria, editarDiaria, excluirDiaria,
+            abrirModalDesconto, fecharModalDesconto, salvarDesconto, editarDesconto, excluirDesconto,
+            filtrarDiarias, filtrarDescontos, limparFiltrosDiarias, limparFiltrosDescontos,
+            debounceAtualizarDiarias, debounceAtualizarDescontos,
+            irPaginaDiarias, irPaginaDescontos, desfazer,
+            exportarDiarias, exportarDescontos, formatarValor
+        };
+
+        if(document.readyState === 'loading'){
+            document.addEventListener('DOMContentLoaded', inicializar);
+        } else {
+            inicializar();
+        }
     </script>
 </body>
 </html>
