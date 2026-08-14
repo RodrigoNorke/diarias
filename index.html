@@ -146,18 +146,18 @@
 
     <script>
         // ============================================================
-        // CASHLOG – SCRIPT ÚNICO E SEM DUPLICAÇÕES
+        // CASHLOG – USANDO var PARA EVITAR REDECLARAÇÃO DE let
         // ============================================================
         const SUPABASE_URL = "https://ompukaiwkovmjzlfadpp.supabase.co";
         const SUPABASE_KEY = "sb_publishable_l7bWwOwGNWaTQuENabb3Fw_YZMaAv_Y";
         const ADM_EMAIL = "rodriggo.oliveira20@gmail.com";
 
-        let supabase = null;
-        let usuarioAtual = null;
-        let ehAdmin = false;
-        let abaAtiva = 'diarias';
-        let diarias = [];
-        let descontos = [];
+        var supabase = null;
+        var usuarioAtual = null;
+        var ehAdmin = false;
+        var abaAtiva = 'diarias';
+        var diarias = [];
+        var descontos = [];
 
         const $ = id => document.getElementById(id);
         const elExiste = id => !!$(id);
