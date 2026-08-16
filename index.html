@@ -445,7 +445,7 @@
 
     <script>
         // ============================================================
-        // CASHLOG – SCRIPT ÚNICO DENTRO DE IIFE (CORRIGIDO E COM DEBUG)
+        // CASHLOG – SCRIPT ÚNICO DENTRO DE IIFE (CORRIGIDO)
         // ============================================================
         (function() {
             if (window.CashLogInitialized) return;
@@ -916,31 +916,59 @@
                 }
             }
 
-            // Expor API pública e funções de debug
-            window.CashLog = {
+            // Expor API pública completa
+            const API = {
+                fazerCadastro,
+                fazerLogin,
+                mostrarCadastro,
+                mostrarLogin,
+                sairConta,
+                alternarTema: function() { return alternarTema(); },
+                selecionarAba,
+                abrirModalDiaria,
+                fecharModalDiaria,
+                salvarDiaria,
                 editarDiaria,
                 excluirDiaria,
+                abrirModalDesconto,
+                fecharModalDesconto,
+                salvarDesconto,
                 editarDesconto,
                 excluirDesconto,
-                formatarValor,
-                abrirModalDiaria,
-                abrirModalDesconto,
-                selecionarAba,
-                sairConta,
+                filtrarDiarias: function() { paginaDiarias=1; atualizarTabelaDiarias(); },
+                filtrarDescontos: function() { paginaDescontos=1; atualizarTabelaDescontos(); },
+                limparFiltrosDiarias: function() {
+                    $('buscaDiarias').value=''; $('dataInicioDiarias').value=''; $('dataFimDiarias').value='';
+                    $('filtroMesDiarias').value='todos'; $('filtroAnoDiarias').value='todos';
+                    paginaDiarias=1; atualizarTabelaDiarias();
+                },
+                limparFiltrosDescontos: function() {
+                    $('buscaDescontos').value=''; $('dataInicioDescontos').value=''; $('dataFimDescontos').value='';
+                    $('filtroMesDescontos').value='todos'; $('filtroAnoDescontos').value='todos';
+                    paginaDescontos=1; atualizarTabelaDescontos();
+                },
+                debounceAtualizarDiarias: function() { clearTimeout(debounceTimerDiarias); debounceTimerDiarias=setTimeout(()=>{paginaDiarias=1; atualizarTabelaDiarias();},300); },
+                debounceAtualizarDescontos: function() { clearTimeout(debounceTimerDescontos); debounceTimerDescontos=setTimeout(()=>{paginaDescontos=1; atualizarTabelaDescontos();},300); },
                 irPaginaDiarias,
                 irPaginaDescontos,
+                desfazer: async function() {},
+                exportarDiarias,
+                exportarDescontos,
                 recarregarDiarias,
                 recarregarDescontos,
-                diariasFiltradas,
-                descontosFiltrados,
-                atualizarTabelaDiarias,
-                atualizarTabelaDescontos
+                formatarValor,
+                carregarTudoDoBanco
             };
-            // Expor também o App para manter compatibilidade com botões onclick
-            window.App = window.CashLog;
-            // Expor diarias para debug
-            window.diarias = diarias;
-            window.descontos = descontos;
+
+            window.App = API;
+            window.CashLog = API;
+
+            // Também expor funções de edição/exclusão isoladas para onclick
+            window.editarDiaria = editarDiaria;
+            window.excluirDiaria = excluirDiaria;
+            window.editarDesconto = editarDesconto;
+            window.excluirDesconto = excluirDesconto;
+            window.formatarValor = formatarValor;
 
             document.addEventListener('DOMContentLoaded', () => {
                 $('formLogin').addEventListener('submit', fazerLogin);
